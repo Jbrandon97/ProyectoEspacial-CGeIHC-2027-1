@@ -1,0 +1,24 @@
+INVENTARIO Y PROCEDENCIA
+
+BASE EXISTENTE
+Geometría, materiales y texturas generados en el avance anterior de este chat. Recuperación exacta en Modelos/Nucleo_original_RECUPERACION.blend. El archivo anterior y su ZIP también permanecen separados en outputs, sin modificaciones.
+Se reutilizaron las ocho zonas, las tres variantes de pino, las rocas, los edificios y el puesto Covenant. La ampliación agrega terreno soldado, textura raster de biomas, LOD de árboles, caminos, ruinas, torres, contenedores y una nave decorativa de geometría propia.
+
+RECURSOS SUMINISTRADOS
+Grunt: Halo: Combat Evolved. ZIP de Enemies - Grunt. El Readme original atribuye la extracción a Shadowth117 mediante TheGhost's Halo CE model importer. Tres instancias; OBJ visible, UV y tres materiales de color originales. Se conserva DAE y documentación de origen.
+Hunter: Halo: Combat Evolved. ZIP de Enemies - Hunter. Mismos créditos de extracción según el Readme. Un ejemplar; cinco grupos de material visibles y sus texturas.
+Sentinel: Halo: Combat Evolved. ZIP de Enemies - Sentinel. Mismos créditos según el Readme. Dos ejemplares; se utiliza la malla metálica visible, no el escudo transparente ni auxiliares de huesos.
+Energy Sword: Halo: Combat Evolved. ZIP de Weapons - Energy Sword. Dos ejemplares con dos grupos de material y el atlas PNG proporcionado. El ZIP no incluye Readme de atribución: no se atribuye el trabajo de extracción a una persona sin evidencia específica.
+
+Los ZIP contienen versiones OBJ y DAE, materiales MTL y PNG. Se eligió OBJ para la importación reproducible en Blender 5.2. Se mantuvieron las geometrías visibles y sus UV; se conservaron los DAE con controladores para futuras adaptaciones de rigging. Los archivos originales permanecen en Modelos/Halo_fuentes, salvo Thumbs.db, que es una caché y no se incluye. Las imágenes usadas por la escena están organizadas en Texturas/Halo.
+
+CONDICIONES REVISADAS
+Los Readme de los tres enemigos indican que no exigen crédito del extractor. Eso no equivale a una licencia de los titulares del videojuego. No se afirma CC0, Creative Commons ni autorización comercial o de redistribución de los modelos extraídos.
+Halo: Combat Evolved pertenece al universo de Bungie/Microsoft. Halo: Combat Evolved © Microsoft Corporation. Este avance académico no es oficial ni está respaldado por Microsoft.
+Se revisaron las Game Content Usage Rules de Microsoft, que describen usos personales/no comerciales sujetos a condiciones y también restringen la ingeniería inversa para obtener activos. Esa página no permite certificar por sí sola la licencia de estos ZIP extraídos. No se realizó extracción del videojuego ni descarga de modelos adicionales; se trabajó con los archivos suministrados. Las condiciones de redistribución de estos modelos concretos no están confirmadas.
+Fuente oficial revisada: https://www.xbox.com/en-US/developers/rules
+La ficha del Grunt identifica a Shadowth117 como usuario que subió el recurso: https://models.spriters-resource.com/pc_computer/halo/asset/282978/
+
+Los nombres Halo y Titanfall identifican la inspiración del proyecto. Las estructuras procedurales Titanfall no son modelos extraídos ni oficiales. No se incluyen recursos de audio o logotipos externos. Esta entrega no sustituye la documentación de autoría e implementación que corresponde al equipo.
+
+NOTA B1: El texto anterior conserva la procedencia del Blender fuente, no enumera todo el contenido de este paquete. No se incluyen NPC ni espadas en B1. Nave_0.png, Nave_1.png y Nave_2.png son patrones procedurales propios de paneles/franjas, aplicados a geometría generada en NaveCarreras.cpp. No se usaron naves de prácticas de laboratorio.

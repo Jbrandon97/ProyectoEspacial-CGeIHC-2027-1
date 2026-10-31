@@ -1,0 +1,4 @@
+Banshee y Ghost de Halo: Combat Evolved. Recursos proporcionados por el usuario en los ZIP de esos nombres.
+El Readme de ambos paquetes dice: This model was ripped by Shadowth117 using TheGhost's Halo CE model importer. No credit needed.
+Esto acredita la extraccion; no declara una licencia libre sobre los modelos del juego ni se presenta como autoria del equipo.
+Adaptacion: solo casco visible __unnamed de OBJ; las otras agrupaciones son marcadores de exportacion (esferas/cajas de pivotes, asiento y disparadores), no piezas del vehiculo. Geometria visible, UV originales preservadas; normales originales del Banshee y normales suaves recalculadas para Ghost (OBJ sin vn) con transformacion rigida, escala uniforme y ajuste de base. Banshee Z-up y Ghost OBJ Y-up, frente original +X convertido a -Z. Textura PNG difusa original; mapas multi/cubemap del motor original no se interpretan como normales. No se incluyen variantes destruidas ni marcadores.

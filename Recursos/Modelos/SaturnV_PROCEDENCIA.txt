@@ -1,0 +1,3 @@
+Recurso proporcionado por el usuario: nasa-saturn-v-rocket.glb.
+El GLB declara generador Khronos glTF Blender I/O v4.2.57, pero no autor, fuente ni licencia explícita. El nombre NASA no se usa como prueba de dominio público. Original preservado.
+Adaptación: PNG externos originales, pose de referencia, escala uniforme 4 y centrado/base. 22 mallas; 23 pistas originales conservadas en el GLB, no utilizadas como lanzamiento. El lanzamiento regional transforma el cohete completo.

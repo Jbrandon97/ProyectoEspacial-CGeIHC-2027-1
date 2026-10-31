@@ -1,0 +1,4 @@
+ciclo_segundos=120
+fase_inicial=0.22
+volumen=0.35
+# ciclo permitido: 12 a 120 s; fase inicial 0..1. No requiere recompilar.

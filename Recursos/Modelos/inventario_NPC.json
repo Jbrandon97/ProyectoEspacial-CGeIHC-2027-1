@@ -1,0 +1,85 @@
+[
+  {
+    "modelo": "Grunt",
+    "piezas_fuente": 3,
+    "triangulos": 1708,
+    "lotes_material": 3,
+    "dimensiones": [
+      1.67,
+      2.2,
+      2.152
+    ],
+    "origen_fuente": [
+      -65.08749819718636,
+      1.5152441263198853,
+      144.88020323239732
+    ],
+    "nodos_fuente": [
+      "Grunt_01_pieza_01",
+      "Grunt_01_pieza_02",
+      "Grunt_01_pieza_03"
+    ]
+  },
+  {
+    "modelo": "Hunter",
+    "piezas_fuente": 5,
+    "triangulos": 2002,
+    "lotes_material": 5,
+    "dimensiones": [
+      1.9,
+      4.4,
+      3.615
+    ],
+    "origen_fuente": [
+      -50.97276479567547,
+      1.5151220560073853,
+      145.0029800372768
+    ],
+    "nodos_fuente": [
+      "Hunter_01_pieza_01",
+      "Hunter_01_pieza_02",
+      "Hunter_01_pieza_03",
+      "Hunter_01_pieza_04",
+      "Hunter_01_pieza_05"
+    ]
+  },
+  {
+    "modelo": "Sentinel",
+    "piezas_fuente": 1,
+    "triangulos": 1586,
+    "lotes_material": 1,
+    "dimensiones": [
+      3.793,
+      2.0,
+      2.45
+    ],
+    "origen_fuente": [
+      -101.99659982952268,
+      9.149476170539856,
+      -115.03283477296765
+    ],
+    "nodos_fuente": [
+      "Sentinel_01_pieza_01"
+    ]
+  },
+  {
+    "modelo": "EnergySword",
+    "piezas_fuente": 2,
+    "triangulos": 128,
+    "lotes_material": 2,
+    "dimensiones": [
+      1.495,
+      0.226,
+      2.4
+    ],
+    "origen_fuente": [
+      -142.05227933391419,
+      2.01151089471758,
+      -66.98651315127834
+    ],
+    "nodos_fuente": [
+      "Energy_Sword_01_pieza_01",
+      "Energy_Sword_01_pieza_02"
+    ]
+  }
+]

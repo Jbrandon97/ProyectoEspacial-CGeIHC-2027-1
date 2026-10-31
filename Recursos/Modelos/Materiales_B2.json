@@ -1,0 +1,8 @@
+{
+  "terreno": {
+    "albedo": "Texturas/Terreno_B2.png",
+    "rugosidad": "Texturas/Terreno_B2_rugosidad.png",
+    "metallic": 0,
+    "nota": "Albedo sin luces horneadas. Rugosidad preparada, no aplicada por el shader actual."
+  }
+}

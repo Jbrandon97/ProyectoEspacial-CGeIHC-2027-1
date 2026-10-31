@@ -1,0 +1,7 @@
+{
+  "author": "jameslucino117 (https://sketchfab.com/jameslucino117)",
+  "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+  "source": "https://sketchfab.com/3d-models/enemieshalo-3covenantengineer-6585e08ea1814aa990ada3945c953602",
+  "title": "Enemies>Halo 3>Covenant>Engineer"
+}
+Adaptación B2: rig, pesos y conversión a Y arriba. Geometría, UV e imágenes del original conservadas. Mapa de emisión preservado para iluminación posterior. Licencia declarada en el GLB: CC BY 4.0; autor jameslucino117.

@@ -64,10 +64,11 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
         shader_.vector((nombre + ".color").c_str(), p.color * (p.encendida ? p.intensidad : 0));
         shader_.vector((nombre + ".atenuacion").c_str(), p.atenuacion);
     }
+    recortarDebajo(-100000.f);
     shader_.vector("focoPos", l.focoPos);
     shader_.vector("focoDir", l.focoDir);
-    shader_.vector("focoDatos", {l.foco ? 3.2f : 0.f, std::cos(glm::radians(17.f)),
-                                 std::cos(glm::radians(25.f))});
+    shader_.vector("focoDatos", {l.foco ? 3.8f : 0.f, std::cos(glm::radians(22.f)),
+                                 std::cos(glm::radians(31.f))});
     material(.85f);
 
     shader_.matriz("vistaProyeccion", vp);

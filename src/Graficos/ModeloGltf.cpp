@@ -75,6 +75,11 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
                 throw std::runtime_error("glTF sin posiciones/normales");
             Parte parte;
             cgltf_node_transform_world(&n, glm::value_ptr(parte.local));
+            if (n.name && std::string(n.name).rfind("Saturn_Etapa_", 0) == 0) {
+                parte.etapa = std::stoi(std::string(n.name).substr(13));
+                if (parte.etapa < 0 || parte.etapa > 2)
+                    throw std::runtime_error("Etapa Saturn invalida");
+            }
             parte.puerta = n.name && std::string(n.name).find("Puerta_independiente") == 0;
             if (pr.material) {
                 auto &mat = *pr.material;
@@ -119,9 +124,12 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
     std::cout << "GLTF_OK " << p.filename().string() << " lotes=" << partes_.size()
               << " triangulos=" << vertices / 3 << "\n";
 }
-void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta) const {
+void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta,
+                         const std::array<glm::mat4, 3> *etapas) const {
     for (auto &p : partes_) {
         auto local = p.local;
+        if (etapas && p.etapa >= 0)
+            local = (*etapas)[p.etapa] * local;
         if (p.puerta)
             local = glm::translate(glm::mat4(1), {0, elevacionPuerta, 0}) * local;
         r.texturada(*p.malla, m * local, p.textura ? p.textura->id() : 0, p.color, p.emision,

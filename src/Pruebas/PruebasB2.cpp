@@ -90,12 +90,15 @@ void Aplicacion::probarB2(const std::filesystem::path &evidencias) {
         exigir(engineer.deformacionMaxima(0) < .00001f, "B2 mueve cuerpo en vez de extremidades");
         for (int cadena = 1; cadena <= 3; ++cadena) {
             float d = engineer.deformacionMaxima(cadena);
-            exigir(d > .001f && d < .6f, "B2 deformacion de tentaculo incorrecta");
+            exigir(estado == 0 ? d < .00001f : (d > .001f && d < .6f),
+                   "E deformacion o reposo incorrecto");
             std::cout << "B2_PIEL estado=" << estado << " cadena=" << cadena << " max=" << d
                       << "\n";
         }
 
-        exigir(a > .00001f && std::abs(b - a) > .00001f, "B2 extremidad inmovil");
+        exigir(estado == 0 ? (a < .00001f && b < .00001f)
+                           : (a > .00001f && std::abs(b - a) > .00001f),
+               "E extremidad: reposo o locomocion incorrectos");
         std::cout << "B2_RIG_OK estado=" << estado << " desplazamientoExtremo=" << a << "," << b
                   << "\n";
         auto vp = glm::perspective(glm::radians(40.0f), float(w) / h, .1f, 100.0f) *

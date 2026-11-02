@@ -1,5 +1,6 @@
 #pragma once
 #include "Engineer.h"
+#include <cmath>
 #include "Mundo/Escenario.h"
 // Engineer articulado en Planeta 1; otras regiones conservan su marcador.
 class Avatar {
@@ -14,6 +15,12 @@ class Avatar {
     void mover(glm::vec2 direccion, float segundos, const Escenario &region, bool correr = false);
     glm::vec3 posicion() const noexcept {
         return posicion_;
+    }
+    glm::vec3 direccion() const {
+        return {std::cos(orientacion_), 0, -std::sin(orientacion_)};
+    }
+    float actividad() const {
+        return actividad_;
     }
     void dibujar(ContextoEscena &c, const glm::mat4 &alMundo) const;
 };

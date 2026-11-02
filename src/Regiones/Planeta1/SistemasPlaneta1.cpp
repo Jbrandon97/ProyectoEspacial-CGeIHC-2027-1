@@ -25,8 +25,21 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
 }
 void SistemasPlaneta1::actualizar(float dt) {
     tiempo += dt;
-    if (lanzamiento >= 0)
+    float avanceReposicion = dt;
+    if (lanzamiento >= 0) {
+        float previo = lanzamiento;
         lanzamiento = std::min(22.f, lanzamiento + dt);
+        if (reposicionPendiente && lanzamiento >= 20) {
+            reposicionPendiente = false;
+            reiniciar();
+            avanceReposicion = std::max(0.f, previo + dt - 20.f);
+        }
+    }
+    if (reposicion >= 0) {
+        reposicion += avanceReposicion;
+        if (reposicion >= 8.5f)
+            reposicion = -1;
+    }
     if (reaccion >= 0) {
         reaccion += dt;
         if (reaccion >= 5)
@@ -73,16 +86,78 @@ Iluminacion SistemasPlaneta1::luces() const {
         auto &p = l.puntuales[6 + i];
         p.posicion = sentinel(i) + glm::vec3(0, -.3f, 0);
         p.color = {.35f, .65f, 1.f};
-        p.intensidad = 3.f * l.noche;
-        p.atenuacion = {1.f, .35f, .22f};
+        p.intensidad = 5.f * l.noche;
+        p.atenuacion = {1.f, .22f, .10f};
         p.encendida = l.noche > .001f;
     }
     return l;
 }
-glm::vec3 SistemasPlaneta1::cohete() const {
-    float t = std::max(0.f, lanzamiento - 3);
-    return {205 + std::max(0.f, t - 7) * 1.8f, 5.22f + .85f * t * t, 21};
+namespace {
+float alturaAscenso(float lanzamiento) {
+    float t = std::max(0.f, lanzamiento - 3.f);
+    return 5.22f + 5.5f * t * t;
 }
+float suave(float a, float b, float t) {
+    return glm::smoothstep(a, b, t);
+}
+} // namespace
+void SistemasPlaneta1::reiniciar() {
+    if (reposicion >= 0)
+        return; // Una pulsacion repetida no reinicia la maquinaria.
+    if (lanzamiento >= 0 && lanzamiento < 20) {
+        reposicionPendiente = true; // Terminar el vuelo antes de suministrar otro cohete.
+        return;
+    }
+    retirarPreparado = lanzamiento < 0;
+    lanzamiento = -1;
+    reposicion = 0;
+}
+float SistemasPlaneta1::aperturaCompuerta() const {
+    if (reposicion < 0)
+        return 0;
+    return suave(0, 1, reposicion) * (1 - suave(7, 8.5f, reposicion));
+}
+glm::vec3 SistemasPlaneta1::cohete() const {
+    if (reposicion >= 0) {
+        float bajada = retirarPreparado ? suave(1, 3.5f, reposicion) : 1;
+        float subida = suave(3.5f, 7, reposicion);
+        return {205, 5.22f - 54 * bajada * (1 - subida), 21};
+    }
+    float t = std::max(0.f, lanzamiento - 3);
+    return {205 + std::max(0.f, t - 7) * 1.8f, alturaAscenso(lanzamiento), 21};
+}
+std::array<glm::mat4, 3> SistemasPlaneta1::etapas() const {
+    std::array<glm::mat4, 3> resultado{glm::mat4(1), glm::mat4(1), glm::mat4(1)};
+    if (reposicion >= 0)
+        return resultado;
+    // Cada pista transforma una seccion REAL, cortada en las uniones del Saturn V.
+    // Estados de tiempo, desplazamiento y giro; interpolacion suave entre claves.
+    const float tiempos[] = {0, 1.5f, 3, 6, 10, 14};
+    const glm::vec3 posiciones[] = {{0, 0, 0},   {7, 55, 0},     {18, 80, 2},
+                                    {40, 70, 5}, {70, -150, 10}, {95, -500, 15}};
+    const float giros[] = {0, .12f, .32f, .70f, 1.1f, 1.4f};
+    for (int etapa = 0; etapa < 2; ++etapa) {
+        float separacion = etapa == 0 ? 7.f : 11.f;
+        float t = lanzamiento - separacion;
+        if (t <= 0)
+            continue;
+        int k = 0;
+        while (k < 4 && t > tiempos[k + 1])
+            ++k;
+        float u = suave(tiempos[k], tiempos[k + 1], t);
+        auto desplazamiento = glm::mix(posiciones[k], posiciones[k + 1], u);
+        desplazamiento.x *= etapa == 0 ? 1 : -1;
+        desplazamiento.y *= etapa == 0 ? 1 : 2;
+        glm::vec3 origen(205 + std::max(0.f, separacion - 10) * 1.8f, alturaAscenso(separacion),
+                         21);
+        auto pivote = glm::vec3(0, etapa == 0 ? 9.f : 24.7f, 0);
+        auto m = glm::translate(glm::mat4(1), origen + desplazamiento - cohete() + pivote);
+        m = glm::rotate(m, glm::mix(giros[k], giros[k + 1], u), glm::vec3(0, 0, 1));
+        resultado[etapa] = glm::translate(m, -pivote);
+    }
+    return resultado;
+}
+
 glm::vec3 SistemasPlaneta1::sentinel(int i) const {
     glm::vec2 c = i == 0 ? glm::vec2(-110, -45) : glm::vec2(123, -38);
     float a = tiempo * (i == 0 ? .22f : -.18f) + i * 2;

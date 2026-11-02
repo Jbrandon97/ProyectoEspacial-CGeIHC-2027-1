@@ -131,7 +131,10 @@ void Aplicacion::actualizarCamara(float dt) {
     auto actividad = e.actividad();
     if (observandoCohete_ && r == Region::Planeta1 && !actividad.ocupado) {
         auto &p = dynamic_cast<Planeta1 &>(e);
-        camaras_.encuadrarEvento(mundo_.aGlobal(r, p.sistemas().cohete() + glm::vec3(0, 24, 0)));
+        auto centro =
+            p.sistemas().cohete() + glm::vec3(0, p.sistemas().lanzamiento >= 11 ? 40 : 24, 0);
+        centro.y = std::clamp(centro.y, 29.22f, 240.f);
+        camaras_.encuadrarEvento(mundo_.aGlobal(r, centro));
         return;
     }
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
@@ -163,11 +166,10 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     auto &il = ambiente.iluminacion;
     il.foco = foco_ && !observandoCohete_ && !actividad.ocupado && r == Region::Planeta1 &&
               camaras_.modo() == ModoCamara::Exploracion;
+    // El haz gira con el Engineer: su origen queda dentro del cuerpo y no en la camara.
     il.focoPos = mundo_.aGlobal(r, avatar_.posicion() + glm::vec3(0, .8f, 0));
-    il.focoDir = -glm::vec3(glm::inverse(camaras_.vista({0, 0, 0}))[2]);
-    // Fuente del avatar: inclinar suavemente hacia delante, no al punto bajo la camara.
-    il.focoDir.y = std::max(-.16f, il.focoDir.y);
-    il.focoDir = glm::normalize(il.focoDir);
+    il.focoDir = glm::normalize(glm::vec3(
+        mundo_.transformacion(r) * glm::vec4(avatar_.direccion() + glm::vec3(0, -.10f, 0), 0)));
     renderizador_.iniciar(a, b, vp, ambiente, camaras_.ojo());
     ContextoEscena c{renderizador_, recursos_};
     e.dibujar(c, mundo_.transformacion(r));
@@ -281,6 +283,7 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
     probarB2(evidencias);
     probarC(evidencias);
     probarD(evidencias);
+    probarE(evidencias);
     // Prueba de conduccion: el controlador de prueba produce W/S/A/D analogicos, nunca fija
     // posiciones de la nave. No existe piloto automatico del jugador en el modo interactivo.
     avatar_.colocar({205, 0, -35}, p);
@@ -467,7 +470,10 @@ void Aplicacion::actualizarAudio() {
         return;
     }
     auto &p = dynamic_cast<Planeta1 &>(escenarios_.actual());
-    audio_.bucle(Audio::Cohete, p.sistemas().motor() ? .8f : 0);
+    audio_.bucle(Audio::Cohete, p.sistemas().motor()
+                                    ? .8f * Audio::atenuacionDistancia(glm::length(
+                                                avatar_.posicion() - p.sistemas().fuenteMotor()))
+                                    : 0);
     audio_.bucle(Audio::Motor,
                  p.carrera().fase() == FaseCarrera::Corriendo
                      ? .2f + .5f * std::min(1.f, std::abs(p.carrera().nave().velocidad()) / 46)

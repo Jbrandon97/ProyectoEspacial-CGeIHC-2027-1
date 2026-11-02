@@ -21,6 +21,9 @@ class Renderizador {
     void iniciar(int ancho, int alto, const glm::mat4 &vistaProyeccion, Ambiente ambiente,
                  glm::vec3 ojo = glm::vec3(0));
     ~Renderizador();
+    void recortarDebajo(float altura) {
+        shader_.vector("recorte", {altura, 0, 0});
+    }
     void material(float rugosidad, float metal = 0);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));

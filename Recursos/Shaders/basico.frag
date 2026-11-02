@@ -6,6 +6,7 @@ uniform sampler2D albedo;
 uniform vec3 sistema,solDir,solColor,ojo,propiedades;
 struct Puntual{vec3 pos,color,atenuacion;};
 uniform Puntual pLuces[8];
+uniform vec3 recorte;
 uniform vec3 focoPos,focoDir,focoDatos;
 out vec4 colorFinal;
 vec3 iluminar(vec3 base,vec3 n,vec3 v,vec3 dir,vec3 energia){
@@ -16,6 +17,7 @@ vec3 iluminar(vec3 base,vec3 n,vec3 v,vec3 dir,vec3 energia){
  return energia*(base*dif*(1-metal*.35)+ks*esp*3);
 }
 void main(){
+ if(posMundo.y<recorte.x)discard;
  vec4 tex=texturizado.x>.5?texture(albedo,coordenada):vec4(1);if(tex.a<.4)discard;
  vec3 base=color*material*tex.rgb;
  if(opciones.x>.5){colorFinal=vec4(base,1);return;}
@@ -25,6 +27,6 @@ void main(){
  total+=iluminar(base,n,v,normalize(solDir),solColor*sistema.y);
  for(int i=0;i<8;i++){if(dot(pLuces[i].color,pLuces[i].color)<.000001)continue;vec3 delta=pLuces[i].pos-posMundo;float d=length(delta);vec3 at=pLuces[i].atenuacion;float factor=1/max(.001,at.x+at.y*d+at.z*d*d);total+=iluminar(base,n,v,delta/max(d,.001),pLuces[i].color*factor);}
  vec3 delta=focoPos-posMundo;float d=length(delta);vec3 ld=delta/max(d,.001);float cono=smoothstep(focoDatos.z,focoDatos.y,dot(-ld,normalize(focoDir)));
- total+=iluminar(base,n,v,ld,vec3(1,.94,.79)*focoDatos.x*cono/(1+.07*d+.018*d*d));
+ total+=iluminar(base,n,v,ld,vec3(1,.94,.79)*focoDatos.x*cono/(1+.055*d+.010*d*d));
  colorFinal=vec4(total+emision,1);
 }

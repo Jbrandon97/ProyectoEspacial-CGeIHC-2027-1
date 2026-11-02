@@ -31,6 +31,7 @@ class Aplicacion {
     void solicitarCamara(ModoCamara modo);
     void procesarEntradas(float dt);
     void aplicarOrden(const OrdenActividad &orden);
+    void probarE(const std::filesystem::path &dir);
     void probarD(const std::filesystem::path &dir);
     void probarC(const std::filesystem::path &evidencias);
     void probarB2(const std::filesystem::path &evidencias);

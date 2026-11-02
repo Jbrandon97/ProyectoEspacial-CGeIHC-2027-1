@@ -26,7 +26,9 @@ void Aplicacion::probarD(const std::filesystem::path &dir) {
             auto &q = l.puntuales[6 + i];
             exigir(glm::length(q.posicion - (s.sentinel(i) + glm::vec3(0, -.3f, 0))) < .001f,
                    "D: luz separada de Sentinel");
-            exigir(q.atenuacion.z >= .2f, "D: luz Sentinel demasiado extensa");
+            exigir(q.intensidad / (q.atenuacion.x + q.atenuacion.y * 50 + q.atenuacion.z * 2500) <
+                       .03f,
+                   "D: luz Sentinel demasiado extensa");
         }
     }
     exigir(dia == 8000 && noche == 4000, "D: duraciones solares incorrectas");

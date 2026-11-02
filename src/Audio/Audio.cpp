@@ -73,6 +73,7 @@ void Audio::bucle(Sonido s, float v) {
     if (v > 0 && !x.activa) {
         x.activa = true;
         x.cursor = 0;
+        ++x.inicios;
     }
 }
 void Audio::disparar(Sonido s, float v) {
@@ -81,6 +82,7 @@ void Audio::disparar(Sonido s, float v) {
     x.bucle = false;
     x.activa = true;
     x.cursor = 0;
+    ++x.inicios;
     x.objetivo = v;
 }
 void Audio::silenciar() {
@@ -110,6 +112,10 @@ void Audio::ejecutar() {
                     float muestra = 0;
                     for (auto &v : voces_) {
                         v.ganancia += (v.objetivo - v.ganancia) * .0005f;
+                        if (v.objetivo == 0 && v.ganancia < .0001f) {
+                            v.activa = false;
+                            v.cursor = 0;
+                        }
                         if (!v.activa)
                             continue;
                         if (v.cursor >= v.datos.size()) {
@@ -141,4 +147,14 @@ void Audio::detenerEfectos() {
     std::lock_guard<std::mutex> l(mutex_);
     for (int i = 2; i < 7; ++i)
         voces_[i].objetivo = 0;
+}
+
+float Audio::atenuacionDistancia(float distancia) {
+    float d = std::max(0.f, distancia) / 45.f;
+    return 1.f / (1.f + d * d);
+}
+Audio::EstadoVoz Audio::estado(Sonido s) {
+    std::lock_guard<std::mutex> l(mutex_);
+    const auto &v = voces_[s];
+    return {v.objetivo, v.cursor, v.activa, v.inicios};
 }

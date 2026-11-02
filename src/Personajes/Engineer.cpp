@@ -71,7 +71,7 @@ Engineer::Engineer(const std::filesystem::path &p) {
     std::cout << "ENGINEER_OK piel 10 articulaciones 3 cadenas texturas originales\n";
 }
 void Engineer::animar(float tiempo, float actividad) {
-    float amplitud = glm::mix(.06f, .22f, glm::clamp(actividad, 0.0f, 1.0f));
+    float amplitud = .22f * std::sqrt(glm::clamp(actividad, 0.0f, 1.0f));
     // El avatar integra la fase con deltaTime: cambiar de estado no salta de fase.
     for (int j = 0; j < 10; ++j) {
         auto local = locales_[j];

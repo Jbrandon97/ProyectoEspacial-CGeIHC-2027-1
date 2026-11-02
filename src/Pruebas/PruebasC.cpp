@@ -179,7 +179,11 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     orden.lanzar = false;
     orden.reiniciarCohete = true;
     p.controlar(orden);
-    exigir(s.lanzamiento < 0 && std::abs(s.cohete().y - 5.22f) < .01f, "Cohete no reinicia");
+    exigir(s.reposicion >= 0 && s.cohete().y < 0, "Cohete reaparece instantaneamente");
+    for (int j = 0; j < 9 * 60; ++j)
+        p.actualizar(1.f / 60);
+    exigir(s.reposicion < 0 && s.lanzamiento < 0 && std::abs(s.cohete().y - 5.22f) < .01f,
+           "Cohete no repone");
     observandoCohete_ = false;
     foco_ = false;
     s = original;

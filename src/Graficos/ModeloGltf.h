@@ -1,6 +1,7 @@
 #pragma once
 #include "Malla.h"
 #include <filesystem>
+#include <array>
 #include <memory>
 #include <string>
 class Renderizador;
@@ -24,6 +25,7 @@ class ModeloGltf {
         glm::mat4 local{1};
         glm::vec3 color{1}, emision{0};
         bool puerta = false;
+        int etapa = -1;
         float rugosidad = .85f, metal = 0;
     };
     std::vector<Parte> partes_;
@@ -37,5 +39,6 @@ class ModeloGltf {
         return puerta_;
     }
     explicit ModeloGltf(const std::filesystem::path &);
-    void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0) const;
+    void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,
+                 const std::array<glm::mat4, 3> *etapas = nullptr) const;
 };

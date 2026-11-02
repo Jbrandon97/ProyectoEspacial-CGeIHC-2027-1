@@ -12,7 +12,7 @@ class Planeta1 final : public Escenario {
     std::unique_ptr<Malla> terreno_, paisaje_, agua_, pista_, detalles_;
     GestorCarrera carrera_;
     SistemasPlaneta1 sistemas_;
-    std::unique_ptr<Malla> propulsion_;
+    std::unique_ptr<Malla> propulsion_, hojaCompuerta_, marcoCompuerta_;
     ColisionesPlaneta1 colisionCohete_;
     unsigned eventoPuerta_ = 0;
     ColisionesPlaneta1 colisiones_, colisionPuerta_;

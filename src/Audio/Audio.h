@@ -12,6 +12,7 @@ class Audio {
     struct Voz {
         std::vector<short> datos;
         size_t cursor = 0;
+        unsigned inicios = 0;
         float objetivo = 0, ganancia = 0;
         bool bucle = false, activa = false;
     };
@@ -29,6 +30,15 @@ class Audio {
     enum Sonido { Musica, Ambiente, Puerta, Cohete, Motor, Inicio, Final };
     explicit Audio(const std::filesystem::path &);
     ~Audio();
+    // Distancia en unidades del mundo; a 45 unidades queda la mitad de energia.
+    static float atenuacionDistancia(float distancia);
+    struct EstadoVoz {
+        float objetivo;
+        size_t cursor;
+        bool activa;
+        unsigned inicios;
+    };
+    EstadoVoz estado(Sonido);
     void bucle(Sonido, float);
     void disparar(Sonido, float = .6f);
     void detenerEfectos();

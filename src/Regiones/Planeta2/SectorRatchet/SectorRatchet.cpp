@@ -7,8 +7,10 @@
 namespace {
 const glm::vec3 POS_EDIFICIO1 = {-10, 0, -10};
 const glm::vec3 POS_EDIFICIO2 = {12, 0, -10};
+const glm::vec3 POS_EDIFICIO3 = {0, 0, 14};
 const glm::vec2 MEDIO_EDIFICIO1 = {2.3f, 1.8f}; // mitad de 4.57 x 3.52
 const glm::vec2 MEDIO_EDIFICIO2 = {3.4f, 4.7f}; // mitad de 6.76 x 9.4
+const glm::vec2 MEDIO_EDIFICIO3 = {2.5f, 2.5f}; // MITAD de sus Dimensions X e Y en Blender
 const float ESCALA_EDIFICIOS = 2.0f;            // 1 = tamano original (~14-16 de alto)
 
 // Configuración del Railjack
@@ -28,6 +30,7 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     liberar();
     edificio1_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Kerwan_Edificio1.gltf");
     edificio2_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Kerwan_Edificio2.gltf");
+    edificio3_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Kerwan_Edificio3.gltf");
 
     // Carga del Railjack animado
     railjack_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Railjack/RailjackSeparadoVibraAnimado.gltf");
@@ -48,6 +51,7 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     };
     yEdificio1_ = apoyo(POS_EDIFICIO1, MEDIO_EDIFICIO1 * ESCALA_EDIFICIOS);
     yEdificio2_ = apoyo(POS_EDIFICIO2, MEDIO_EDIFICIO2 * ESCALA_EDIFICIOS);
+    yEdificio3_ = apoyo(POS_EDIFICIO3, MEDIO_EDIFICIO3 * ESCALA_EDIFICIOS);
 }
 
 void SectorRatchet::actualizar(float dt) {
@@ -69,6 +73,10 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     if (edificio2_) {
         auto e2 = glm::translate(m, {POS_EDIFICIO2.x, yEdificio2_, POS_EDIFICIO2.z});
         edificio2_->dibujar(c.renderizador, glm::scale(e2, glm::vec3(ESCALA_EDIFICIOS)));
+        if (edificio3_) {
+            auto e3 = glm::translate(m, {POS_EDIFICIO3.x, yEdificio3_, POS_EDIFICIO3.z});
+            edificio3_->dibujar(c.renderizador, glm::scale(e3, glm::vec3(ESCALA_EDIFICIOS)));
+        }
     }
 
     // Dibujar el Railjack
@@ -93,6 +101,7 @@ void SectorRatchet::liberar() noexcept {
     std::vector<Objeto>().swap(objetos_);
     edificio1_.reset();
     edificio2_.reset();
+    edificio3_.reset();
     railjack_.reset();
     orokintower_.reset();
     warframe_.reset();
@@ -103,5 +112,6 @@ bool SectorRatchet::obstaculo(glm::vec3 p) const {
         return std::abs(p.x - centro.x) < medio.x + .5f && std::abs(p.z - centro.z) < medio.y + .5f;
     };
     return dentro(POS_EDIFICIO1, MEDIO_EDIFICIO1 * ESCALA_EDIFICIOS) ||
-           dentro(POS_EDIFICIO2, MEDIO_EDIFICIO2 * ESCALA_EDIFICIOS);
+           dentro(POS_EDIFICIO2, MEDIO_EDIFICIO2 * ESCALA_EDIFICIOS) ||
+           dentro(POS_EDIFICIO3, MEDIO_EDIFICIO3 * ESCALA_EDIFICIOS);
 }

@@ -8,12 +8,12 @@
 // Submodulo de Planeta2. Sus coordenadas son locales al sector; Planeta2 lo coloca.
 class SectorRatchet {
     std::vector<Objeto> objetos_;
-    std::unique_ptr<ModeloGltf> edificio1_, edificio2_; // Metropolis (Kerwan)
+    std::unique_ptr<ModeloGltf> edificio1_, edificio2_, edificio3_; // Metropolis (Kerwan)
     std::unique_ptr<ModeloGltf> railjack_;              // Railjack animado
     std::unique_ptr<ModeloGltf> orokintower_;           // Torre Orokin
     std::unique_ptr<ModeloGltf> warframe_;           // Warframe
     std::function<float(float, float)> suelo_;          // altura del terreno en coords locales
-    float yEdificio1_ = 0, yEdificio2_ = 0;
+    float yEdificio1_ = 0, yEdificio2_ = 0, yEdificio3_ = 0;
 
   public:
     void usarSuelo(std::function<float(float, float)> suelo) {

@@ -5,6 +5,8 @@
 namespace {
 const glm::vec3 POS_WARFRAME = {-18, 0, 0};
 const glm::vec3 POS_RATCHET = {18, 0, 0};
+const float LIMITE = 230.0f;      // el terreno mide 600 (+-300); la cordillera empieza ~235
+const float PENDIENTE_MAX = 1.2f; // ~50 grados: no deja subir laderas mas empinadas
 } // namespace
 
 void Planeta2::cargar(ContextoEscena &c) {
@@ -37,13 +39,21 @@ void Planeta2::liberar() noexcept {
     alturas_.reset();
 }
 glm::vec3 Planeta2::ajustarMovimiento(glm::vec3 anterior, glm::vec3 p) const {
-    p = Escenario::ajustarMovimiento(anterior, p); // limite de +-43
-    auto choca = [this](glm::vec3 q) { return ratchet_.obstaculo(q - POS_RATCHET); };
+    p.x = glm::clamp(p.x, -LIMITE, LIMITE);
+    p.z = glm::clamp(p.z, -LIMITE, LIMITE);
+    // pendiente: solo bloquea al SUBIR una ladera muy inclinada (bajar si se puede)
+    auto empinado = [this](glm::vec3 a, glm::vec3 b) {
+        float dist = glm::length(glm::vec2(b.x - a.x, b.z - a.z));
+        return dist > 1e-4f && (altura(b.x, b.z) - altura(a.x, a.z)) / dist > PENDIENTE_MAX;
+    };
+    auto choca = [&](glm::vec3 q) {
+        return ratchet_.obstaculo(q - POS_RATCHET) || empinado(anterior, q);
+    };
     if (!choca(p))
         return p;
     glm::vec3 soloX{p.x, p.y, anterior.z}, soloZ{anterior.x, p.y, p.z};
     if (!choca(soloX))
-        return soloX;
+        return soloX; // se desliza
     if (!choca(soloZ))
         return soloZ;
     return anterior;

@@ -5,10 +5,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace {
-const glm::vec3 POS_EDIFICIO1 = {-8, 0, -10}; // la Y se calcula con el terreno
-const glm::vec3 POS_EDIFICIO2 = {8, 0, -10};
+const glm::vec3 POS_EDIFICIO1 = {-10, 0, -10};
+const glm::vec3 POS_EDIFICIO2 = {12, 0, -10};
 const glm::vec2 MEDIO_EDIFICIO1 = {2.3f, 1.8f}; // mitad de 4.57 x 3.52
 const glm::vec2 MEDIO_EDIFICIO2 = {3.4f, 4.7f}; // mitad de 6.76 x 9.4
+const float ESCALA_EDIFICIOS = 2.0f;            // 1 = tamano original (~14-16 de alto)
 } // namespace
 
 void SectorRatchet::cargar(ContextoEscena &c) {
@@ -25,8 +26,8 @@ void SectorRatchet::cargar(ContextoEscena &c) {
                 h = std::min(h, suelo_(centro.x + sx, centro.z + sz));
         return h;
     };
-    yEdificio1_ = apoyo(POS_EDIFICIO1, MEDIO_EDIFICIO1);
-    yEdificio2_ = apoyo(POS_EDIFICIO2, MEDIO_EDIFICIO2);
+    yEdificio1_ = apoyo(POS_EDIFICIO1, MEDIO_EDIFICIO1 * ESCALA_EDIFICIOS);
+    yEdificio2_ = apoyo(POS_EDIFICIO2, MEDIO_EDIFICIO2 * ESCALA_EDIFICIOS);
 }
 
 void SectorRatchet::actualizar(float) {} // Aqui ira la nave.
@@ -34,12 +35,14 @@ void SectorRatchet::actualizar(float) {} // Aqui ira la nave.
 void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     for (const auto &o : objetos_)
         c.renderizador.dibujar(o, m);
-    if (edificio1_)
-        edificio1_->dibujar(c.renderizador,
-                            glm::translate(m, {POS_EDIFICIO1.x, yEdificio1_, POS_EDIFICIO1.z}));
-    if (edificio2_)
-        edificio2_->dibujar(c.renderizador,
-                            glm::translate(m, {POS_EDIFICIO2.x, yEdificio2_, POS_EDIFICIO2.z}));
+    if (edificio1_) {
+        auto e1 = glm::translate(m, {POS_EDIFICIO1.x, yEdificio1_, POS_EDIFICIO1.z});
+        edificio1_->dibujar(c.renderizador, glm::scale(e1, glm::vec3(ESCALA_EDIFICIOS)));
+    }
+    if (edificio2_) {
+        auto e2 = glm::translate(m, {POS_EDIFICIO2.x, yEdificio2_, POS_EDIFICIO2.z});
+        edificio2_->dibujar(c.renderizador, glm::scale(e2, glm::vec3(ESCALA_EDIFICIOS)));
+    }
 }
 
 void SectorRatchet::liberar() noexcept {
@@ -52,5 +55,5 @@ bool SectorRatchet::obstaculo(glm::vec3 p) const {
     auto dentro = [&](glm::vec3 centro, glm::vec2 medio) {
         return std::abs(p.x - centro.x) < medio.x + .5f && std::abs(p.z - centro.z) < medio.y + .5f;
     };
-    return dentro(POS_EDIFICIO1, MEDIO_EDIFICIO1) || dentro(POS_EDIFICIO2, MEDIO_EDIFICIO2);
+    return dentro(POS_EDIFICIO1, MEDIO_EDIFICIO1 * ESCALA_EDIFICIOS) || dentro(POS_EDIFICIO2, MEDIO_EDIFICIO2 * ESCALA_EDIFICIOS);
 }

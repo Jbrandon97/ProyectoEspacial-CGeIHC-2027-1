@@ -1,3 +1,6 @@
 Recurso proporcionado por el usuario: nasa-saturn-v-rocket.glb.
-El GLB declara generador Khronos glTF Blender I/O v4.2.57, pero no autor, fuente ni licencia explícita. El nombre NASA no se usa como prueba de dominio público. Original preservado.
-Adaptación: PNG externos originales, pose de referencia, escala uniforme 4 y centrado/base. 22 mallas; 23 pistas originales conservadas en el GLB, no utilizadas como lanzamiento. El lanzamiento regional transforma el cohete completo.
+El GLB declara generador Khronos glTF Blender I/O v4.2.57, pero no autor, fuente ni licencia explÃ­cita. El nombre NASA no se usa como prueba de dominio pÃºblico. Original preservado.
+AdaptaciÃ³n: PNG externos originales, pose de referencia, escala uniforme 4 y centrado/base. 22 mallas; 23 pistas originales conservadas en el GLB, no utilizadas como lanzamiento. El lanzamiento regional transforma el cohete completo.
+
+Bloque E: SaturnV_Etapas.gltf/.bin deriva del modelo anterior, conservado sin cambios. Seccionamos las caras en las uniones a 17.94995 y 31.53242 unidades del modelo ya escalado, interpolando UV y normales. La superficie exterior se conserva; agregamos tapas planas discretas en las secciones abiertas. Los tres grupos se animan independientemente; no duplicamos ni ocultamos el cohete completo para representar una separacion. Preparacion reproducible en Herramientas/preparar_recursos_E.py.
+Plataforma_E.gltf/.bin conserva la plataforma propia con un hueco central de 10 x 10 para la compuerta. Los originales Plataforma.gltf/.bin tambien se conservan.

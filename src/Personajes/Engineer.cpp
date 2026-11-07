@@ -71,7 +71,7 @@ Engineer::Engineer(const std::filesystem::path &p) {
     std::cout << "ENGINEER_OK piel 10 articulaciones 3 cadenas texturas originales\n";
 }
 void Engineer::animar(float tiempo, float actividad) {
-    float amplitud = glm::mix(.06f, .22f, glm::clamp(actividad, 0.0f, 1.0f));
+    float amplitud = .22f * std::sqrt(glm::clamp(actividad, 0.0f, 1.0f));
     // El avatar integra la fase con deltaTime: cambiar de estado no salta de fase.
     for (int j = 0; j < 10; ++j) {
         auto local = locales_[j];
@@ -103,9 +103,10 @@ void Engineer::animar(float tiempo, float actividad) {
         s.malla->actualizar(v, true);
     }
 }
-void Engineer::dibujar(Renderizador &r, const glm::mat4 &m) const {
+void Engineer::dibujar(Renderizador &r, const glm::mat4 &m, bool energia) const {
     for (auto &s : partes_)
-        r.texturada(*s.malla, m, s.textura->id(), glm::vec3(1), glm::vec3(0), .65f, .05f);
+        r.texturada(*s.malla, m, s.textura->id(), glm::vec3(1),
+                    energia ? glm::vec3(.008f, .035f, .065f) : glm::vec3(0), .65f, .05f);
 }
 float Engineer::desplazamientoExtremidad() const {
     return glm::length(glm::vec3(pose_[3] * inversas_[3] * glm::vec4(0, -1.47f, 0, 1)) -

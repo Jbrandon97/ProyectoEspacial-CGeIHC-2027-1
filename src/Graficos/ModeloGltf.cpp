@@ -13,6 +13,7 @@
 #pragma warning(pop)
 #endif
 #include <fstream>
+#include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
@@ -74,7 +75,15 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
             if (!pos || !normal)
                 throw std::runtime_error("glTF sin posiciones/normales");
             Parte parte;
+            parte.indiceNodo = j;
             cgltf_node_transform_world(&n, glm::value_ptr(parte.local));
+            if (n.name && std::string(n.name).rfind("Saturn_Etapa_", 0) == 0) {
+                parte.etapa = std::stoi(std::string(n.name).substr(13));
+                if (parte.etapa < 0 || parte.etapa > 2)
+                    throw std::runtime_error("Etapa Saturn invalida");
+            }
+            if (n.name && std::string(n.name) == "Saturn_Capsula")
+                parte.etapa = 3;
             parte.puerta = n.name && std::string(n.name).find("Puerta_independiente") == 0;
             if (pr.material) {
                 auto &mat = *pr.material;
@@ -111,17 +120,36 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
             for (auto &vert : v)
                 (parte.puerta ? puerta_ : triangulos_)
                     .push_back(glm::vec3(parte.local * glm::vec4(vert.posicion, 1)));
+            if (parte.etapa >= 0)
+                for (auto &vert : v)
+                    verticesEtapas_[parte.etapa].push_back(
+                        glm::vec3(parte.local * glm::vec4(vert.posicion, 1)));
             vertices += count;
             parte.malla = std::make_unique<Malla>(v);
             partes_.push_back(std::move(parte));
         }
     }
+    // El apoyo necesita posiciones, no duplicados por triangulo/normal/UV.
+    for (auto &v : verticesEtapas_) {
+        auto menor = [](glm::vec3 a, glm::vec3 b) {
+            return a.x != b.x ? a.x < b.x : a.y != b.y ? a.y < b.y : a.z < b.z;
+        };
+        std::sort(v.begin(), v.end(), menor);
+        v.erase(std::unique(v.begin(), v.end(), [](glm::vec3 a, glm::vec3 b) { return a == b; }),
+                v.end());
+    }
     std::cout << "GLTF_OK " << p.filename().string() << " lotes=" << partes_.size()
               << " triangulos=" << vertices / 3 << "\n";
 }
-void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta) const {
+void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta,
+                         const std::array<glm::mat4, 4> *etapas,
+                         const std::vector<glm::mat4> *moverPartes) const {
     for (auto &p : partes_) {
         auto local = p.local;
+        if (etapas && p.etapa >= 0)
+            local = (*etapas)[p.etapa] * local;
+        if (moverPartes && p.indiceNodo < moverPartes->size())
+            local = (*moverPartes)[p.indiceNodo] * local;
         if (p.puerta)
             local = glm::translate(glm::mat4(1), {0, elevacionPuerta, 0}) * local;
         r.texturada(*p.malla, m * local, p.textura ? p.textura->id() : 0, p.color, p.emision,

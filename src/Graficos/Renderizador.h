@@ -14,6 +14,7 @@ class Renderizador {
     GLuint vaoCielo_ = 0;
     std::string seleccionCielo_;
     unsigned dibujos_ = 0;
+    bool capturasHabilitadas_ = true;
     glm::mat4 vp_{1};
 
   public:
@@ -21,6 +22,13 @@ class Renderizador {
     void iniciar(int ancho, int alto, const glm::mat4 &vistaProyeccion, Ambiente ambiente,
                  glm::vec3 ojo = glm::vec3(0));
     ~Renderizador();
+    void permitirCapturas(bool valor) { capturasHabilitadas_ = valor; }
+    void recortarDebajo(float altura) {
+        shader_.vector("recorte", {altura, 0, 0});
+    }
+    void densidadHumo(float transparencia) {
+        shader_.vector("humo", {transparencia, 0, 0});
+    }
     void material(float rugosidad, float metal = 0);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));

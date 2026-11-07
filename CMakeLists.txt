@@ -16,11 +16,11 @@ add_library(glm INTERFACE)
 target_include_directories(glm SYSTEM INTERFACE Dependencias/glm)
 add_executable(ProyectoEspacial src/main.cpp)
 target_sources(ProyectoEspacial PRIVATE
- src/Audio/Audio.cpp src/Nucleo/Aplicacion.cpp src/Nucleo/Ventana.cpp src/Nucleo/Entradas.cpp
+ src/Regiones/Planeta1/KeyframesCohete.cpp src/Regiones/Planeta1/Titan.cpp src/Audio/Audio.cpp src/Nucleo/Aplicacion.cpp src/Nucleo/Ventana.cpp src/Nucleo/Entradas.cpp
  src/Graficos/ModeloGltf.cpp src/Graficos/Geometria.cpp src/Graficos/Interfaz.cpp src/Graficos/Shader.cpp src/Graficos/Malla.cpp src/Graficos/Renderizador.cpp
  src/Camaras/GestorCamaras.cpp src/Mundo/MundoEspacial.cpp
  src/Mundo/GestorEscenarios.cpp src/Mundo/RegistroEscenarios.cpp
- src/Pruebas/PruebasD.cpp src/Pruebas/PruebasC.cpp src/Pruebas/PruebasB2.cpp src/Pruebas/PruebasB1.cpp src/Pruebas/PruebasCarrera.cpp src/Personajes/Engineer.cpp src/Personajes/Avatar.cpp src/Pruebas/Verificacion.cpp)
+ src/Pruebas/PruebasE.cpp src/Pruebas/PruebasD.cpp src/Pruebas/PruebasC.cpp src/Pruebas/PruebasB2.cpp src/Pruebas/PruebasB1.cpp src/Pruebas/PruebasCarrera.cpp src/Personajes/Engineer.cpp src/Personajes/Avatar.cpp src/Pruebas/Verificacion.cpp)
 add_subdirectory(src/Regiones)
 target_include_directories(ProyectoEspacial PRIVATE src Dependencias/importacion)
 target_compile_definitions(ProyectoEspacial PRIVATE GLFW_INCLUDE_NONE NOMINMAX)

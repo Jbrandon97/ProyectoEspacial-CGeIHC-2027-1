@@ -1,49 +1,58 @@
-# Proyecto Espacial — CGeIHC 2027-1
+# Proyecto Espacial — integración final
 
-Proyecto final de Computación Gráfica e Interacción Humano-Computadora, Facultad de Ingeniería, UNAM. Base inicial: **Bloque D** en C++17 y OpenGL. Repositorio privado de colaboración académica; no incluye cambios del Bloque E.
+Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Integramos Halo/Titanfall, Ratchet & Clank/Warframe y Espacio en C++17, OpenGL 3.3 y GLFW.
 
-## Abrir y compilar
+## Abrir, compilar y ejecutar
 
-1. Clonar el repositorio completo con una cuenta que tenga acceso.
-2. En Windows, instalar Visual Studio 2022 con **Desarrollo para el escritorio con C++**, herramientas **MSVC v143** y Windows SDK 10/11.
-3. Abrir `ProyectoEspacial.sln`, seleccionar **Release | x64** y establecer **ProyectoEspacial** como proyecto de inicio.
-4. Compilar la solución y ejecutar. Se genera `bin/x64/Release/ProyectoEspacial.exe`; la compilación copia automáticamente `Recursos/` junto al ejecutable. No se distribuyen binarios compilados.
+1. Abrir `ProyectoEspacial.sln` con Visual Studio 2022, carga de trabajo Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK.
+2. Seleccionar **Release | x64**, proyecto de inicio **ProyectoEspacial**, compilar y ejecutar.
+3. La compilación genera `bin/x64/Release/ProyectoEspacial.exe` y copia `Recursos` junto a él. Las dependencias están incluidas.
+4. En la carpeta preparada para revisión también puede abrirse directamente `ProyectoEspacial.exe`, situado junto a `Recursos` para evitar duplicarlos.
+5. Pruebas automatizadas: `ProyectoEspacial.exe --pruebas --evidencias carpeta_destino`.
 
-Las dependencias están incluidas; no hace falta descargar modelos ni configurar rutas absolutas. No se requiere Git LFS para esta base. CMake es una alternativa opcional mediante `CMakePresets.json`. El script `Herramientas/generar_audio.py` requiere Python y NumPy solo si se desea regenerar el audio; los WAV ya están incluidos.
+Para verificar sin generar capturas: `ProyectoEspacial.exe --pruebas --sin-capturas`. Conservamos los tests porque forman parte de la solución. No se necesita Python para jugar; las herramientas de síntesis y conversión sólo se usan para regenerar recursos.
 
-## Estructura y responsabilidades
+GLFW y GLAD se compilan como biblioteca estática; GLM es de cabeceras. No hacen falta DLL de terceros ni redistribuible de MSVC: Release utiliza /MT. Windows y un controlador compatible con OpenGL 3.3 son necesarios. Los filtros organizan los archivos en Visual Studio; el proyecto ejecutable es el proyecto de inicio. El depurador usa la carpeta del EXE y el PDB correspondiente se genera en cada compilación.
 
-| Carpeta | Función |
+## Controles
+
+| Tecla | Acción |
 | --- | --- |
-| `src/Regiones/Planeta1/` | Planeta 1, responsabilidad de John |
-| `src/Regiones/Planeta2/` | Planeta 2, trabajo coordinado entre dos integrantes |
-| `src/Regiones/Espacio/` | Región Espacio, responsabilidad del tercer compañero |
-| `src/Mundo/`, `src/Nucleo/` | Interfaces regionales, registro, ciclo de aplicación e integración |
-| `src/Camaras/`, `src/Graficos/`, `src/Audio/`, `src/Personajes/` | Sistemas compartidos; coordinar sus cambios |
-| `src/Pruebas/` | Comprobaciones existentes del proyecto |
-| `Recursos/` | Modelos, texturas, shaders, cielos, audio y originales suministrados |
-| `Dependencias/`, `Herramientas/` | Bibliotecas incluidas y generación de audio |
+| 1 / 2 / 3 | Planeta 1 / Planeta 2 / Espacio |
+| F1–F4 | Cámaras originales, según compatibilidad de región |
+| WASD / Shift | Caminar 15 / correr 30 unidades/s, relativo a cámara |
+| Mouse / flechas / Tab | Cámara / órbita / liberar cursor |
+| X | Abordar o descender de Banshee, en proximidad y detenida |
+| W/S/A/D en carrera | Acelerar / frenar / dirigir |
+| R / C | Reiniciar carrera / recuperar con penalización de 2 s |
+| E / P | Hangar cercano / reflector fijo del hangar |
+| F | Energía corporal cian omnidireccional del Engineer |
+| G / K / H | Reacción de Grunt 1 / inspección de Grunt 2 / vigilancia de Hunter; en proximidad |
+| B / J | Caminata / saludo articulado del BT-7274, en proximidad y sin otra animación suya activa |
+| L / T / O | Lanzar / solicitar reposición / observar o regresar |
+| M / - / + / Esc | Silencio / volumen / salir |
 
-## Ramas
+El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. Los restos permanecen apoyados hasta reiniciar y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
 
-Todas las ramas parten del mismo commit inicial completo:
+## Estructura e integración
 
-- `main`: base funcional e integración del equipo.
-- `planeta1-john`: desarrollo de Planeta 1.
-- `planeta2-integrante1`: primer compañero de Planeta 2.
-- `planeta2-integrante2`: segundo compañero de Planeta 2.
-- `espacio-integrante3`: compañero encargado de Espacio.
+- `src/Regiones/Planeta1/`: Halo/Titanfall, base de `planeta1--BRAND-ON`.
+- `src/Regiones/Planeta2/`: región única Ratchet & Clank/Warframe; fuente principal `planeta2--PEDRO`. La rama `planeta2--MIGUEL` conserva el historial y los originales del colaborador, sin otro merge redundante.
+- `src/Regiones/Espacio/`: Gateway, navegación, cuerpos celestes y tráfico; base `espacio-DAVID` y revisión del ZIP.
+- `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: servicios compartidos; coordinar cambios entre integrantes.
+- `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y scripts de preparación/audio.
+- `integracion-final`: integración local validada; pendiente de autorización para publicar e incorporar a `main`.
 
-## Reglas de integración
+Conservamos las interfaces de ambos sectores de Planeta 2; su distribución conjunta se dibuja una sola vez desde SectorRatchet. No duplicar los modelos Warframe en SectorWarframe. Mantener las rutas relativas, revisar cambios compartidos y probar las tres regiones antes de integrar.
 
-Trabajamos en nuestra rama y proponemos cambios a `main` mediante pull request, con revisión de otro integrante y descripción de las pruebas realizadas. Evitamos subir compilaciones, ZIP o archivos personales y no forzamos cambios sobre las ramas de los demás. Los dos responsables de Planeta 2 acuerdan previamente qué archivos modifica cada uno.
+En Espacio: F3 piloto, V primera persona/exterior, F4 observación; W/S aceleración/freno, A/D giro, mouse orientación, Q/Z ascenso/descenso, C recuperación y Enter visita contextual. F4 permite órbita con mouse/flechas. Las teclas 1–3 y F1–F4 se conservan; la selección automática de cámara sigue activa según el modo.
 
-Conservamos la estructura y el contrato `Escenario` de `src/Mundo/Escenario.h`: posiciones locales, eje Y hacia arriba, actualización con `deltaTime`, carga y liberación de recursos por región. `RegistroEscenarios` registra los tres módulos; `ContextoEscena` proporciona los servicios comunes. Las regiones no crean otra ventana ni otro ciclo principal. Los cambios en gestores, cámaras, renderizador, núcleo e interfaces se coordinan con todo el equipo. Al agregar fuentes, actualizamos el proyecto de Visual Studio y CMake de manera compatible.
+La posición, orientación, cámara y reloj regional se conservan durante la sesión; no se guardan al cerrar. Los WAV originales se regeneran con los scripts `Herramientas/generar_audio*.py` (Python y NumPy), innecesarios para jugar.
 
-**Pendientes prioritarios de integración:** persistencia independiente de cada región; conservación de posición del avatar, cámara y orientación al regresar; ciclos de día/noche que no se reinicien; y completar los cuatro recorridos de cámara exigidos por el profesor. Actualmente `GestorEscenarios::activar` carga/libera regiones, `Aplicacion::cambiarRegion` restablece avatar y cámara, y `Planeta1::cargar` reinicia sus sistemas. Estos puntos quedan identificados, sin modificar su funcionamiento en esta publicación.
+El cargador real es **cgltf**, acompañado de stb_image, GLM, GLAD y GLFW. Esta base no utiliza Assimp; no se añadió una biblioteca ni DLL que el código no necesita.
 
-## Recursos y atribuciones
+## Entrega y atribuciones
 
-Incluimos los recursos completos del Bloque D para el trabajo académico privado del equipo: Banshee, Ghost, Engineer, NPC, espadas, Saturn V, texturas, skyboxes y audio. Conservamos los archivos de licencia y procedencia existentes. Los recursos de terceros no son de nuestra autoría; el carácter privado del repositorio no se presenta como una licencia de redistribución. No cambiar la visibilidad ni redistribuir los recursos fuera del equipo sin revisar sus permisos.
+El paquete fuente permite compilar. `ProyectoEspacial_Ejecutable_Final.zip` contiene `Entrega_Ejecutable` con EXE, PDB y Recursos; extraer la carpeta completa y abrir el EXE. No ejecutar dentro del ZIP ni separar el EXE de sus recursos.
 
-Los skyboxes de Kenney conservan su licencia CC0 en `Recursos/Cielos/License.txt`. El audio sintetizado conserva su procedencia y generador. Las atribuciones de modelos están en `Recursos/Modelos/` y las licencias de bibliotecas, en `Dependencias/`.
+Las procedencias y licencias permanecen en Recursos y Dependencias. Los modelos de terceros no se presentan como propios; la finalidad académica no cambia sus derechos. La revisión y las limitaciones verificadas están en `Informe_Tecnico_Integracion.md`.

@@ -26,3 +26,8 @@ for name,notes in [('Inicio_carrera',[60,64,67]),('Final_carrera',[67,72,76,79])
   u=t-i*.25;m=u>=0;f=440*2**((n-69)/12);s[m]+=.12*np.sin(2*np.pi*f*u[m])*np.exp(-u[m]*5)*np.minimum(1,u[m]*80)
  guardar(name,s)
 (O/'PROCEDENCIA.txt').write_text('Composición Orbita ambiental y seis ambientes/efectos originales sintetizados para el proyecto. Sin muestras ni música comercial de Halo/Titanfall. PCM estéreo 44 100 Hz, 16 bits. Generación reproducible en Herramientas/generar_audio.py. Música: progresión armónica de cuatro acordes, arpegios y timbres de pad; bucle de 32 segundos.\n',encoding='utf-8')
+# Ambiente propio con frecuencias enteras y modulacion periodica: union sin salto.
+t=np.arange(sr*8)/sr
+s=.055*np.sin(2*np.pi*55*t)*(1+.24*np.sin(2*np.pi*t/8))+.025*np.sin(2*np.pi*110*t)+.009*np.sin(2*np.pi*330*t+1.8*np.sin(2*np.pi*t/4))
+guardar('Energia_Covenant',s)
+with (O/'PROCEDENCIA.txt').open('a',encoding='utf-8') as f: f.write('Ambiente Energia_Covenant: sintesis original periodica de 8 s; tonos de maquinaria y modulacion lenta, sin muestras externas.\n')

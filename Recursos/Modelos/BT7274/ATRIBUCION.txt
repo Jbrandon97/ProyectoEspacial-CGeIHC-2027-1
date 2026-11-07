@@ -1,0 +1,5 @@
+BT-7274 — Palurdas Arts (https://sketchfab.com/PalurdasArts)
+Fuente: https://sketchfab.com/3d-models/bt-7274-934abf35aeb84d128ffba1eadbc4aed5
+Licencia declarada: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+SHA256 GLB original: 6fe7edff74434c6e642842ab0b654183ae4eea5018b4e513d6dad951e8861d41
+Adaptacion: PNG externos, material difuso compatible y animacion propia. Conservamos la autoria del modelo y texturas. No cargamos el plano de exhibicion ni la camara del archivo.

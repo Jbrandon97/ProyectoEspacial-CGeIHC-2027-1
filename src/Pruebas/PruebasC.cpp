@@ -132,14 +132,20 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     }
     for (int n : {1, 3}) {
         s.tiempo = 0;
+        s.hunter = 0;
+        s.inspeccion = 0;
         auto a = s.animacionNPC(n);
         s.tiempo = 2;
+        s.hunter = 2;
+        s.inspeccion = 2;
         auto b = s.animacionNPC(n);
         float d = 0;
         for (int j = 0; j < 4; ++j)
             d += glm::length(a[j] - b[j]);
         exigir(d > .1f, "Keyframes sin movimiento");
         s.tiempo = 8;
+        s.hunter = 8;
+        s.inspeccion = 8;
         auto fin = s.animacionNPC(n);
         exigir(glm::length(fin[0] - a[0]) < .001f, "Keyframes sin cierre");
     }
@@ -162,11 +168,12 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     avatar_.colocar(orden.avatar, p);
     observandoCohete_ = true;
     dibujar(dir / "C_Cohete_listo.ppm");
-    float anterior = s.cohete().y;
+    float anterior = glm::vec3(s.etapas()[3] * glm::vec4(0, 45, 0, 1)).y;
     for (int j = 1; j <= 22 * 60 + 1; ++j) {
         p.actualizar(1.f / 60);
-        exigir(s.cohete().y + .001f >= anterior, "Cohete retrocede");
-        anterior = s.cohete().y;
+        exigir(glm::vec3(s.etapas()[3] * glm::vec4(0, 45, 0, 1)).y + .001f >= anterior,
+               "Cohete retrocede");
+        anterior = glm::vec3(s.etapas()[3] * glm::vec4(0, 45, 0, 1)).y;
         if (j == 120)
             dibujar(dir / "C_Motores.ppm");
         if (j == 480)
@@ -174,12 +181,19 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         if (j == 840)
             dibujar(dir / "C_Altura.ppm");
     }
-    exigir(s.cohete().y > 300 && s.lanzamiento == 22, "Cohete no finaliza");
+    exigir(glm::vec3(s.etapas()[3] * glm::vec4(0, 45, 0, 1)).y > 150 && s.lanzamiento > 21.9f,
+           "Cohete no finaliza");
     dibujar(dir / "C_Final_lanzamiento.ppm");
     orden.lanzar = false;
     orden.reiniciarCohete = true;
     p.controlar(orden);
-    exigir(s.lanzamiento < 0 && std::abs(s.cohete().y - 5.22f) < .01f, "Cohete no reinicia");
+    for (int j = 0; j < 48 * 60 + 6; ++j)
+        p.actualizar(1.f / 60);
+    exigir(s.reposicion >= 0 && s.cohete().y < 0, "Cohete reaparece instantaneamente");
+    for (int j = 0; j < 9 * 60; ++j)
+        p.actualizar(1.f / 60);
+    exigir(s.reposicion < 0 && s.lanzamiento < 0 && std::abs(s.cohete().y - 5.22f) < .01f,
+           "Cohete no repone");
     observandoCohete_ = false;
     foco_ = false;
     s = original;

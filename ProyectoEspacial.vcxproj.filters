@@ -1,0 +1,283 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{ED4C0D90-EC10-546E-BDA4-48555AFDA019}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Audio">
+      <UniqueIdentifier>{0E369781-EF4D-5C29-AEAC-28C1C791CC1A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Camaras">
+      <UniqueIdentifier>{37AE1393-3868-5B18-8173-CF847AFA68C2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Graficos">
+      <UniqueIdentifier>{1FFB3C97-38EF-502E-BDD2-37AE48632320}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Mundo">
+      <UniqueIdentifier>{8AB5E6D1-3186-5325-B8CC-4585580CE48C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Nucleo">
+      <UniqueIdentifier>{88B32421-C920-59F2-B744-3410943E51DA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Personajes">
+      <UniqueIdentifier>{5E0BE94F-1756-5597-8474-393BBCF18C7D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Pruebas">
+      <UniqueIdentifier>{4895F5C9-9C53-5BCE-96D1-09F782B6681E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Regiones\Espacio">
+      <UniqueIdentifier>{D735D3D1-FD1D-5D81-84DF-8764BA3AE900}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Regiones\Planeta1">
+      <UniqueIdentifier>{3DBE2A1C-012C-54BD-B37A-D64B65F6C9C7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Regiones\Planeta2">
+      <UniqueIdentifier>{43B70722-A649-5AC8-906D-65116CB4CEDE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Regiones\Planeta2\SectorRatchet">
+      <UniqueIdentifier>{53DF523D-D77B-5C7F-97C7-B49833BDEA02}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Regiones\Planeta2\SectorWarframe">
+      <UniqueIdentifier>{D72F9DE5-7149-5B0E-A341-EB8EA645D935}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Audio\Audio.cpp">
+      <Filter>src\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Camaras\GestorCamaras.cpp">
+      <Filter>src\Camaras</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\Geometria.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\Interfaz.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\Malla.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\ModeloGltf.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\Renderizador.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Graficos\Shader.cpp">
+      <Filter>src\Graficos</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Mundo\GestorEscenarios.cpp">
+      <Filter>src\Mundo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Mundo\MundoEspacial.cpp">
+      <Filter>src\Mundo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Mundo\RegistroEscenarios.cpp">
+      <Filter>src\Mundo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Nucleo\Aplicacion.cpp">
+      <Filter>src\Nucleo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Nucleo\Entradas.cpp">
+      <Filter>src\Nucleo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Nucleo\Ventana.cpp">
+      <Filter>src\Nucleo</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Personajes\Avatar.cpp">
+      <Filter>src\Personajes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Personajes\Engineer.cpp">
+      <Filter>src\Personajes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasB1.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasB2.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasC.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasCarrera.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasE.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\PruebasD.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Pruebas\Verificacion.cpp">
+      <Filter>src\Pruebas</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Espacio\Espacio.cpp">
+      <Filter>src\Regiones\Espacio</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\CircuitoCarreras.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\ColisionesPlaneta1.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\ControlCarrera.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\GestorCarrera.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\NaveCarreras.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\Planeta1.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\RivalCarrera.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\KeyframesCohete.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\Titan.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\SistemasPlaneta1.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta1\TerrenoPlaneta1.cpp">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta2\Planeta2.cpp">
+      <Filter>src\Regiones\Planeta2</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta2\SectorRatchet\SectorRatchet.cpp">
+      <Filter>src\Regiones\Planeta2\SectorRatchet</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta2\SectorWarframe\SectorWarframe.cpp">
+      <Filter>src\Regiones\Planeta2\SectorWarframe</Filter>
+    </ClCompile>
+    <ClInclude Include="src\Audio\Audio.h">
+      <Filter>src\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Camaras\GestorCamaras.h">
+      <Filter>src\Camaras</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Geometria.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Iluminacion.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Interfaz.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Malla.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\ModeloGltf.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Renderizador.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Graficos\Shader.h">
+      <Filter>src\Graficos</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\ActividadEscena.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\ContextoEscena.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\Escenario.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\GestorEscenarios.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\MundoEspacial.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\RegistroEscenarios.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Mundo\Tipos.h">
+      <Filter>src\Mundo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Nucleo\Aplicacion.h">
+      <Filter>src\Nucleo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Nucleo\Entradas.h">
+      <Filter>src\Nucleo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Nucleo\Ventana.h">
+      <Filter>src\Nucleo</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Personajes\Avatar.h">
+      <Filter>src\Personajes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Personajes\Engineer.h">
+      <Filter>src\Personajes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pruebas\PruebasB1.h">
+      <Filter>src\Pruebas</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pruebas\PruebasCarrera.h">
+      <Filter>src\Pruebas</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Pruebas\Verificacion.h">
+      <Filter>src\Pruebas</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Espacio\Espacio.h">
+      <Filter>src\Regiones\Espacio</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\CircuitoCarreras.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\ColisionesPlaneta1.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\ControlCarrera.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\Distribucion.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\GestorCarrera.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\NaveCarreras.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\Planeta1.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\RivalCarrera.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\KeyframesCohete.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\Titan.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\SistemasPlaneta1.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta1\TerrenoPlaneta1.h">
+      <Filter>src\Regiones\Planeta1</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta2\Planeta2.h">
+      <Filter>src\Regiones\Planeta2</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta2\SectorRatchet\SectorRatchet.h">
+      <Filter>src\Regiones\Planeta2\SectorRatchet</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta2\SectorWarframe\SectorWarframe.h">
+      <Filter>src\Regiones\Planeta2\SectorWarframe</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

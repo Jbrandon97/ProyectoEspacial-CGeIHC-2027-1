@@ -8,14 +8,17 @@
 #include <glm/gtc/matrix_transform.hpp>
 void Planeta1::cargar(ContextoEscena &c) {
     liberar();
+    titan_ = std::make_unique<Titan>(c.recursos / "Modelos/BT7274/BT7274.gltf");
     carrera_ = GestorCarrera();
     sistemas_ = SistemasPlaneta1();
     sistemas_.configurar(c.recursos / "Configuracion_C.txt");
     eventoPuerta_ = 0;
     puertaAltura_ = puertaDestino_ = 7;
     for (auto &e : Distribucion::edificios)
-        modelos_[e.modelo] = std::make_unique<ModeloGltf>(c.recursos / "Modelos" /
-                                                          (std::string(e.modelo) + ".gltf"));
+        modelos_[e.modelo] = std::make_unique<ModeloGltf>(
+            c.recursos / "Modelos" /
+            (std::string(e.modelo) +
+             (std::string(e.modelo) == "Plataforma" ? "_E.gltf" : ".gltf")));
     for (auto &e : Distribucion::edificios)
         colisiones_.agregar(modelos_.at(e.modelo)->triangulos(), {e.centro.x, 2, e.centro.y});
     colisiones_.agregar(CircuitoCarreras::construir(), CircuitoCarreras::origen());
@@ -35,11 +38,53 @@ void Planeta1::cargar(ContextoEscena &c) {
     for (auto nombre : {"Grunt", "Hunter", "Sentinel", "EnergySword"})
         modelos_[nombre] =
             std::make_unique<ModeloGltf>(c.recursos / "Modelos" / (std::string(nombre) + ".gltf"));
-    modelos_["SaturnV"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/SaturnV.gltf");
+    modelos_["SaturnV"] =
+        std::make_unique<ModeloGltf>(c.recursos / "Modelos/SaturnV_Keyframes.gltf");
     colisionCohete_.agregar(modelos_.at("SaturnV")->triangulos(), {205, 5.22f, 21});
     std::vector<Vertice> llama;
     Geometria::cono(llama, {0, 0, 0}, 1.8f, -7, {1, .65f, .18f}, 12);
     propulsion_ = std::make_unique<Malla>(llama);
+    std::vector<Vertice> nube;
+    Geometria::elipsoide(nube, {0, 0, 0}, {1, 1, 1}, {.66f, .69f, .71f}, 10, 6);
+    humo_ = std::make_unique<Malla>(nube);
+    std::vector<Vertice> hoja, marco;
+    Geometria::caja(hoja, {0, 0, 0}, {5, .18f, 10}, {.23f, .27f, .29f});
+    for (int j = -4; j <= 4; j += 2)
+        Geometria::caja(hoja, {0, .095f, float(j)}, {4.7f, .012f, .14f}, {.53f, .38f, .17f});
+    // Brocal y guardas visibles; la zona central queda reservada al mecanismo.
+    for (int signo : {-1, 1}) {
+        Geometria::caja(marco, {signo * 5.6f, 5.35f, 0}, {.45f, .3f, 11.6f}, {.45f, .33f, .16f});
+        Geometria::caja(marco, {0, 5.35f, signo * 5.6f}, {11.6f, .3f, .45f}, {.45f, .33f, .16f});
+        Geometria::caja(marco, {signo * 6.f, 5.9f, 0}, {.16f, 1.4f, 11.8f}, {.25f, .29f, .31f});
+        Geometria::caja(marco, {0, 5.9f, signo * 6.f}, {12, .16f, .16f}, {.65f, .45f, .18f});
+    }
+    Geometria::caja(marco, {0, 2.06f, 0}, {10, .08f, 10}, {.035f, .04f, .045f});
+    colisiones_.agregar(marco, {205, 0, 21});
+    hojaCompuerta_ = std::make_unique<Malla>(hoja);
+    marcoCompuerta_ = std::make_unique<Malla>(marco);
+    ColisionesPlaneta1 apoyosPaisaje;
+    apoyosPaisaje.agregar(TerrenoPlaneta1::paisaje(), {0, 0, 0});
+    std::vector<Vertice> marcas;
+    for (int i = 0; i < 48; ++i)
+        for (int lado : {-1, 1}) {
+            auto q = CircuitoCarreras::muestra(i * CircuitoCarreras::Longitud / 48,
+                                               lado * (CircuitoCarreras::Ancho * .5f + .15f));
+            std::vector<Vertice> tramo;
+            Geometria::caja(tramo, {0, 0, 0}, {.18f, .1f, 4.f}, {1, 1, 1});
+            auto m =
+                glm::rotate(glm::translate(glm::mat4(1), CircuitoCarreras::origen() + q.posicion +
+                                                             glm::vec3(0, .28f, 0)),
+                            std::atan2(q.tangente.x, q.tangente.z), glm::vec3(0, 1, 0));
+            for (auto v : tramo) {
+                v.posicion = glm::vec3(m * glm::vec4(v.posicion, 1));
+                v.normal = glm::mat3(m) * v.normal;
+                marcas.push_back(v);
+            }
+        }
+    marcasPista_ = std::make_unique<Malla>(marcas);
+    sistemas_.calibrarApoyo(modelos_.at("SaturnV")->verticesEtapas(), [&](float x, float z) {
+        return apoyosPaisaje.apoyo(x, z, TerrenoPlaneta1::altura(x, z));
+    });
     modelos_["Pino"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Pino.gltf");
     suelo_ = std::make_unique<Textura>(c.recursos / "Modelos/Texturas/Terreno_B2.png");
     texturaAgua_ = std::make_unique<Textura>(c.recursos / "Modelos/Texturas/Agua.png");
@@ -54,6 +99,7 @@ void Planeta1::cargar(ContextoEscena &c) {
 void Planeta1::actualizar(float dt) {
     carrera_.actualizar(dt);
     sistemas_.actualizar(dt);
+    titan_->animar(sistemas_.titan, sistemas_.saludo);
     // Sensor impide cerrar sobre el avatar; no teletransporta ni aplasta.
     if (puertaDestino_ < puertaAltura_ && std::abs(visitante_.x - 165) < 21 &&
         std::abs(visitante_.z + 77.5f) < 3.5f)
@@ -102,12 +148,49 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         if (r.visible(glm::vec3(local[3]), 8))
             modelos_.at(n.modelo)->dibujar(r, local);
     }
+    r.dibujar(*marcoCompuerta_, glm::translate(m, {205, 0, 21}));
+    for (int signo : {-1, 1}) {
+        auto hoja = glm::translate(
+            m, {205 + signo * (2.5f + 5.25f * sistemas_.aperturaCompuerta()), 5.12f, 21});
+        r.dibujar(*hojaCompuerta_, hoja);
+    }
+    titan_->dibujar(r, glm::rotate(glm::translate(m, Titan::posicion(sistemas_.titan)),
+                                   Titan::giro(sistemas_.titan), glm::vec3(0, 1, 0)));
     auto cohete = glm::translate(m, sistemas_.cohete());
-    modelos_.at("SaturnV")->dibujar(r, cohete);
+    auto etapas = sistemas_.etapas();
+    r.recortarDebajo(sistemas_.reposicion >= 0 ? glm::vec3(m * glm::vec4(0, 5.21f, 0, 1)).y
+                                               : -100000.f);
+    if (sistemas_.visibleCohete())
+        modelos_.at("SaturnV")->dibujar(r, cohete, 0, &etapas);
+    r.recortarDebajo(-100000.f);
     if (sistemas_.motor()) {
-        float f = .85f + .15f * std::sin(sistemas_.tiempo * 25);
-        r.texturada(*propulsion_, glm::scale(cohete, {1, f, 1}), 0, {1, .7f, .25f},
-                    {1, .35f, .05f});
+        // Dos conos reutilizados, nucleo caliente y envolvente pulsante; sin particulas.
+        float f =
+            .9f + .12f * std::sin(sistemas_.tiempo * 29) + .06f * std::sin(sistemas_.tiempo * 47);
+        auto motor = glm::translate(m, sistemas_.fuenteMotor()) *
+                     glm::mat4(glm::mat3(etapas[sistemas_.lanzamiento < 7    ? 0
+                                                : sistemas_.lanzamiento < 11 ? 1
+                                                                             : 2]));
+        r.texturada(*propulsion_, glm::scale(motor, {1.f, f, 1.f}), 0, {1, .55f, .12f},
+                    {1, .32f, .04f});
+        r.texturada(*propulsion_, glm::scale(motor, {.55f, f * .72f, .55f}), 0, {1, .94f, .7f},
+                    {1, .8f, .4f});
+    }
+    // Emisiones deterministas de vida limitada: no acumulamos particulas ni buffers.
+    float vuelo = sistemas_.lanzamiento;
+    if (vuelo >= 1 && vuelo < 8) {
+        for (int i = 0; i < 18; ++i) {
+            float nacimiento = 1 + i * .18f, edad = vuelo - nacimiento;
+            if (edad < 0 || edad > 3.5f)
+                continue;
+            float ang = i * 2.39996f;
+            glm::vec3 pos(205 + std::cos(ang) * edad * .7f, 5.6f + edad * .4f,
+                          21 + std::sin(ang) * edad * .7f);
+            float radio = (.35f + edad * .23f) * (1 - glm::smoothstep(2.3f, 3.5f, edad));
+            r.densidadHumo(.48f + .48f * edad / 3.5f);
+            r.dibujar(*humo_, glm::scale(glm::translate(m, pos), {radio, radio * .7f, radio}));
+        }
+        r.densidadHumo(0);
     }
     auto luces = sistemas_.luces();
     for (int j = 0; j < 6; ++j) {
@@ -130,6 +213,9 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         if (r.visible(glm::vec3(modelo[3]) + glm::vec3(0, 8, 0), 17))
             modelos_.at("Pino")->dibujar(r, modelo);
     }
+    float noche = sistemas_.luces().noche;
+    if (noche > .001f)
+        r.texturada(*marcasPista_, m, 0, {.08f, .2f, .3f}, glm::vec3(.12f, .5f, .8f) * noche);
     auto circuito = glm::translate(m, CircuitoCarreras::origen());
     r.dibujar(*pista_, circuito);
     r.dibujar(*detalles_, circuito);
@@ -138,9 +224,14 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         ghost_->dibujar(r, circuito * rival.matriz());
 }
 void Planeta1::liberar() noexcept {
+    titan_.reset();
+    humo_.reset();
+    marcasPista_.reset();
     colisiones_.limpiar();
     colisionCohete_.limpiar();
     propulsion_.reset();
+    hojaCompuerta_.reset();
+    marcoCompuerta_.reset();
     colisionPuerta_.limpiar();
     rampaPeatonal_.reset();
     modelos_.clear();
@@ -170,6 +261,14 @@ float Planeta1::altura(float x, float z) const noexcept {
 }
 glm::vec3 Planeta1::ajustarMovimiento(glm::vec3 a, glm::vec3 p) const {
     auto soporte = [this](float x, float z) { return altura(x, z); };
+    auto centro = Titan::posicion(sistemas_.titan);
+    auto d = glm::vec2(p.x - centro.x, p.z - centro.z);
+    if (glm::length(d) < 3.2f) {
+        auto anterior = glm::vec2(a.x - centro.x, a.z - centro.z);
+        d = glm::length(anterior) > .01f ? glm::normalize(anterior) : glm::vec2(1, 0);
+        p.x = centro.x + d.x * 3.2f;
+        p.z = centro.z + d.y * 3.2f;
+    }
     auto q = colisiones_.mover(a, p, soporte);
     q = colisionPuerta_.mover(a, q, soporte);
     return sistemas_.lanzamiento < 5 ? colisionCohete_.mover(a, q, soporte) : q;
@@ -190,10 +289,23 @@ void Planeta1::controlar(const OrdenActividad &o) {
         ++eventoPuerta_;
     }
     if (!carrera_.ocupado()) {
+        if (o.titan && sistemas_.saludo < 0 && sistemas_.titan < 0 &&
+            glm::length(o.avatar - Titan::posicion(-1)) < 18)
+            sistemas_.titan = 0;
+        if (o.saludo && sistemas_.saludo < 0 && sistemas_.titan < 0 &&
+            glm::length(o.avatar - Titan::posicion(-1)) < 18)
+            sistemas_.saludo = 0;
+        if (o.reflector && glm::length(o.avatar - glm::vec3(165, 3, -70)) < 35)
+            sistemas_.reflector = !sistemas_.reflector;
+        if (o.inspeccion && sistemas_.inspeccion < 0 &&
+            glm::length(o.avatar - glm::vec3(-65, 2, 162)) < 12)
+            sistemas_.inspeccion = 0;
+        if (o.hunter && sistemas_.hunter < 0 && glm::length(o.avatar - glm::vec3(-65, 2, 174)) < 15)
+            sistemas_.hunter = 0;
         float d = glm::length(glm::vec2(o.avatar.x - 205, o.avatar.z - 21));
         if (o.lanzar && d < 65 && d > 8)
             sistemas_.lanzar();
-        if (o.reiniciarCohete && d < 90)
+        if (o.reiniciarCohete && d < 90 && d > 9)
             sistemas_.reiniciar();
         if (o.reaccion && glm::length(glm::vec2(o.avatar.x + 77, o.avatar.z - 153)) < 10 &&
             sistemas_.reaccion < 0) {
@@ -205,10 +317,16 @@ void Planeta1::controlar(const OrdenActividad &o) {
 EstadoActividad Planeta1::actividad() const {
     auto e = carrera_.estado();
     if (!e.ocupado && glm::length(glm::vec2(visitante_.x - 165, visitante_.z + 70)) < 30)
-        e.mensajes.push_back("E / ABRIR O CERRAR HANGAR / SENSOR DE PASO");
+        e.mensajes.push_back("E HANGAR / P REFLECTOR / SENSOR DE PASO");
     if (!e.ocupado) {
+        if (glm::length(visitante_ - glm::vec3(-65, 2, 162)) < 12)
+            e.mensajes.push_back("K / INSPECCION GRUNT 2");
+        if (glm::length(visitante_ - Titan::posicion(-1)) < 18)
+            e.mensajes.push_back("B CAMINATA / J SALUDO BT-7274");
+        if (glm::length(visitante_ - glm::vec3(-65, 2, 174)) < 15)
+            e.mensajes.push_back("H / VIGILANCIA HUNTER");
         if (glm::length(glm::vec2(visitante_.x - 205, visitante_.z - 21)) < 65)
-            e.mensajes.push_back("L LANZAR / T REINICIAR / O OBSERVAR COHETE");
+            e.mensajes.push_back("L LANZAR / T REPONER / O OBSERVAR COHETE");
         if (glm::length(glm::vec2(visitante_.x + 77, visitante_.z - 153)) < 10)
             e.mensajes.push_back("G / SALUDAR AL GRUNT");
     }

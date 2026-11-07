@@ -17,6 +17,13 @@ class Aplicacion {
     GestorEscenarios escenarios_;
     GestorCamaras camaras_;
     Avatar avatar_;
+    struct MemoriaRegion {
+        Avatar::Estado avatar;
+        GestorCamaras camara;
+        bool foco, cohete;
+    };
+    std::map<Region, MemoriaRegion> memoriaRegiones_;
+    bool regionPreparada_ = false;
     Entradas entradas_;
     Interfaz interfaz_;
     Audio audio_;
@@ -31,6 +38,10 @@ class Aplicacion {
     void solicitarCamara(ModoCamara modo);
     void procesarEntradas(float dt);
     void aplicarOrden(const OrdenActividad &orden);
+    void probarFinalPlaneta1(const std::filesystem::path &dir);
+    void probarPlaneta2(const std::filesystem::path &dir);
+    void probarEspacio(const std::filesystem::path &dir);
+    void probarE(const std::filesystem::path &dir);
     void probarD(const std::filesystem::path &dir);
     void probarC(const std::filesystem::path &evidencias);
     void probarB2(const std::filesystem::path &evidencias);

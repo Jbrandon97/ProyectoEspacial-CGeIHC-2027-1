@@ -6,9 +6,11 @@ class GestorCamaras {
     ModoCamara modo_ = ModoCamara::Exploracion;
     float angulo_ = 0, inclinacion_ = .28f;
     glm::vec3 ojo_{0}, objetivo_{0};
-    bool preparada_ = false;
+    bool preparada_ = false, cabina_ = false;
 
   public:
+    void alternarCabina() { cabina_ = !cabina_; preparada_ = false; }
+    bool cabina() const { return cabina_; }
     static bool compatible(ModoCamara modo, Region region);
     bool solicitar(ModoCamara modo, Region region);
     void alCambiarRegion(Region region);
@@ -25,6 +27,7 @@ class GestorCamaras {
     // Altura recibe coordenadas globales; resuelve colision del brazo de camara con terreno.
     void seguir(glm::vec3 objetivo, glm::vec3 direccion, float dt,
                 const std::function<float(float, float)> &altura);
+    void seguirEspacio(glm::vec3 nave, glm::vec3 frente, glm::vec3 centro, float dt);
     glm::mat4 vista(glm::vec3 objetivoGlobal) const;
     glm::mat4 proyeccion(float aspecto) const;
     ModoCamara modo() const noexcept {

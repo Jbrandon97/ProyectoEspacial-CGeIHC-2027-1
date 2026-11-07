@@ -5,14 +5,17 @@
 #include "Graficos/ModeloGltf.h"
 #include "Mundo/Escenario.h"
 #include "SistemasPlaneta1.h"
+#include "Titan.h"
 #include <map>
 #include <memory>
 // Composicion regional: terreno, paisaje, pista y competencia comparten servicios graficos.
 class Planeta1 final : public Escenario {
     std::unique_ptr<Malla> terreno_, paisaje_, agua_, pista_, detalles_;
+    std::unique_ptr<Titan> titan_;
+    std::unique_ptr<Malla> humo_, marcasPista_;
     GestorCarrera carrera_;
     SistemasPlaneta1 sistemas_;
-    std::unique_ptr<Malla> propulsion_;
+    std::unique_ptr<Malla> propulsion_, hojaCompuerta_, marcoCompuerta_;
     ColisionesPlaneta1 colisionCohete_;
     unsigned eventoPuerta_ = 0;
     ColisionesPlaneta1 colisiones_, colisionPuerta_;
@@ -26,6 +29,9 @@ class Planeta1 final : public Escenario {
     std::unique_ptr<Textura> suelo_, texturaAgua_;
 
   public:
+    const Titan &titan() const {
+        return *titan_;
+    }
     Region id() const noexcept override {
         return Region::Planeta1;
     }

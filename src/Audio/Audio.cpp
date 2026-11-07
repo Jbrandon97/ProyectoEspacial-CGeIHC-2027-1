@@ -10,8 +10,8 @@
 Audio::Audio(const std::filesystem::path &r) {
     const char *nombres[] = {"Orbita_ambiental", "Viento_instalaciones", "Puerta_hangar",
                              "Propulsion",       "Motor_nave",           "Inicio_carrera",
-                             "Final_carrera"};
-    for (int i = 0; i < 7; ++i) {
+                             "Final_carrera",    "Energia_Covenant", "Horizonte_espacial", "Ambiente_Planeta2"};
+    for (size_t i = 0; i < voces_.size(); ++i) {
         std::ifstream f(r / "Audio" / (std::string(nombres[i]) + ".wav"), std::ios::binary);
         std::vector<char> b((std::istreambuf_iterator<char>(f)), {});
         if (b.size() < 44 || std::memcmp(b.data(), "RIFF", 4))
@@ -73,6 +73,7 @@ void Audio::bucle(Sonido s, float v) {
     if (v > 0 && !x.activa) {
         x.activa = true;
         x.cursor = 0;
+        ++x.inicios;
     }
 }
 void Audio::disparar(Sonido s, float v) {
@@ -81,6 +82,7 @@ void Audio::disparar(Sonido s, float v) {
     x.bucle = false;
     x.activa = true;
     x.cursor = 0;
+    ++x.inicios;
     x.objetivo = v;
 }
 void Audio::silenciar() {
@@ -109,7 +111,13 @@ void Audio::ejecutar() {
                 for (int k = 0; k < 2048; ++k) {
                     float muestra = 0;
                     for (auto &v : voces_) {
-                        v.ganancia += (v.objetivo - v.ganancia) * .0005f;
+                        bool musica = &v == &voces_[Musica] || &v == &voces_[MusicaEspacio] ||
+                                      &v == &voces_[MusicaPlaneta2];
+                        v.ganancia += (v.objetivo - v.ganancia) * (musica ? .000045f : .0005f);
+                        if (v.objetivo == 0 && v.ganancia < .0001f) {
+                            v.activa = false;
+                            v.cursor = 0;
+                        }
                         if (!v.activa)
                             continue;
                         if (v.cursor >= v.datos.size()) {
@@ -139,6 +147,16 @@ void Audio::ejecutar() {
 
 void Audio::detenerEfectos() {
     std::lock_guard<std::mutex> l(mutex_);
-    for (int i = 2; i < 7; ++i)
+    for (int i = 2; i < 8; ++i)
         voces_[i].objetivo = 0;
+}
+
+float Audio::atenuacionDistancia(float distancia) {
+    float d = std::max(0.f, distancia) / 45.f;
+    return 1.f / (1.f + d * d);
+}
+Audio::EstadoVoz Audio::estado(Sonido s) {
+    std::lock_guard<std::mutex> l(mutex_);
+    const auto &v = voces_[s];
+    return {v.objetivo, v.cursor, v.activa, v.inicios, v.ganancia};
 }

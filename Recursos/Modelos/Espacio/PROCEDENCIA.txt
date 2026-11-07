@@ -1,0 +1,1 @@
+Texturas procedurales originales para visualizacion esquematica de los dos planetas y la luna; no son mapas astronomicos reales. Cielo estelar sintetico original, semilla 711. Sin recursos de practicas ni capturas generadas como evidencia.

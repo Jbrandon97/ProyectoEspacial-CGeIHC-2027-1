@@ -11,7 +11,7 @@ const float PENDIENTE_MAX = 1.2f; // ~50 grados: no deja subir laderas mas empin
 
 void Planeta2::cargar(ContextoEscena &c) {
     liberar();
-    terreno_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Terreno.gltf");
+    terreno_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Terreno2.gltf");
     alturas_ = std::make_unique<AlturasTerreno>(c.recursos / "Modelos/Alturas_201x201.f32");
     warframe_.cargar(c);
     // el sector Ratchet pregunta la altura en sus coordenadas locales

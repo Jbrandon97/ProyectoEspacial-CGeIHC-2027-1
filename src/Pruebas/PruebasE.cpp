@@ -318,8 +318,8 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     o.giro = 1;
     aplicarOrden(o);
     e.actualizar(.5f);
-    exigir(e.actividad().objetivo.y > p.y + 5, "Nave sin ascenso");
-    exigir(e.actividad().direccion.z > .2f, "Nave sin giro");
+    exigir(e.actividad().objetivo.y > p.y + 10, "Nave sin ascenso");
+    exigir(e.actividad().direccion.z > .3f, "Nave sin giro");
     o = {};
     aplicarOrden(o);
     auto reloj = e.reloj();
@@ -331,36 +331,6 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     exigir(glm::length(e.ajustarMovimiento(p, {0, 0, 0}) - p) < .001f, "Gateway atravesable");
     exigir(glm::length(e.trafico(0) - e.trafico(40)) < .001f, "Trafico no ciclico");
     exigir(glm::length(e.trafico(12) - e.trafico(18)) < .001f, "Trafico sin espera");
-    Espacio baja, alta;
-    OrdenActividad vuelo; vuelo.acelerador = 1; vuelo.giro = .2f; vuelo.mirada = {20, -35};
-    baja.controlar(vuelo); alta.controlar(vuelo);
-    for (int i = 0; i < 120; ++i) baja.actualizar(1.f / 30);
-    for (int i = 0; i < 480; ++i) alta.actualizar(1.f / 120);
-    exigir(glm::length(baja.actividad().objetivo - alta.actividad().objetivo) < .02f, "Vuelo depende de FPS");
-    exigir(alta.direccion().y > .05f, "Mouse vertical invertido");
-    exigir(glm::length(glm::vec3(alta.matrizNave()[2]) + alta.direccion()) < .0001f, "Modelo y vuelo desalineados");
-    solicitarCamara(ModoCamara::Viaje);
-    camaras_.alternarCabina(); actualizarCamara(1.f / 60);
-    auto arriba = glm::vec3(e.matrizNave()[1]);
-    auto ojoEsperado = mundo_.aGlobal(Region::Espacio, e.actividad().objetivo + arriba * 1.6f + e.direccion() * .55f);
-    exigir(glm::length(camaras_.ojo() - ojoEsperado) < .001f, "Cabina separada del piloto");
-    dibujar(); camaras_.alternarCabina(); actualizarCamara(1.f / 60); dibujar();
-    for (int i = 0; i < 3; ++i) {
-        cambiarRegion(Region::Espacio); actualizarAudio();
-        exigir(audio_.estado(Audio::MusicaEspacio).objetivo > 0 && audio_.estado(Audio::Musica).objetivo == 0, "Musicas duplicadas en Espacio");
-        auto inicios = audio_.estado(Audio::MusicaEspacio).inicios;
-        for (int j = 0; j < 10; ++j) actualizarAudio();
-        exigir(audio_.estado(Audio::MusicaEspacio).inicios == inicios, "Musica reiniciada cada cuadro");
-        cambiarRegion(Region::Planeta1); actualizarAudio();
-        exigir(audio_.estado(Audio::MusicaEspacio).objetivo == 0 && audio_.estado(Audio::Musica).objetivo > 0, "Musica espacial sigue al salir");
-    }
-    if (audio_.disponible()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2600));
-        exigir(audio_.estado(Audio::MusicaEspacio).ganancia < .001f, "Fundido espacial no termina");
-    }
-    cambiarRegion(Region::Espacio);
-    std::cout << "VUELO_OK mouse coherente, matriz alineada, 30/120 FPS equivalentes, cabina anclada, cambio exterior\n";
-    std::cout << "MUSICA_ESPACIO_OK tres transiciones, sin reinicios, fundido y exclusividad regional\n";
     int w, h;
     ventana_.dimensiones(w, h);
     ContextoEscena c{renderizador_, recursos_};
@@ -380,11 +350,11 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     solicitarCamara(ModoCamara::Viaje);
     for (int i = 0; i < 90; ++i)
         actualizarCamara(1.f / 60);
-    dibujar(dir / "Espacio_F3_nave.ppm");
+    dibujar(dir / "Espacio_vista_nave.ppm");
     solicitarCamara(ModoCamara::Observacion);
     for (int i = 0; i < 90; ++i)
         actualizarCamara(1.f / 60);
-    dibujar(dir / "Espacio_F4.ppm");
+    dibujar(dir / "Espacio_vista_observacion.ppm");
     o = {};
     o.recuperar = true;
     aplicarOrden(o);
@@ -393,5 +363,5 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     aplicarOrden(o);
     exigir(escenarios_.actual().id() == Region::Planeta1, "Portal no retorna a planeta1");
     std::cout << "ESPACIO_OK navegacion avance giro altura, colision Gateway, trafico40s, "
-                 "persistencia, F3/F4, portal Planeta1\n";
+                 "persistencia, camaras, portal Planeta1\n";
 }

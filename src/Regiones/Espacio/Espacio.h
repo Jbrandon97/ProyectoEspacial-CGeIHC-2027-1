@@ -5,7 +5,7 @@
 // Modulo independiente: coordenadas locales, tiempo propio y recursos cargados una vez.
 class Espacio final : public Escenario {
     std::unique_ptr<ModeloGltf> gateway_, nave_;
-    std::unique_ptr<Malla> esfera_, satelite_;
+    std::unique_ptr<Malla> esfera_, satelite_, luzNave_;
     std::unique_ptr<Textura> halo_, orokin_, luna_;
     glm::vec3 posicion_{-210, 0, 0};
     float tiempo_ = 0, rumbo_ = 1.5707963f, velocidad_ = 0;

@@ -10,7 +10,7 @@
 Audio::Audio(const std::filesystem::path &r) {
     const char *nombres[] = {"Orbita_ambiental", "Viento_instalaciones", "Puerta_hangar",
                              "Propulsion",       "Motor_nave",           "Inicio_carrera",
-                             "Final_carrera",    "Energia_Covenant", "Horizonte_espacial"};
+                             "Final_carrera",    "Energia_Covenant", "Horizonte_espacial", "Ambiente_Planeta2"};
     for (size_t i = 0; i < voces_.size(); ++i) {
         std::ifstream f(r / "Audio" / (std::string(nombres[i]) + ".wav"), std::ios::binary);
         std::vector<char> b((std::istreambuf_iterator<char>(f)), {});
@@ -111,7 +111,8 @@ void Audio::ejecutar() {
                 for (int k = 0; k < 2048; ++k) {
                     float muestra = 0;
                     for (auto &v : voces_) {
-                        bool musica = &v == &voces_[Musica] || &v == &voces_[MusicaEspacio];
+                        bool musica = &v == &voces_[Musica] || &v == &voces_[MusicaEspacio] ||
+                                      &v == &voces_[MusicaPlaneta2];
                         v.ganancia += (v.objetivo - v.ganancia) * (musica ? .000045f : .0005f);
                         if (v.objetivo == 0 && v.ganancia < .0001f) {
                             v.activa = false;

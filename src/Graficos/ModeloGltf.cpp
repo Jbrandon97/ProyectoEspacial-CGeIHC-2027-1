@@ -75,6 +75,7 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
             if (!pos || !normal)
                 throw std::runtime_error("glTF sin posiciones/normales");
             Parte parte;
+            parte.indiceNodo = j;
             cgltf_node_transform_world(&n, glm::value_ptr(parte.local));
             if (n.name && std::string(n.name).rfind("Saturn_Etapa_", 0) == 0) {
                 parte.etapa = std::stoi(std::string(n.name).substr(13));
@@ -141,11 +142,14 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
               << " triangulos=" << vertices / 3 << "\n";
 }
 void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta,
-                         const std::array<glm::mat4, 4> *etapas) const {
+                         const std::array<glm::mat4, 4> *etapas,
+                         const std::vector<glm::mat4> *moverPartes) const {
     for (auto &p : partes_) {
         auto local = p.local;
         if (etapas && p.etapa >= 0)
             local = (*etapas)[p.etapa] * local;
+        if (moverPartes && p.indiceNodo < moverPartes->size())
+            local = (*moverPartes)[p.indiceNodo] * local;
         if (p.puerta)
             local = glm::translate(glm::mat4(1), {0, elevacionPuerta, 0}) * local;
         r.texturada(*p.malla, m * local, p.textura ? p.textura->id() : 0, p.color, p.emision,

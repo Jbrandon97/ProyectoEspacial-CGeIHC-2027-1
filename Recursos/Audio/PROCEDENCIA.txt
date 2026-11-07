@@ -2,3 +2,5 @@ Composición Orbita ambiental y seis ambientes/efectos originales sintetizados p
 Ambiente Energia_Covenant: sintesis original periodica de 8 s; tonos de maquinaria y modulacion lenta, sin muestras externas.
 
 Horizonte espacial: composición ambiental original, síntesis aditiva estéreo, siete voces armónicas y modulaciones periódicas lentas, bucle de 48 segundos. Sin grabaciones ni música comercial. Generación reproducible: Herramientas/generar_audio_espacio.py (NumPy). Exclusiva de la rama espacio-DAVID.
+
+Ambiente Planeta2: pad original sintetizado en la integracion; tres tonos sinusoidales, sin muestras comerciales, estereo PCM 44.1 kHz/16 bits, bucle de 12 s.

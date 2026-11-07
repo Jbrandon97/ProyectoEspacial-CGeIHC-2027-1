@@ -26,6 +26,7 @@ class ModeloGltf {
         glm::vec3 color{1}, emision{0};
         bool puerta = false;
         int etapa = -1;
+        size_t indiceNodo = 0;
         float rugosidad = .85f, metal = 0;
     };
     std::vector<Parte> partes_;
@@ -44,5 +45,6 @@ class ModeloGltf {
     }
     explicit ModeloGltf(const std::filesystem::path &);
     void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,
-                 const std::array<glm::mat4, 4> *etapas = nullptr) const;
+                 const std::array<glm::mat4, 4> *etapas = nullptr,
+                 const std::vector<glm::mat4> *moverPartes = nullptr) const;
 };

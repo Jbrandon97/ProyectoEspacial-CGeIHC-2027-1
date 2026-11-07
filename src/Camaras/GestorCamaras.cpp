@@ -22,7 +22,8 @@ bool GestorCamaras::solicitar(ModoCamara m, Region r) {
     return true;
 }
 void GestorCamaras::alCambiarRegion(Region r) {
-    modo_ = r == Region::Espacio ? ModoCamara::Observacion : ModoCamara::Exploracion;
+    modo_ = r == Region::Espacio ? ModoCamara::Viaje : ModoCamara::Exploracion;
+    cabina_ = r == Region::Espacio;
     angulo_ = 0;
     inclinacion_ = .28f;
     preparada_ = false;
@@ -87,7 +88,7 @@ const char *GestorCamaras::nombre() const {
     case ModoCamara::Carrera:
         return "CARRERA";
     case ModoCamara::Viaje:
-        return "TRANSPORTE: VISTA PREVIA";
+        return cabina_ ? "NAVE / CABINA" : "NAVE / EXTERIOR";
     default:
         return "OBSERVACION";
     }

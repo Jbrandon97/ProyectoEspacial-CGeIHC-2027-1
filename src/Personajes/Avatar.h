@@ -2,7 +2,7 @@
 #include "Engineer.h"
 #include <cmath>
 #include "Mundo/Escenario.h"
-// Engineer articulado en Planeta 1; otras regiones conservan su marcador.
+// Engineer articulado compartido por Planeta 1 y Planeta 2.
 class Avatar {
     glm::vec3 posicion_{0};
     bool sobrePlaneta1_ = false;

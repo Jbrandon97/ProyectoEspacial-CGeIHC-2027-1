@@ -41,6 +41,9 @@ void Espacio::cargar(ContextoEscena &c) {
     Geometria::cono(v, {0, 2.5f, 0}, 1.8f, 1.2f, {.8f, .8f, .85f}, 20);
     Geometria::caja(v, {0, 4, 0}, {.12f, 2, .12f}, {.8f, .8f, .8f});
     satelite_ = std::make_unique<Malla>(v);
+    v.clear();
+    Geometria::elipsoide(v, {0, 0, 0}, {1, 1, 1}, {.4f, .7f, 1.f}, 10, 6);
+    luzNave_ = std::make_unique<Malla>(v);
 }
 glm::vec3 Espacio::direccion() const {
     return {std::sin(rumbo_) * std::cos(cabeceo_), std::sin(cabeceo_), -std::cos(rumbo_) * std::cos(cabeceo_)};
@@ -103,7 +106,7 @@ void Espacio::actualizar(float dt) {
         float suavidad = 1 - std::exp(-8 * h);
         rumbo_ += diferencia * suavidad;
         cabeceo_ += (cabeceoObjetivo_ - cabeceo_) * suavidad;
-        ascenso_ += (orden_.vertical * 18 - ascenso_) * suavidad;
+        ascenso_ += (orden_.vertical * 32 - ascenso_) * suavidad;
         velocidad_ = std::clamp(velocidad_ + (orden_.acelerador * 14 - orden_.freno * 24) * h, 0.f, 40.f);
         if (!orden_.acelerador && !orden_.freno) velocidad_ *= std::exp(-.7f * h);
         auto propuesta = posicion_ + (direccion() * velocidad_ + glm::vec3(0, ascenso_, 0)) * h;
@@ -142,15 +145,26 @@ void Espacio::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     r.material(.45f, .6f);
     r.dibujar(*satelite_, m * modelo({-65, 30, -65}, {1, 1, 1}, tiempo_ * .2f));
     if (exterior_) nave_->dibujar(r, m * matrizNave());
-    auto p = trafico(tiempo_), d = trafico(tiempo_ + .05f) - p;
-    float giro = glm::length(d) > .0001f ? std::atan2(d.x, -d.z) : -pi / 2;
-    nave_->dibujar(r, m * modelo(p, {.8f, .8f, .8f}, -giro));
+    // Dos naves adicionales, en patrulla independiente y sin maniobras bruscas.
+    for (int i = 0; i < 2; ++i) {
+        float t = tiempo_ + i * 17.f;
+        glm::vec3 desplazamiento(0, 15.f * i, -25.f * i);
+        auto p = trafico(t) + desplazamiento;
+        auto d = trafico(t + .05f) - trafico(t);
+        float giro = glm::length(d) > .0001f ? std::atan2(d.x, -d.z) : -pi / 2;
+        nave_->dibujar(r, m * modelo(p, {.76f, .76f, .76f}, -giro));
+        // Baliza de energia muy tenue. No ilumina toda la escena.
+        r.texturada(*luzNave_, m * modelo(p + glm::vec3(0, .4f, 2.7f),
+                                            {.48f, .48f, .48f}), 0,
+                    { .4f, .65f, 1.f }, { .08f, .21f, .45f });
+    }
 }
 void Espacio::liberar() noexcept {
     gateway_.reset();
     nave_.reset();
     esfera_.reset();
     satelite_.reset();
+    luzNave_.reset();
     halo_.reset();
     orokin_.reset();
     luna_.reset();
@@ -162,6 +176,14 @@ Ambiente Espacio::ambiente() const noexcept {
     a.iluminacion.sol = glm::normalize(glm::vec3(-.6f, .5f, .8f));
     a.iluminacion.fuerzaSol = 1.15f;
     a.iluminacion.ambiente = .22f;
+    for (int i = 0; i < 2; ++i) {
+        auto &p = a.iluminacion.puntuales[i];
+        p.posicion = trafico(tiempo_ + i * 17.f) + glm::vec3(0, i * 15.f, i * -25.f);
+        p.color = {.35f, .65f, 1.f};
+        p.intensidad = 2.2f;
+        p.atenuacion = {1.f, .15f, .07f};
+        p.encendida = true;
+    }
     return a;
 }
 EstadoActividad Espacio::actividad() const {
@@ -169,8 +191,8 @@ EstadoActividad Espacio::actividad() const {
     e.ocupado = true;
     e.objetivo = posicion_;
     e.direccion = direccion();
-    e.mensajes = {"ESPACIO / F3 NAVE / V CABINA-EXTERIOR / F4 OBSERVACION",
-                  "W-S MOTOR / A-D GIRA / MOUSE RUMBO-ALTURA / Q-Z ASCENSO / C RECUPERA"};
+    e.mensajes = {"ESPACIO / V CABINA-EXTERIOR / DOS NAVES EN PATRULLA",
+                  "W-S MOTOR / A-D GIRA / MOUSE DIRECCION / Q-Z ASCENSO / C RECUPERA"};
     for (int i = 0; i < 2; ++i)
         if (glm::length(posicion_ - glm::vec3(i ? 210.f : -210.f, 0, 0)) < 28)
             e.mensajes.push_back(i ? "ENTER / VISITAR PLANETA 2" : "ENTER / REGRESAR A PLANETA 1");

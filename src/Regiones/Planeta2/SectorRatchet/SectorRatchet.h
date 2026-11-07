@@ -11,6 +11,7 @@ class SectorRatchet {
     std::unique_ptr<ModeloGltf> edificio1_, edificio2_; // Metropolis (Kerwan)
     std::unique_ptr<ModeloGltf> railjack_;              // Railjack animado
     std::unique_ptr<ModeloGltf> orokintower_;           // Torre Orokin
+    std::unique_ptr<ModeloGltf> warframe_;           // Warframe
     std::function<float(float, float)> suelo_;          // altura del terreno en coords locales
     float yEdificio1_ = 0, yEdificio2_ = 0;
 

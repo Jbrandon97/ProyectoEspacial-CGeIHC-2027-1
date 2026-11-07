@@ -18,6 +18,10 @@ const float ESCALA_RAILJACK = 0.5f;                // Escala de la nave
 // Configuración de la torre Orokin
 const glm::vec3 POS_OROKINTOWER = {-23.0f, 5.0f, 0.0f}; // Posición en la escena
 const float ESCALA_OROKINTOWER = 1.5f;                // Escala de la torre
+
+// Configuración del Warframe
+const glm::vec3 POS_WARFRAME = {5.0f, 7.0f, 0.0f}; // Posición en la escena
+const float ESCALA_WARFRAME = 4.0f;             // Escala de la torre
 } // namespace
 
 void SectorRatchet::cargar(ContextoEscena &c) {
@@ -29,6 +33,8 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     railjack_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Railjack/RailjackSeparadoVibraAnimado.gltf");
     // Carga de la torre Orokin
     orokintower_ = std::make_unique<ModeloGltf>(c.recursos /"Originales/OrokinTower/TorreOrokin1.gltf");
+    // Carga de Warframe
+    warframe_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Warframe/Warframe.gltf");
 
     // apoyo: el punto mas bajo bajo la base, para que ninguna esquina quede flotando
     auto apoyo = [this](glm::vec3 centro, glm::vec2 medio) {
@@ -76,6 +82,11 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         auto ot = glm::translate(m, POS_OROKINTOWER);
         orokintower_->dibujar(c.renderizador, glm::scale(ot, glm::vec3(ESCALA_OROKINTOWER)));
     }
+    // Dibujar el Warframe
+    if (warframe_) {
+        auto wf = glm::translate(m, POS_WARFRAME);
+        warframe_->dibujar(c.renderizador, glm::scale(wf, glm::vec3(ESCALA_WARFRAME)));
+    }
 }
 
 void SectorRatchet::liberar() noexcept {
@@ -84,6 +95,7 @@ void SectorRatchet::liberar() noexcept {
     edificio2_.reset();
     railjack_.reset();
     orokintower_.reset();
+    warframe_.reset();
 }
 
 bool SectorRatchet::obstaculo(glm::vec3 p) const {

@@ -12,8 +12,12 @@ const glm::vec2 MEDIO_EDIFICIO2 = {3.4f, 4.7f}; // mitad de 6.76 x 9.4
 const float ESCALA_EDIFICIOS = 2.0f;            // 1 = tamano original (~14-16 de alto)
 
 // Configuración del Railjack
-const glm::vec3 POS_RAILJACK = {0.0f, 3.0f, 0.0f}; // Posición en la escena
+const glm::vec3 POS_RAILJACK = {-200.0f, 15.0f, 0.0f}; // Posición en la escena
 const float ESCALA_RAILJACK = 0.5f;                // Escala de la nave
+
+// Configuración de la torre Orokin
+const glm::vec3 POS_OROKINTOWER = {-23.0f, 5.0f, 0.0f}; // Posición en la escena
+const float ESCALA_OROKINTOWER = 1.5f;                // Escala de la torre
 } // namespace
 
 void SectorRatchet::cargar(ContextoEscena &c) {
@@ -23,6 +27,8 @@ void SectorRatchet::cargar(ContextoEscena &c) {
 
     // Carga del Railjack animado
     railjack_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Railjack/RailjackSeparadoVibraAnimado.gltf");
+    // Carga de la torre Orokin
+    orokintower_ = std::make_unique<ModeloGltf>(c.recursos /"Originales/OrokinTower/TorreOrokin1.gltf");
 
     // apoyo: el punto mas bajo bajo la base, para que ninguna esquina quede flotando
     auto apoyo = [this](glm::vec3 centro, glm::vec2 medio) {
@@ -64,6 +70,12 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         auto rj = glm::translate(m, POS_RAILJACK);
         railjack_->dibujar(c.renderizador, glm::scale(rj, glm::vec3(ESCALA_RAILJACK)));
     }
+
+    // Dibujar la torre Orokin
+    if (orokintower_) {
+        auto ot = glm::translate(m, POS_OROKINTOWER);
+        orokintower_->dibujar(c.renderizador, glm::scale(ot, glm::vec3(ESCALA_OROKINTOWER)));
+    }
 }
 
 void SectorRatchet::liberar() noexcept {
@@ -71,6 +83,7 @@ void SectorRatchet::liberar() noexcept {
     edificio1_.reset();
     edificio2_.reset();
     railjack_.reset();
+    orokintower_.reset();
 }
 
 bool SectorRatchet::obstaculo(glm::vec3 p) const {

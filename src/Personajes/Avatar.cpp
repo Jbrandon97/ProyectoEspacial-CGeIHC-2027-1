@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
 void Avatar::aparecer(const Escenario &e) {
-    sobrePlaneta1_ = e.id() == Region::Planeta1;
+    sobrePlaneta1_ = e.id() == Region::Planeta1 || e.id() == Region::Planeta2;
     posicion_ = e.aparicion();
     posicion_.y = e.altura(posicion_.x, posicion_.z) + 1;
 }
@@ -38,7 +38,7 @@ void Avatar::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
 }
 
 void Avatar::colocar(glm::vec3 p, const Escenario &e) {
-    sobrePlaneta1_ = e.id() == Region::Planeta1;
+    sobrePlaneta1_ = e.id() == Region::Planeta1 || e.id() == Region::Planeta2;
     posicion_ = e.ajustarMovimiento(p, p);
     posicion_.y = e.altura(posicion_.x, posicion_.z) + 1;
 }

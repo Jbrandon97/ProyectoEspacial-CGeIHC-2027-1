@@ -118,14 +118,32 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     const auto alturaSuelo = [this](float x, float z) {
         return suelo_ ? suelo_(x, z) : 0.f;
     };
+    const ModeloGltf *tipos[] = {edificio1_.get(), edificio2_.get(), edificio3_.get()};
     for (size_t i = 0; i < Edificios.size(); ++i) {
-        auto e = Edificios[i];
-        float apoyo = alturaSuelo(e.posicion.x, e.posicion.y);
-        // La base se hunde un poco en el terreno; no se deja suspendida.
-        for (float x : {-e.medio.x * EscalaEdificios, e.medio.x * EscalaEdificios})
-            for (float z : {-e.medio.y * EscalaEdificios, e.medio.y * EscalaEdificios})
-                apoyo = std::min(apoyo, alturaSuelo(e.posicion.x + x, e.posicion.y + z));
-        apoyos_[i] = apoyo - .15f;
+        const auto e = Edificios[i];
+        const auto &vertices = tipos[e.tipo]->triangulos();
+        glm::vec3 minimo(1e9f), maximo(-1e9f);
+        for (auto v : vertices) { minimo = glm::min(minimo, v); maximo = glm::max(maximo, v); }
+        float apoyo = 1e9f;
+        // Cada punto inferior se compara con su terreno; se incluye el origen del glTF.
+        for (auto v : vertices) if (v.y <= minimo.y + .05f) {
+            float x = e.posicion.x + v.x * EscalaEdificios;
+            float z = e.posicion.y + v.z * EscalaEdificios;
+            apoyo = std::min(apoyo, alturaSuelo(x, z) - v.y * EscalaEdificios);
+        }
+        apoyos_[i] = apoyo - .12f;
+        huecosBase_[i] = -1e9f;
+        for (auto v : vertices) if (v.y <= minimo.y + .05f) {
+            float suelo = alturaSuelo(e.posicion.x + v.x * EscalaEdificios,
+                                      e.posicion.y + v.z * EscalaEdificios);
+            huecosBase_[i] = std::max(huecosBase_[i], apoyos_[i] + v.y * EscalaEdificios - suelo);
+        }
+        centrosEdificios_[i] = {e.posicion.x, apoyos_[i] + minimo.y * EscalaEdificios, e.posicion.y};
+        // La luz queda fuera de la fachada, no dentro del volumen opaco del edificio.
+        glm::vec3 luz{e.posicion.x + (minimo.x + maximo.x) * EscalaEdificios * .5f, 0,
+                      e.posicion.y + maximo.z * EscalaEdificios + 2.5f};
+        luz.y = alturaSuelo(luz.x, luz.z) + 6.f;
+        lucesEdificios_[i] = luz;
     }
     std::vector<Vertice> arbol;
     Geometria::caja(arbol, {0, 1.05f, 0}, {.52f, 2.1f, .52f}, {.38f, .27f, .49f});

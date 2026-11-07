@@ -75,16 +75,13 @@ Ambiente Planeta2::ambiente() const noexcept {
     l.ambiente = .13f + .14f * dia;
     l.colorSol = glm::mix(glm::vec3(1, .56f, .4f), glm::vec3(.95f, .96f, 1),
                           glm::smoothstep(0.f, .65f, l.sol.y));
-    // Cinco/seis edificios con luminarias concentradas. Solo de noche.
-    const glm::vec3 edificios[] = {{26, 12, -15}, {69, 17, -27}, {56, 19, 45},
-                                   {-7, 12, -52}, {112, 17, 63}, {-14, 19, 85}};
+    // Seis luminarias de fachada sincronizadas con la noche.
     for (int i = 0; i < 6; ++i) {
         auto &p = l.puntuales[i];
-        p.posicion = edificios[i];
-        p.posicion.y += altura(p.posicion.x, p.posicion.z);
+        p.posicion = ratchet_.luzEdificio(size_t(i)) + PosSectorRatchet;
         p.color = i % 2 ? glm::vec3(.48f, .61f, 1.f) : glm::vec3(.75f, .42f, 1.f);
-        p.intensidad = 3.0f * l.noche;
-        p.atenuacion = {1, .10f, .022f};
+        p.intensidad = 3.5f * l.noche;
+        p.atenuacion = {1, .09f, .018f};
         p.encendida = l.noche > .001f;
     }
     const auto nave = ratchet_.aphelionPosicion() + PosSectorRatchet;

@@ -16,6 +16,8 @@ class Planeta2 final : public Escenario {
     float tiempo_ = 24.0f;
 
   public:
+    const SectorRatchet &ratchet() const { return ratchet_; }
+    float reloj() const { return tiempo_; }
     Region id() const noexcept override { return Region::Planeta2; }
     const char *nombre() const noexcept override { return "Planeta2"; }
     void cargar(ContextoEscena &servicios) override;

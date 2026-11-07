@@ -111,6 +111,8 @@ void Aplicacion::procesarEntradas(float dt) {
     for (int i = 0; i < 3; ++i)
         if (entradas_.pulsada(GLFW_KEY_1 + i))
             cambiarRegion(Region(i));
+    for (int i = 0; i < 4; ++i)
+        if (entradas_.pulsada(GLFW_KEY_F1 + i)) solicitarCamara(ModoCamara(i));
     if (entradas_.pulsada(GLFW_KEY_M))
         audio_.silenciar();
     if (entradas_.pulsada(GLFW_KEY_MINUS))
@@ -277,6 +279,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
                      "y GL sin errores\n";
         probarCarrera(evidencias);
         probarEspacio(evidencias);
+        probarPlaneta2(evidencias);
         escenarios_.liberar();
         Renderizador::comprobarErrores();
         return 0;

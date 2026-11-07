@@ -1,6 +1,7 @@
 #include "Nucleo/Aplicacion.h"
 #include "Regiones/Planeta1/Planeta1.h"
 #include "Regiones/Espacio/Espacio.h"
+#include "Regiones/Planeta2/Planeta2.h"
 #include "Regiones/Planeta1/TerrenoPlaneta1.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -331,6 +332,36 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     exigir(glm::length(e.ajustarMovimiento(p, {0, 0, 0}) - p) < .001f, "Gateway atravesable");
     exigir(glm::length(e.trafico(0) - e.trafico(40)) < .001f, "Trafico no ciclico");
     exigir(glm::length(e.trafico(12) - e.trafico(18)) < .001f, "Trafico sin espera");
+    Espacio baja, alta;
+    OrdenActividad vuelo; vuelo.acelerador = 1; vuelo.giro = .2f; vuelo.mirada = {20, -35};
+    baja.controlar(vuelo); alta.controlar(vuelo);
+    for (int i = 0; i < 120; ++i) baja.actualizar(1.f / 30);
+    for (int i = 0; i < 480; ++i) alta.actualizar(1.f / 120);
+    exigir(glm::length(baja.actividad().objetivo - alta.actividad().objetivo) < .02f, "Vuelo depende de FPS");
+    exigir(alta.direccion().y > .05f, "Mouse vertical invertido");
+    exigir(glm::length(glm::vec3(alta.matrizNave()[2]) + alta.direccion()) < .0001f, "Modelo y vuelo desalineados");
+    solicitarCamara(ModoCamara::Viaje);
+    if (!camaras_.cabina()) camaras_.alternarCabina(); actualizarCamara(1.f / 60);
+    auto arriba = glm::vec3(e.matrizNave()[1]);
+    auto ojoEsperado = mundo_.aGlobal(Region::Espacio, e.actividad().objetivo + arriba * 1.6f + e.direccion() * .55f);
+    exigir(glm::length(camaras_.ojo() - ojoEsperado) < .001f, "Cabina separada del piloto");
+    dibujar(); camaras_.alternarCabina(); actualizarCamara(1.f / 60); dibujar();
+    for (int i = 0; i < 3; ++i) {
+        cambiarRegion(Region::Espacio); actualizarAudio();
+        exigir(audio_.estado(Audio::MusicaEspacio).objetivo > 0 && audio_.estado(Audio::Musica).objetivo == 0, "Musicas duplicadas en Espacio");
+        auto inicios = audio_.estado(Audio::MusicaEspacio).inicios;
+        for (int j = 0; j < 10; ++j) actualizarAudio();
+        exigir(audio_.estado(Audio::MusicaEspacio).inicios == inicios, "Musica reiniciada cada cuadro");
+        cambiarRegion(Region::Planeta1); actualizarAudio();
+        exigir(audio_.estado(Audio::MusicaEspacio).objetivo == 0 && audio_.estado(Audio::Musica).objetivo > 0, "Musica espacial sigue al salir");
+    }
+    if (audio_.disponible()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2600));
+        exigir(audio_.estado(Audio::MusicaEspacio).ganancia < .001f, "Fundido espacial no termina");
+    }
+    cambiarRegion(Region::Espacio);
+    std::cout << "VUELO_OK mouse coherente, matriz alineada, 30/120 FPS equivalentes, cabina anclada, cambio exterior\n";
+    std::cout << "MUSICA_ESPACIO_OK tres transiciones, sin reinicios, fundido y exclusividad regional\n";
     int w, h;
     ventana_.dimensiones(w, h);
     ContextoEscena c{renderizador_, recursos_};
@@ -364,4 +395,32 @@ void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
     exigir(escenarios_.actual().id() == Region::Planeta1, "Portal no retorna a planeta1");
     std::cout << "ESPACIO_OK navegacion avance giro altura, colision Gateway, trafico40s, "
                  "persistencia, camaras, portal Planeta1\n";
+}
+
+void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
+    auto exigir=[](bool b,const char *m){if(!b)throw std::runtime_error(m);};
+    cambiarRegion(Region::Planeta2);
+    auto &p=dynamic_cast<Planeta2 &>(escenarios_.actual());
+    for(float hueco:p.ratchet().huecosBase()) exigir(std::isfinite(hueco)&&hueco<=-.10f,"Base Kerwan suspendida");
+    for(auto centro:p.ratchet().centrosEdificios()) exigir(p.ratchet().obstaculo(centro),"Edificio sin colision");
+    auto dia=p.ambiente();exigir(dia.iluminacion.noche<.01f,"Planeta2 no inicia de dia");
+    p.actualizar(70);
+    auto noche=p.ambiente();exigir(noche.iluminacion.noche>.95f,"Luces P2 no siguen ciclo nocturno");
+    for(int i=0;i<6;++i){auto l=noche.iluminacion.puntuales[i];exigir(l.encendida&&l.intensidad>0,"Luz Kerwan apagada");exigir(l.posicion.y>p.altura(l.posicion.x,l.posicion.z)+5,"Luz Kerwan enterrada");}
+    int w,h;ventana_.dimensiones(w,h);ContextoEscena c{renderizador_,recursos_};
+    auto foto=[&](std::string nombre,glm::vec3 ojo,glm::vec3 objetivo){
+        ojo=mundo_.aGlobal(Region::Planeta2,ojo);objetivo=mundo_.aGlobal(Region::Planeta2,objetivo);
+        auto vp=glm::perspective(glm::radians(58.f),float(w)/h,.1f,1200.f)*glm::lookAt(ojo,objetivo,{0,1,0});
+        auto amb=p.ambiente();for(auto &l:amb.iluminacion.puntuales)if(l.encendida)l.posicion=mundo_.aGlobal(Region::Planeta2,l.posicion);
+        renderizador_.iniciar(w,h,vp,amb,ojo);p.dibujar(c,mundo_.transformacion(Region::Planeta2));renderizador_.capturar(dir/(nombre+".ppm"),w,h);Renderizador::comprobarErrores();
+    };
+    foto("P2_Noche",{125,62,155},{15,12,0});
+    p.actualizar(50);
+    foto("P2_Dia",{125,62,155},{15,12,0});
+    int i=0;for(auto centro:p.ratchet().centrosEdificios()){
+        centro+=glm::vec3(18,0,0);foto("P2_Base_"+std::to_string(i++),centro+glm::vec3(14,7,17),centro+glm::vec3(0,4,0));
+    }
+    auto reloj=p.reloj();cambiarRegion(Region::Espacio);cambiarRegion(Region::Planeta2);exigir(p.reloj()==reloj,"Reloj P2 reiniciado");
+    std::cout<<"PLANETA2_OK seis apoyos geometricos sin hueco, colisiones, seis luces de fachada, ciclo120s y persistencia\n";
+    cambiarRegion(Region::Planeta1);
 }

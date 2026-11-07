@@ -39,6 +39,7 @@ class Aplicacion {
     void procesarEntradas(float dt);
     void aplicarOrden(const OrdenActividad &orden);
     void probarFinalPlaneta1(const std::filesystem::path &dir);
+    void probarPlaneta2(const std::filesystem::path &dir);
     void probarEspacio(const std::filesystem::path &dir);
     void probarE(const std::filesystem::path &dir);
     void probarD(const std::filesystem::path &dir);

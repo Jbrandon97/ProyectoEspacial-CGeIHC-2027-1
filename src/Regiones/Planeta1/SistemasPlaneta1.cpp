@@ -176,7 +176,7 @@ std::array<glm::mat4, 4> SistemasPlaneta1::etapas() const {
     for (int i = 0; i < 4; ++i) {
         m[i] = matrizClave(animacionCohete_, i, std::max(0.f, lanzamiento));
         if (i < 3 && lanzamiento >= separacion[i]) {
-            // Adaptacion de apoyo autorizada: solo altura, sin editar el TXT ni la capsula.
+            // Ajuste vertical del apoyo; conserva los keyframes y la capsula.
             // Alcanzar el ajuste antes del contacto evita hundir piezas en la ladera.
             float u = suave(separacion[i], contacto[i] - 2, lanzamiento);
             m[i] = glm::translate(glm::mat4(1), {0, ajusteSuelo_[i] * u, 0}) * m[i];

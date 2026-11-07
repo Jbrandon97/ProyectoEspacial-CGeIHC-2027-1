@@ -1,6 +1,6 @@
-# Proyecto Espacial — Planeta 1 Halo / Titanfall
+# Proyecto Espacial — integración final
 
-Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión continúa el Bloque E y la integración local del Saturn V; incorpora la terminación de Planeta 1. Conservamos la arquitectura C++17/OpenGL/GLFW. Espacio está integrado en una rama propia; Planeta 2 conserva la base provisional y espera la integración del trabajo remoto de sus integrantes.
+Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Integramos Halo/Titanfall, Ratchet & Clank/Warframe y Espacio en C++17, OpenGL 3.3 y GLFW.
 
 ## Abrir, compilar y ejecutar
 
@@ -34,27 +34,25 @@ GLFW y GLAD se compilan como biblioteca estática; GLM es de cabeceras. No hacen
 
 El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. Los restos permanecen apoyados hasta reiniciar y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
 
-## Organización del equipo
+## Estructura e integración
 
-- `src/Regiones/Planeta1/`: rama `planeta1--BRAND-ON`.
-- `src/Regiones/Planeta2/`: ramas `planeta2-integrante1` y `planeta2-integrante2`.
-- `src/Regiones/Espacio/`: rama `espacio-DAVID`.
-- `main`: integración mediante revisión del equipo.
-- `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: interfaces y servicios compartidos; coordinar cambios.
-- `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y preparación reproducible.
+- `src/Regiones/Planeta1/`: Halo/Titanfall, base de `planeta1--BRAND-ON`.
+- `src/Regiones/Planeta2/`: región única Ratchet & Clank/Warframe; fuente principal `planeta2--PEDRO`. La rama `planeta2--MIGUEL` conserva el historial y los originales del colaborador, sin otro merge redundante.
+- `src/Regiones/Espacio/`: Gateway, navegación, cuerpos celestes y tráfico; base `espacio-DAVID` y revisión del ZIP.
+- `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: servicios compartidos; coordinar cambios entre integrantes.
+- `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y scripts de preparación/audio.
+- `integracion-final`: integración local validada; pendiente de autorización para publicar e incorporar a `main`.
 
-Rama de trabajo: `espacio-DAVID`, carpeta independiente. Incorporamos la base funcional publicada conservando el historial; el remoto anterior de David sólo contenía el módulo provisional. Los cambios nuevos están en Espacio y sus interfaces de entrada, cámara y audio. Planeta 1 conserva su base y Planeta 2 no se modifica.
+Conservamos las interfaces de ambos sectores de Planeta 2; su distribución conjunta se dibuja una sola vez desde SectorRatchet. No duplicar los modelos Warframe en SectorWarframe. Mantener las rutas relativas, revisar cambios compartidos y probar las tres regiones antes de integrar.
 
-En Espacio: F3 piloto, V alterna primera persona/exterior, F4 observación de Gateway. W acelera y S frena; A/D giran; mouse orienta la nave horizontal y verticalmente. Q/Z conservan ascenso/descenso, C recuperación y Enter visita contextual al planeta cercano. F4 conserva órbita con mouse/flechas; los mandos de vuelo sólo se aplican en F3. 1–3 mantienen el cambio de región.
+En Espacio: F3 piloto, V primera persona/exterior, F4 observación; W/S aceleración/freno, A/D giro, mouse orientación, Q/Z ascenso/descenso, C recuperación y Enter visita contextual. F4 permite órbita con mouse/flechas. Las teclas 1–3 y F1–F4 se conservan; la selección automática de cámara sigue activa según el modo.
 
-El piloto y la nave comparten posición y orientación. Los giros se amortiguan, velocidad limitada a 40 u/s y colisiones en subpasos. El modelo Banshee no contiene una cabina interior: en primera persona ocultamos su exterior para evitar ver polígonos desde dentro, sin inventar otra nave ni una cámara libre. La cámara sigue fija al piloto.
+La posición, orientación, cámara y reloj regional se conservan durante la sesión; no se guardan al cerrar. Los WAV originales se regeneran con los scripts `Herramientas/generar_audio*.py` (Python y NumPy), innecesarios para jugar.
 
-`Horizonte_espacial.wav` es una composición ambiental original de 48 s con frecuencias y envolventes periódicas. Entra y sale mediante fundidos; la música de Planeta 1 conserva su recurso. El mezclador existente maneja ambas pistas por región. Generación: `Herramientas/generar_audio_espacio.py` con NumPy.
+El cargador real es **cgltf**, acompañado de stb_image, GLM, GLAD y GLFW. Esta base no utiliza Assimp; no se añadió una biblioteca ni DLL que el código no necesita.
 
-La posición, orientación, cámara y sistemas regionales se conservan durante la ejecución. No hay guardado al cerrar. La entrega `Proyecto_Espacial_Final_1.zip` corresponde exclusivamente a la rama `planeta1--BRAND-ON`, por lo que estas mejoras nuevas se prueban y desarrollan desde esta rama de David.
+## Entrega y atribuciones
 
-## Atribuciones
+El paquete fuente permite compilar. `ProyectoEspacial_Ejecutable_Final.zip` contiene `Entrega_Ejecutable` con EXE, PDB y Recursos; extraer la carpeta completa y abrir el EXE. No ejecutar dentro del ZIP ni separar el EXE de sus recursos.
 
-Conservamos las atribuciones de recursos Halo/Titanfall y Saturn V en `Recursos/Modelos`, la licencia CC0 de Kenney en `Recursos/Cielos` y las licencias de bibliotecas en `Dependencias`. BT-7274: Palurdas Arts, licencia CC-BY-4.0 declarada en el archivo; fuente y adaptación en `Recursos/Modelos/BT7274/ATRIBUCION.txt`. Los WAV se sintetizan para el proyecto y no contienen música comercial. La revisión académica privada no cambia los derechos de recursos de terceros.
-
-Gateway: recurso oficial NASA/JSC/Gateway Program Office; procedencia y adaptación en `Recursos/Modelos/Gateway/PROCEDENCIA.txt`. Texturas planetarias y cielo espacial: síntesis propia, no fotografías científicas.
+Las procedencias y licencias permanecen en Recursos y Dependencias. Los modelos de terceros no se presentan como propios; la finalidad académica no cambia sus derechos. La revisión y las limitaciones verificadas están en `Informe_Tecnico_Integracion.md`.

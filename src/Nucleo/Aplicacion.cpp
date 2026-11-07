@@ -14,7 +14,7 @@
 #include <windows.h>
 #endif
 namespace {
-// No depende del directorio de trabajo, ni de rutas de la computadora del autor.
+// Resuelve los recursos junto al ejecutable, independientemente del directorio de trabajo.
 std::filesystem::path recursosJuntoAlEjecutable(const char *argumento) {
 #ifdef _WIN32
     wchar_t ruta[32768];
@@ -274,13 +274,15 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
 }
 int Aplicacion::ejecutar(int argc, char **argv) noexcept {
     try {
-        bool pruebas = false;
+        bool pruebas = false, capturas = true;
         Region inicial = Region::Planeta1;
         std::filesystem::path evidencias = "EvidenciasPrueba";
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
             if (a == "--pruebas")
                 pruebas = true;
+            else if (a == "--sin-capturas")
+                capturas = false;
             else if (a == "--evidencias" && i + 1 < argc)
                 evidencias = argv[++i];
             else if (a == "--region" && i + 1 < argc) {
@@ -295,10 +297,11 @@ int Aplicacion::ejecutar(int argc, char **argv) noexcept {
                     throw std::invalid_argument("Region desconocida");
             } else
                 throw std::invalid_argument(
-                    "Opciones: --region planeta1|planeta2|espacio --pruebas --evidencias carpeta");
+                    "Opciones: --region planeta1|planeta2|espacio --pruebas --sin-capturas --evidencias carpeta");
         }
         {
             Aplicacion app(recursosJuntoAlEjecutable(argv[0]));
+            app.renderizador_.permitirCapturas(capturas);
             int estado = app.ciclo(pruebas, evidencias, inicial);
             if (estado)
                 return estado;

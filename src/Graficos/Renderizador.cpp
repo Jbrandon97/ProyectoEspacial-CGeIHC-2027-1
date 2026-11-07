@@ -94,6 +94,7 @@ void Renderizador::dibujar(const Objeto &o, const glm::mat4 &base) {
     ++dibujos_;
 }
 void Renderizador::capturar(const std::filesystem::path &p, int a, int b) const {
+    if (!capturasHabilitadas_) return;
     // PPM sin dependencias extra. OpenGL entrega filas desde abajo: se invierten al escribir.
     std::vector<unsigned char> pix(size_t(a) * size_t(b) * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);

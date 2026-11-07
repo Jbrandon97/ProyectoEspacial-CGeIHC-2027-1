@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Dependencias\glad\src">
+      <UniqueIdentifier>{2C4CD3EA-A8CF-5159-A446-FBA2662C8DF8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dependencias\glfw\src">
+      <UniqueIdentifier>{5922F69B-32F1-5607-9B6B-ACE2B7BE509A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Dependencias\glfw\src\context.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\init.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\input.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\monitor.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\platform.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\vulkan.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\window.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\egl_context.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\osmesa_context.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\null_init.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\null_monitor.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\null_window.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\null_joystick.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_module.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_time.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_thread.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_init.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_joystick.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_monitor.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\win32_window.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glfw\src\wgl_context.c">
+      <Filter>Dependencias\glfw\src</Filter>
+    </ClCompile>
+    <ClCompile Include="Dependencias\glad\src\glad.c">
+      <Filter>Dependencias\glad\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -10,7 +10,9 @@ Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión
 4. En la carpeta preparada para revisión también puede abrirse directamente `ProyectoEspacial.exe`, situado junto a `Recursos` para evitar duplicarlos.
 5. Pruebas automatizadas: `ProyectoEspacial.exe --pruebas --evidencias carpeta_destino`.
 
-El registro técnico está en [Documentacion/Registro_Final_Integracion.txt](Documentacion/Registro_Final_Integracion.txt) y las capturas reales en `Documentacion/Evidencias`; el registro distingue ejecución automatizada, revisión visual y pruebas no realizadas. No se necesita Python para jugar. `Herramientas/generar_audio.py` (NumPy) permite regenerar los WAV; `Herramientas/preparar_bt.py` (Pillow) convierte el GLB de BT suministrado.
+Para verificar sin generar capturas: `ProyectoEspacial.exe --pruebas --sin-capturas`. Conservamos los tests porque forman parte de la solución. No se necesita Python para jugar; las herramientas de síntesis y conversión sólo se usan para regenerar recursos.
+
+GLFW y GLAD se compilan como biblioteca estática; GLM es de cabeceras. No hacen falta DLL de terceros ni redistribuible de MSVC: Release utiliza /MT. Windows y un controlador compatible con OpenGL 3.3 son necesarios. Los filtros organizan los archivos en Visual Studio; el proyecto ejecutable es el proyecto de inicio. El depurador usa la carpeta del EXE y el PDB correspondiente se genera en cada compilación.
 
 ## Controles
 
@@ -34,18 +36,16 @@ El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsul
 
 ## Organización del equipo
 
-- `src/Regiones/Planeta1/`: John, rama `planeta1-john`.
+- `src/Regiones/Planeta1/`: rama `planeta1--BRAND-ON`.
 - `src/Regiones/Planeta2/`: ramas `planeta2-integrante1` y `planeta2-integrante2`.
-- `src/Regiones/Espacio/`: rama `espacio-integrante3`.
+- `src/Regiones/Espacio/`: rama `espacio-DAVID`.
 - `main`: integración mediante revisión del equipo.
 - `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: interfaces y servicios compartidos; coordinar cambios.
 - `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y preparación reproducible.
 
-La base de Planeta 1 se publica en `planeta1-john`; Espacio y las adaptaciones compartidas están en `codex/integracion-planeta1-espacio`, sin modificar `main` ni las ramas de compañeros. Las regiones conservan avatar, orientación, cámara y sistemas al regresar; sus relojes se pausan mientras están inactivas. No se guarda la partida al cerrar el programa.
+Rama de trabajo: `planeta1--BRAND-ON`. Conserva todos los avances de Planeta 1 y la versión de Espacio que ya había sido integrada por el equipo. Las mejoras nuevas de vuelo, primera persona y música espacial se desarrollan exclusivamente en `espacio-DAVID`, en otra carpeta; no forman parte del ZIP `Proyecto_Espacial_Final_1.zip`.
 
-En Espacio, F3 sigue la nave y F4 permite observar Gateway con mouse/flechas. W acelera, S frena, A/D giran, Q/Z cambian altura, C recupera junto a Planeta 1. Enter permite entrar al planeta al estar cerca del punto de llegada (x=-210 o +210, y=z=0). Las teclas 1–3 siguen disponibles. Gateway tiene un volumen de colisión conservador, sin interior transitable. Una segunda Banshee recorre una aproximación, espera y retirada cada 40 s. Las esferas planetarias son referencias visuales, no sustituyen el escenario de Planeta 2. La música continúa en Espacio.
-
-La entrega ZIP contiene EXE y PDB de Release x64 en su raíz. El PDB es para depuración, no hace falta para jugar. `Herramientas/preparar_espacio.py` requiere NumPy y Pillow únicamente para regenerar recursos desde el GLB de NASA.
+La posición, orientación, cámara y sistemas se conservan entre regiones mientras el programa está abierto; sus relojes se pausan al salir. Las teclas 1–3 permanecen. No se modifican Planeta 2 ni main. La integración definitiva requiere revisar las ramas de los compañeros.
 
 ## Atribuciones
 

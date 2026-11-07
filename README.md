@@ -2,6 +2,10 @@
 
 Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Integramos Halo/Titanfall, Ratchet & Clank/Warframe y Espacio en C++17, OpenGL 3.3 y GLFW.
 
+## Ejecutar sin Visual Studio
+
+Descargar `ProyectoEspacial_Ejecutable_Final.zip` desde [GitHub Releases — v1.0-final](https://github.com/Jbrandon97/ProyectoEspacial-CGeIHC-2027-1/releases/tag/v1.0-final). Extraer el ZIP completo y abrir `ProyectoEspacial.exe` con doble clic dentro de `Entrega_Ejecutable`. Mantener `Recursos` junto al EXE. No se necesita un archivo CMD ni compilar para jugar.
+
 ## Abrir, compilar y ejecutar
 
 1. Abrir `ProyectoEspacial.sln` con Visual Studio 2022, carga de trabajo Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK.
@@ -41,7 +45,7 @@ El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsul
 - `src/Regiones/Espacio/`: Gateway, navegación, cuerpos celestes y tráfico; base `espacio-DAVID` y revisión del ZIP.
 - `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: servicios compartidos; coordinar cambios entre integrantes.
 - `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y scripts de preparación/audio.
-- `integracion-final`: integración local validada; pendiente de autorización para publicar e incorporar a `main`.
+- `integracion-final`: base validada e incorporada a `main` mediante merge, conservando los historiales.
 
 Conservamos las interfaces de ambos sectores de Planeta 2; su distribución conjunta se dibuja una sola vez desde SectorRatchet. No duplicar los modelos Warframe en SectorWarframe. Mantener las rutas relativas, revisar cambios compartidos y probar las tres regiones antes de integrar.
 

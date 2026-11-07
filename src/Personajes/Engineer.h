@@ -18,7 +18,7 @@ class Engineer {
   public:
     explicit Engineer(const std::filesystem::path &);
     void animar(float tiempo, float actividad);
-    void dibujar(Renderizador &, const glm::mat4 &) const;
+    void dibujar(Renderizador &, const glm::mat4 &, bool energia = false) const;
     float desplazamientoExtremidad() const;
     float deformacionMaxima(int grupo) const {
         return desplazamientos_.at(grupo);

@@ -20,15 +20,14 @@ bool GestorEscenarios::activar(Region r, ContextoEscena &c) {
     if (destino == actual_)
         return false;
     try {
-        destino->cargar(c);
+        if(!cargadas_.count(r)){destino->cargar(c);cargadas_.insert(r);}
     } catch (...) {
         destino->liberar();
         throw;
     }
-    if (actual_)
-        actual_->liberar();
+    // Conservamos recursos y estado de las regiones visitadas hasta el cierre.
     actual_ = destino;
-    std::cout << "REGION " << actual_->nombre() << " cargada; una region activa\n";
+    std::cout << "REGION " << actual_->nombre() << " preparada; una region activa, estado conservado\n";
     return true;
 }
 Escenario &GestorEscenarios::actual() const {
@@ -39,5 +38,6 @@ Escenario &GestorEscenarios::actual() const {
 void GestorEscenarios::liberar() noexcept {
     for (auto &par : regiones_)
         par.second->liberar();
+    cargadas_.clear();
     actual_ = nullptr;
 }

@@ -11,7 +11,7 @@ struct Iluminacion {
     bool activa = false;
     glm::vec3 sol{0, 1, 0}, colorSol{1};
     float fuerzaSol = 1, ambiente = .2f, noche = 0;
-    std::array<LuzPuntual, 8> puntuales{};
+    std::array<LuzPuntual, 16> puntuales{};
     bool foco = false;
     glm::vec3 focoPos{0}, focoDir{0, 0, -1};
 };

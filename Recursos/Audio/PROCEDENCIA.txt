@@ -1,1 +1,2 @@
 Composición Orbita ambiental y seis ambientes/efectos originales sintetizados para el proyecto. Sin muestras ni música comercial de Halo/Titanfall. PCM estéreo 44 100 Hz, 16 bits. Generación reproducible en Herramientas/generar_audio.py. Música: progresión armónica de cuatro acordes, arpegios y timbres de pad; bucle de 32 segundos.
+Ambiente Energia_Covenant: sintesis original periodica de 8 s; tonos de maquinaria y modulacion lenta, sin muestras externas.

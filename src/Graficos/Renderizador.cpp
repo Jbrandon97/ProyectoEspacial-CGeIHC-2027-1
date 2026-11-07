@@ -57,7 +57,7 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
     shader_.vector("solDir", l.sol);
     shader_.vector("solColor", l.colorSol);
     shader_.vector("ojo", ojo);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 16; ++i) {
         auto &p = l.puntuales[i];
         auto nombre = "pLuces[" + std::to_string(i) + "]";
         shader_.vector((nombre + ".pos").c_str(), p.posicion);

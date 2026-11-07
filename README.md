@@ -2,7 +2,7 @@
 
 Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Integramos Halo/Titanfall, Ratchet & Clank/Warframe y Espacio en C++17, OpenGL 3.3 y GLFW.
 
-## Ejecutar sin Visual Studio
+## Ejecutar 
 
 Descargar `ProyectoEspacial_Ejecutable_Final.zip` desde [GitHub Releases — v1.0-final](https://github.com/Jbrandon97/ProyectoEspacial-CGeIHC-2027-1/releases/tag/v1.0-final). Extraer el ZIP completo y abrir `ProyectoEspacial.exe` con doble clic dentro de `Entrega_Ejecutable`. Mantener `Recursos` junto al EXE. No se necesita un archivo CMD ni compilar para jugar.
 

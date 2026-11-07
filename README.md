@@ -1,94 +1,54 @@
-# Proyecto Espacial — CGeIHC 2027-1
+# Proyecto Espacial — Planeta 1 Halo / Titanfall
 
-Proyecto final de Computación Gráfica e Interacción Humano-Computadora, Facultad de Ingeniería, UNAM. Base inicial: **Bloque D** en C++17 y OpenGL. Esta rama incorpora el **Bloque E de Planeta 1**; la integración con el equipo permanece pendiente.
+Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión continúa el Bloque E y la integración local del Saturn V; incorpora la terminación de Planeta 1. Conservamos la arquitectura C++17/OpenGL/GLFW. Espacio está integrado en una rama propia; Planeta 2 conserva la base provisional y espera la integración del trabajo remoto de sus integrantes.
 
-## Abrir y compilar
+## Abrir, compilar y ejecutar
 
-1. Clonar el repositorio completo con una cuenta que tenga acceso.
-2. En Windows, instalar Visual Studio 2022 con **Desarrollo para el escritorio con C++**, herramientas **MSVC v143** y Windows SDK 10/11.
-3. Abrir `ProyectoEspacial.sln`, seleccionar **Release | x64** y establecer **ProyectoEspacial** como proyecto de inicio.
-4. Compilar la solución y ejecutar. Se genera `bin/x64/Release/ProyectoEspacial.exe`; la compilación copia automáticamente `Recursos/` junto al ejecutable. No se distribuyen binarios compilados.
+1. Abrir `ProyectoEspacial.sln` con Visual Studio 2022, carga de trabajo Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK.
+2. Seleccionar **Release | x64**, proyecto de inicio **ProyectoEspacial**, compilar y ejecutar.
+3. La compilación genera `bin/x64/Release/ProyectoEspacial.exe` y copia `Recursos` junto a él. Las dependencias están incluidas.
+4. En la carpeta preparada para revisión también puede abrirse directamente `ProyectoEspacial.exe`, situado junto a `Recursos` para evitar duplicarlos.
+5. Pruebas automatizadas: `ProyectoEspacial.exe --pruebas --evidencias carpeta_destino`.
 
-Las dependencias están incluidas; no hace falta descargar modelos ni configurar rutas absolutas. No se requiere Git LFS para esta base. CMake es una alternativa opcional mediante `CMakePresets.json`. El script `Herramientas/generar_audio.py` requiere Python y NumPy solo si se desea regenerar el audio; los WAV ya están incluidos.
+El registro técnico está en [Documentacion/Registro_Final_Integracion.txt](Documentacion/Registro_Final_Integracion.txt) y las capturas reales en `Documentacion/Evidencias`; el registro distingue ejecución automatizada, revisión visual y pruebas no realizadas. No se necesita Python para jugar. `Herramientas/generar_audio.py` (NumPy) permite regenerar los WAV; `Herramientas/preparar_bt.py` (Pillow) convierte el GLB de BT suministrado.
 
-## Estructura y responsabilidades
+## Controles
 
-| Carpeta | Función |
+| Tecla | Acción |
 | --- | --- |
-| `src/Regiones/Planeta1/` | Planeta 1, responsabilidad de John |
-| `src/Regiones/Planeta2/` | Planeta 2, trabajo coordinado entre dos integrantes |
-| `src/Regiones/Espacio/` | Región Espacio, responsabilidad del tercer compañero |
-| `src/Mundo/`, `src/Nucleo/` | Interfaces regionales, registro, ciclo de aplicación e integración |
-| `src/Camaras/`, `src/Graficos/`, `src/Audio/`, `src/Personajes/` | Sistemas compartidos; coordinar sus cambios |
-| `src/Pruebas/` | Comprobaciones existentes del proyecto |
-| `Recursos/` | Modelos, texturas, shaders, cielos, audio y originales suministrados |
-| `Dependencias/`, `Herramientas/` | Bibliotecas incluidas y generación de audio |
+| 1 / 2 / 3 | Planeta 1 / Planeta 2 / Espacio |
+| F1–F4 | Cámaras originales, según compatibilidad de región |
+| WASD / Shift | Caminar 15 / correr 30 unidades/s, relativo a cámara |
+| Mouse / flechas / Tab | Cámara / órbita / liberar cursor |
+| X | Abordar o descender de Banshee, en proximidad y detenida |
+| W/S/A/D en carrera | Acelerar / frenar / dirigir |
+| R / C | Reiniciar carrera / recuperar con penalización de 2 s |
+| E / P | Hangar cercano / reflector fijo del hangar |
+| F | Energía corporal cian omnidireccional del Engineer |
+| G / K / H | Reacción de Grunt 1 / inspección de Grunt 2 / vigilancia de Hunter; en proximidad |
+| B / J | Caminata / saludo articulado del BT-7274, en proximidad y sin otra animación suya activa |
+| L / T / O | Lanzar / solicitar reposición / observar o regresar |
+| M / - / + / Esc | Silencio / volumen / salir |
 
-## Ramas
+El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. Los restos permanecen apoyados hasta reiniciar y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
 
-Todas las ramas parten del mismo commit inicial completo:
+## Organización del equipo
 
-- `main`: base funcional e integración del equipo.
-- `planeta1-john`: desarrollo de Planeta 1.
-- `planeta2-integrante1`: primer compañero de Planeta 2.
-- `planeta2-integrante2`: segundo compañero de Planeta 2.
-- `espacio-integrante3`: compañero encargado de Espacio.
+- `src/Regiones/Planeta1/`: John, rama `planeta1-john`.
+- `src/Regiones/Planeta2/`: ramas `planeta2-integrante1` y `planeta2-integrante2`.
+- `src/Regiones/Espacio/`: rama `espacio-integrante3`.
+- `main`: integración mediante revisión del equipo.
+- `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: interfaces y servicios compartidos; coordinar cambios.
+- `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y preparación reproducible.
 
-## Reglas de integración
+La base de Planeta 1 se publica en `planeta1-john`; Espacio y las adaptaciones compartidas están en `codex/integracion-planeta1-espacio`, sin modificar `main` ni las ramas de compañeros. Las regiones conservan avatar, orientación, cámara y sistemas al regresar; sus relojes se pausan mientras están inactivas. No se guarda la partida al cerrar el programa.
 
-Trabajamos en nuestra rama y proponemos cambios a `main` mediante pull request, con revisión de otro integrante y descripción de las pruebas realizadas. Evitamos subir compilaciones, ZIP o archivos personales y no forzamos cambios sobre las ramas de los demás. Los dos responsables de Planeta 2 acuerdan previamente qué archivos modifica cada uno.
+En Espacio, F3 sigue la nave y F4 permite observar Gateway con mouse/flechas. W acelera, S frena, A/D giran, Q/Z cambian altura, C recupera junto a Planeta 1. Enter permite entrar al planeta al estar cerca del punto de llegada (x=-210 o +210, y=z=0). Las teclas 1–3 siguen disponibles. Gateway tiene un volumen de colisión conservador, sin interior transitable. Una segunda Banshee recorre una aproximación, espera y retirada cada 40 s. Las esferas planetarias son referencias visuales, no sustituyen el escenario de Planeta 2. La música continúa en Espacio.
 
-Conservamos la estructura y el contrato `Escenario` de `src/Mundo/Escenario.h`: posiciones locales, eje Y hacia arriba, actualización con `deltaTime`, carga y liberación de recursos por región. `RegistroEscenarios` registra los tres módulos; `ContextoEscena` proporciona los servicios comunes. Las regiones no crean otra ventana ni otro ciclo principal. Los cambios en gestores, cámaras, renderizador, núcleo e interfaces se coordinan con todo el equipo. Al agregar fuentes, actualizamos el proyecto de Visual Studio y CMake de manera compatible.
+La entrega ZIP contiene EXE y PDB de Release x64 en su raíz. El PDB es para depuración, no hace falta para jugar. `Herramientas/preparar_espacio.py` requiere NumPy y Pillow únicamente para regenerar recursos desde el GLB de NASA.
 
-**Pendientes prioritarios de integración:** persistencia independiente de cada región; conservación de posición del avatar, cámara y orientación al regresar; ciclos de día/noche que no se reinicien; y completar los cuatro recorridos de cámara exigidos por el profesor. Actualmente `GestorEscenarios::activar` carga/libera regiones, `Aplicacion::cambiarRegion` restablece avatar y cámara, y `Planeta1::cargar` reinicia sus sistemas. Estos puntos quedan identificados, sin modificar su funcionamiento en esta publicación.
+## Atribuciones
 
-## Recursos y atribuciones
+Conservamos las atribuciones de recursos Halo/Titanfall y Saturn V en `Recursos/Modelos`, la licencia CC0 de Kenney en `Recursos/Cielos` y las licencias de bibliotecas en `Dependencias`. BT-7274: Palurdas Arts, licencia CC-BY-4.0 declarada en el archivo; fuente y adaptación en `Recursos/Modelos/BT7274/ATRIBUCION.txt`. Los WAV se sintetizan para el proyecto y no contienen música comercial. La revisión académica privada no cambia los derechos de recursos de terceros.
 
-Incluimos los recursos completos del Bloque D para el trabajo académico privado del equipo: Banshee, Ghost, Engineer, NPC, espadas, Saturn V, texturas, skyboxes y audio. Conservamos los archivos de licencia y procedencia existentes. Los recursos de terceros no son de nuestra autoría; el carácter privado del repositorio no se presenta como una licencia de redistribución. No cambiar la visibilidad ni redistribuir los recursos fuera del equipo sin revisar sus permisos.
-
-Los skyboxes de Kenney conservan su licencia CC0 en `Recursos/Cielos/License.txt`. El audio sintetizado conserva su procedencia y generador. Las atribuciones de modelos están en `Recursos/Modelos/` y las licencias de bibliotecas, en `Dependencias/`.
-
-## Bloque E — resumen de Planeta 1
-
-- Saturn V: ascenso de 20 s, separación de dos etapas reales a los 7 y 11 s, llamas dobles y reposición mediante compuerta en 8,5 s. Se conservan el modelo y la plataforma originales junto a sus derivados. Si pulsamos T durante el vuelo, la reposición espera al final; si el cohete está preparado, primero desciende. No transporta al avatar.
-- Engineer: escala 1,05, pose completamente inmóvil en reposo y articulaciones activas al caminar/correr. Velocidades 15/30, sin salto.
-- Iluminación: ciclo 120 s conservado; mayor presencia local de las luces Sentinel y linterna más amplia que gira con el avatar.
-- Audio: música/ambiente independientes, efectos condicionados y volumen de propulsión según distancia a su motor, suavizado por el mezclador existente. Sin bibliotecas nuevas.
-
-### Controles conservados
-
-| Teclas | Acción |
-| --- | --- |
-| 1 / 2 / 3 | Planeta 1 / Planeta 2 / Espacio, igual que en D |
-| F1 / F2 / F3 / F4 | Exploración / carrera / vista previa / observación, según compatibilidad original; F4 permanece reservado a Espacio |
-| WASD / Shift | Movimiento relativo a cámara / correr; en carrera W acelera, S frena, A/D dirigen |
-| Mouse / flechas izquierda-derecha / Tab | Cámara / órbita / liberar o capturar cursor |
-| X / R / C | Abordar o descender con nave detenida / reiniciar carrera / recuperar con penalización de 2 s |
-| E / G | Hangar cercano / reacción del Grunt cercano |
-| L / T / O | Lanzar / solicitar reposición / observar cohete y regresar |
-| F / M / - / + | Linterna / silencio / volumen |
-| Esc | Salir |
-
-L requiere estar a 8–65 unidades de la plataforma; T, a 9–90 unidades, fuera del brocal. Las interacciones del cohete no se activan durante la carrera. O permite observar el evento, sin viaje interplanetario.
-
-### Inventario de animaciones (sin doble conteo)
-
-| Objeto | Categoría | Implementación y actualización |
-| --- | --- | --- |
-| Puerta del hangar | Básica por teclado | `Planeta1.cpp`: `controlar` con E, `actualizar` interpola altura |
-| Saturn V | Básica por teclado | `SistemasPlaneta1`: L inicia y `actualizar` integra el tiempo; `Planeta1::dibujar` aplica posición y llama |
-| Grunt 1 | Básica por teclado | G cercano; `SistemasPlaneta1::animacionNPC(0)` |
-| Sentinel 1 | Continua | `SistemasPlaneta1::sentinel(0)` y `giroSentinel(0)` |
-| Sentinel 2 | Continua | `SistemasPlaneta1::sentinel(1)` y `giroSentinel(1)` |
-| Grunt 3 | Continua | `SistemasPlaneta1::animacionNPC(2)`, giro de vigilancia |
-| Grunt 2 | Keyframes | `SistemasPlaneta1::animacionNPC(1)`: cinco estados temporales e interpolación |
-| Hunter | Keyframes | `SistemasPlaneta1::animacionNPC(3)`: cinco estados temporales e interpolación |
-| Engineer | Locomoción jerárquica, fuera del conteo de keyframes | `Avatar::mover`, `Engineer::animar` |
-
-La separación del Saturn V también usa keyframes explícitos (`etapas`), pero no contamos nuevamente el cohete para completar las cantidades. La compuerta forma parte de su reposición. No se cuenta el satélite de Espacio como contenido de Planeta 1 ni se modifica.
-
-### Validación y límites
-
-Se compilaron los conjuntos de cambios en Visual Studio 2022 Release x64 y se ejecutó `--pruebas`: regresión de carrera (3 vueltas, 24 checkpoints, penalización), colisiones, modelos, iluminación, cámaras y nuevas pruebas E de separación, reposición a 30/60/144 pasos por segundo, inmovilidad y velocidades del avatar, eventos y atenuación de audio. Las pruebas generan sus evidencias fuera de la entrega.
-
-Se inspeccionaron capturas reales de OpenGL: etapas separadas, compuerta y elevación, Engineer y luces. Las dos imágenes de reposo son idénticas. La revisión interactiva de ventana comprobó X, C, F, movimiento W, F3/F4 y 1/2/3; no equivale a una partida completa jugada manualmente. No se realizó evaluación auditiva humana: se verificaron el dispositivo, los buffers de audio, los eventos y los niveles calculados. Los cuatro recorridos completos, la persistencia entre regiones y el contenido de los compañeros siguen siendo asuntos de integración general.
+Gateway: recurso oficial NASA/JSC/Gateway Program Office; procedencia y adaptación en `Recursos/Modelos/Gateway/PROCEDENCIA.txt`. Texturas planetarias y cielo espacial: síntesis propia, no fotografías científicas.

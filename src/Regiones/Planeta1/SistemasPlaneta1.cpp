@@ -1,10 +1,15 @@
 #include "SistemasPlaneta1.h"
 #include "TerrenoPlaneta1.h"
+#include "CircuitoCarreras.h"
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <stdexcept>
 #include <glm/gtc/matrix_transform.hpp>
 void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
+    if (!animacionCohete_.Leer((p.parent_path() / "Animaciones/keyframescohete.txt").string()) ||
+        animacionCohete_.Cantidad() != 72)
+        throw std::runtime_error("Saturn V: no se pudieron cargar los 72 keyframes definitivos");
     std::ifstream f(p);
     std::string linea;
     while (std::getline(f, linea)) {
@@ -25,14 +30,22 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
 }
 void SistemasPlaneta1::actualizar(float dt) {
     tiempo += dt;
+    if (inspeccion >= 0 && (inspeccion += dt) >= 8)
+        inspeccion = -1;
+    if (saludo >= 0 && (saludo += dt) >= 6)
+        saludo = -1;
+    if (titan >= 0 && (titan += dt) >= 14)
+        titan = -1;
+    if (hunter >= 0 && (hunter += dt) >= 8)
+        hunter = -1;
     float avanceReposicion = dt;
     if (lanzamiento >= 0) {
         float previo = lanzamiento;
-        lanzamiento = std::min(22.f, lanzamiento + dt);
-        if (reposicionPendiente && lanzamiento >= 20) {
+        lanzamiento += dt;
+        if (lanzamiento >= 70) {
             reposicionPendiente = false;
             reiniciar();
-            avanceReposicion = std::max(0.f, previo + dt - 20.f);
+            avanceReposicion = std::max(0.f, previo + dt - 70.f);
         }
     }
     if (reposicion >= 0) {
@@ -75,10 +88,10 @@ Iluminacion SistemasPlaneta1::luces() const {
     for (int i = 0; i < 6; ++i) {
         auto &p = l.puntuales[i];
         p.posicion = pos[i];
-        p.color = i == 5   ? glm::vec3(.35f, .6f, 1)
+        p.color = i == 5   ? glm::vec3(.7f, .18f, 1)
                   : i == 4 ? glm::vec3(.4f, .85f, 1)
                            : glm::vec3(1, .68f, .38f);
-        p.intensidad = 5 * l.noche;
+        p.intensidad = (i == 5 ? 7.f : 5.f) * l.noche;
         p.encendida = l.noche > .001f;
     }
     // Reutilizar las dos plazas libres: luz corta solidaria a cada patrulla.
@@ -86,29 +99,46 @@ Iluminacion SistemasPlaneta1::luces() const {
         auto &p = l.puntuales[6 + i];
         p.posicion = sentinel(i) + glm::vec3(0, -.3f, 0);
         p.color = {.35f, .65f, 1.f};
-        p.intensidad = 5.f * l.noche;
-        p.atenuacion = {1.f, .22f, .10f};
+        p.intensidad = 6.5f * l.noche;
+        p.atenuacion = {1.f, .07f, .025f};
         p.encendida = l.noche > .001f;
     }
+    for (int i = 0; i < 4; ++i) {
+        auto q = CircuitoCarreras::muestra(CircuitoCarreras::Longitud * (i + .125f) / 4);
+        auto &p = l.puntuales[9 + i];
+        p.posicion = CircuitoCarreras::origen() + q.posicion + glm::vec3(0, 7, 0);
+        p.color = {.3f, .65f, 1};
+        p.intensidad = 4 * l.noche;
+        p.atenuacion = {1, .045f, .008f};
+        p.encendida = l.noche > .001f;
+    }
+    l.foco = reflector;
+    l.focoPos = {165, 12, -76};
+    l.focoDir = glm::normalize(glm::vec3(0, -.65f, 1));
     return l;
 }
 namespace {
-float alturaAscenso(float lanzamiento) {
-    float t = std::max(0.f, lanzamiento - 3.f);
-    return 5.22f + 5.5f * t * t;
-}
 float suave(float a, float b, float t) {
     return glm::smoothstep(a, b, t);
+}
+const glm::vec3 origenSaturn(205, 5.22f, 21);
+const float separacion[] = {7, 11, 15};
+const float contacto[] = {17, 21, 24};
+glm::mat4 matrizClave(const KeyframesCohete &a, int i, double t) {
+    auto c = a.Evaluar(i, t);
+    return glm::translate(glm::mat4(1), c.posicion) * glm::mat4_cast(c.orientacion) *
+           glm::translate(glm::mat4(1), -a.Pista(i).pivote);
 }
 } // namespace
 void SistemasPlaneta1::reiniciar() {
     if (reposicion >= 0)
-        return; // Una pulsacion repetida no reinicia la maquinaria.
-    if (lanzamiento >= 0 && lanzamiento < 20) {
-        reposicionPendiente = true; // Terminar el vuelo antes de suministrar otro cohete.
+        return;
+    if (lanzamiento >= 0 && lanzamiento < 70) {
+        reposicionPendiente = true;
         return;
     }
     retirarPreparado = lanzamiento < 0;
+    animacionCohete_.Reiniciar();
     lanzamiento = -1;
     reposicion = 0;
 }
@@ -118,44 +148,61 @@ float SistemasPlaneta1::aperturaCompuerta() const {
     return suave(0, 1, reposicion) * (1 - suave(7, 8.5f, reposicion));
 }
 glm::vec3 SistemasPlaneta1::cohete() const {
+    auto p = origenSaturn;
     if (reposicion >= 0) {
         float bajada = retirarPreparado ? suave(1, 3.5f, reposicion) : 1;
-        float subida = suave(3.5f, 7, reposicion);
-        return {205, 5.22f - 54 * bajada * (1 - subida), 21};
+        p.y -= 54 * bajada * (1 - suave(3.5f, 7, reposicion));
     }
-    float t = std::max(0.f, lanzamiento - 3);
-    return {205 + std::max(0.f, t - 7) * 1.8f, alturaAscenso(lanzamiento), 21};
+    return p; // Raiz constante durante el vuelo. El TXT contiene todo el ascenso.
 }
-std::array<glm::mat4, 3> SistemasPlaneta1::etapas() const {
-    std::array<glm::mat4, 3> resultado{glm::mat4(1), glm::mat4(1), glm::mat4(1)};
-    if (reposicion >= 0)
-        return resultado;
-    // Cada pista transforma una seccion REAL, cortada en las uniones del Saturn V.
-    // Estados de tiempo, desplazamiento y giro; interpolacion suave entre claves.
-    const float tiempos[] = {0, 1.5f, 3, 6, 10, 14};
-    const glm::vec3 posiciones[] = {{0, 0, 0},   {7, 55, 0},     {18, 80, 2},
-                                    {40, 70, 5}, {70, -150, 10}, {95, -500, 15}};
-    const float giros[] = {0, .12f, .32f, .70f, 1.1f, 1.4f};
-    for (int etapa = 0; etapa < 2; ++etapa) {
-        float separacion = etapa == 0 ? 7.f : 11.f;
-        float t = lanzamiento - separacion;
-        if (t <= 0)
-            continue;
-        int k = 0;
-        while (k < 4 && t > tiempos[k + 1])
-            ++k;
-        float u = suave(tiempos[k], tiempos[k + 1], t);
-        auto desplazamiento = glm::mix(posiciones[k], posiciones[k + 1], u);
-        desplazamiento.x *= etapa == 0 ? 1 : -1;
-        desplazamiento.y *= etapa == 0 ? 1 : 2;
-        glm::vec3 origen(205 + std::max(0.f, separacion - 10) * 1.8f, alturaAscenso(separacion),
-                         21);
-        auto pivote = glm::vec3(0, etapa == 0 ? 9.f : 24.7f, 0);
-        auto m = glm::translate(glm::mat4(1), origen + desplazamiento - cohete() + pivote);
-        m = glm::rotate(m, glm::mix(giros[k], giros[k + 1], u), glm::vec3(0, 0, 1));
-        resultado[etapa] = glm::translate(m, -pivote);
+void SistemasPlaneta1::calibrarApoyo(const std::array<std::vector<glm::vec3>, 4> &v,
+                                     const std::function<float(float, float)> &altura) {
+    for (int i = 0; i < 3; ++i) {
+        if (v[i].empty())
+            throw std::runtime_error("Saturn V: etapa sin geometria");
+        auto m = matrizClave(animacionCohete_, i, 24);
+        float ajuste = -10000;
+        for (auto q : v[i]) {
+            q = origenSaturn + glm::vec3(m * glm::vec4(q, 1));
+            ajuste = std::max(ajuste, altura(q.x, q.z) + .03f - q.y);
+        }
+        ajusteSuelo_[i] = ajuste;
     }
-    return resultado;
+    if (v[3].empty())
+        throw std::runtime_error("Saturn V: falta capsula independiente");
+}
+std::array<glm::mat4, 4> SistemasPlaneta1::etapas() const {
+    std::array<glm::mat4, 4> m;
+    for (int i = 0; i < 4; ++i) {
+        m[i] = matrizClave(animacionCohete_, i, std::max(0.f, lanzamiento));
+        if (i < 3 && lanzamiento >= separacion[i]) {
+            // Adaptacion de apoyo autorizada: solo altura, sin editar el TXT ni la capsula.
+            // Alcanzar el ajuste antes del contacto evita hundir piezas en la ladera.
+            float u = suave(separacion[i], contacto[i] - 2, lanzamiento);
+            m[i] = glm::translate(glm::mat4(1), {0, ajusteSuelo_[i] * u, 0}) * m[i];
+        }
+    }
+    // Variante del proyecto: S-IVB y capsula permanecen unidas tras la segunda separacion.
+    if (lanzamiento >= 11) {
+        float u = lanzamiento - 11;
+        auto c = animacionCohete_.Evaluar(2, 11);
+        auto pos = c.posicion + c.velocidad * u + glm::vec3(.08f * u * u, .5f * u * u, 0);
+        auto giro = glm::angleAxis(-.28f * glm::smoothstep(0.f, 30.f, u), glm::vec3(0, 0, 1));
+        auto vuelo = glm::translate(glm::mat4(1), pos) * glm::mat4_cast(giro) *
+                     glm::translate(glm::mat4(1), -animacionCohete_.Pista(2).pivote);
+        m[2] = m[3] = vuelo;
+    }
+    // Los restos permanecen apoyados hasta reiniciar el ciclo de lanzamiento.
+    return m;
+}
+glm::vec3 SistemasPlaneta1::fuenteMotor() const {
+    int i = lanzamiento < 7 ? 0 : lanzamiento < 11 ? 1 : 2;
+    float base = i == 0 ? 0.f : i == 1 ? 17.949953f : 31.532417f;
+    return cohete() + glm::vec3(etapas()[i] * glm::vec4(0, base, 0, 1));
+}
+glm::vec3 SistemasPlaneta1::objetivoObservacion() const {
+    float t = std::min(13.f, std::max(0.f, lanzamiento));
+    return origenSaturn + animacionCohete_.Evaluar(3, t).posicion - glm::vec3(0, 22, 0);
 }
 
 glm::vec3 SistemasPlaneta1::sentinel(int i) const {
@@ -166,7 +213,8 @@ glm::vec3 SistemasPlaneta1::sentinel(int i) const {
 }
 float SistemasPlaneta1::giroSentinel(int i) const {
     float v = i == 0 ? .22f : -.18f, a = tiempo * v + i * 2;
-    return std::atan2(-12 * std::sin(a) * v, 8 * std::cos(a) * v);
+    // El frente de la malla original es +X, comprobado desde vistas ortogonales.
+    return std::atan2(-12 * std::sin(a) * v, 8 * std::cos(a) * v) - 1.570796327f;
 }
 glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
     glm::mat4 m(1);
@@ -183,7 +231,7 @@ glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
         const float t[] = {0, 2, 4, 6, 8};
         const float giro[] = {0, .5f, -.35f, .25f, 0};
         const float incl[] = {0, .12f, .05f, -.07f, 0};
-        float u = std::fmod(tiempo + (i == 3 ? 1.f : 0.f), 8.f);
+        float u = i == 3 ? std::max(0.f, hunter) : std::max(0.f, inspeccion);
         int k = 0;
         while (k < 3 && u > t[k + 1])
             ++k;

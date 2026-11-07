@@ -29,9 +29,13 @@ class ModeloGltf {
         float rugosidad = .85f, metal = 0;
     };
     std::vector<Parte> partes_;
+    std::array<std::vector<glm::vec3>, 4> verticesEtapas_;
     std::vector<glm::vec3> triangulos_, puerta_;
 
   public:
+    const auto &verticesEtapas() const {
+        return verticesEtapas_;
+    }
     const std::vector<glm::vec3> &triangulos() const {
         return triangulos_;
     }
@@ -40,5 +44,5 @@ class ModeloGltf {
     }
     explicit ModeloGltf(const std::filesystem::path &);
     void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,
-                 const std::array<glm::mat4, 3> *etapas = nullptr) const;
+                 const std::array<glm::mat4, 4> *etapas = nullptr) const;
 };

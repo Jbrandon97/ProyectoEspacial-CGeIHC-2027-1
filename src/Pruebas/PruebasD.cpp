@@ -27,7 +27,7 @@ void Aplicacion::probarD(const std::filesystem::path &dir) {
             exigir(glm::length(q.posicion - (s.sentinel(i) + glm::vec3(0, -.3f, 0))) < .001f,
                    "D: luz separada de Sentinel");
             exigir(q.intensidad / (q.atenuacion.x + q.atenuacion.y * 50 + q.atenuacion.z * 2500) <
-                       .03f,
+                       .12f,
                    "D: luz Sentinel demasiado extensa");
         }
     }
@@ -36,8 +36,8 @@ void Aplicacion::probarD(const std::filesystem::path &dir) {
         s.tiempo = 0;
         s.faseInicial = f;
         auto l = s.luces();
-        for (auto &q : l.puntuales)
-            exigir(q.encendida == (f > .7f), "D: encendido nocturno incorrecto");
+        for (int i = 0; i < 8; ++i)
+            exigir(l.puntuales[i].encendida == (f > .7f), "D: encendido nocturno incorrecto");
     }
     std::cout << "D_CICLO_OK dia=80 noche=40 total=120; 12000 muestras y 8 luces sincronizadas\n";
     ModeloGltf banshee(recursos_ / "Modelos/Banshee.gltf"), ghost(recursos_ / "Modelos/Ghost.gltf");

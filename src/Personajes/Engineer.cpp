@@ -103,9 +103,10 @@ void Engineer::animar(float tiempo, float actividad) {
         s.malla->actualizar(v, true);
     }
 }
-void Engineer::dibujar(Renderizador &r, const glm::mat4 &m) const {
+void Engineer::dibujar(Renderizador &r, const glm::mat4 &m, bool energia) const {
     for (auto &s : partes_)
-        r.texturada(*s.malla, m, s.textura->id(), glm::vec3(1), glm::vec3(0), .65f, .05f);
+        r.texturada(*s.malla, m, s.textura->id(), glm::vec3(1),
+                    energia ? glm::vec3(.008f, .035f, .065f) : glm::vec3(0), .65f, .05f);
 }
 float Engineer::desplazamientoExtremidad() const {
     return glm::length(glm::vec3(pose_[3] * inversas_[3] * glm::vec4(0, -1.47f, 0, 1)) -

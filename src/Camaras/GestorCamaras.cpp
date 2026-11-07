@@ -30,7 +30,7 @@ void GestorCamaras::alCambiarRegion(Region r) {
 void GestorCamaras::mirar(glm::vec2 d) {
     if (modo_ != ModoCamara::Carrera) {
         angulo_ += d.x * .003f;
-        inclinacion_ = std::clamp(inclinacion_ + d.y * .0025f, -.65f, 1.25f);
+        inclinacion_ = std::clamp(inclinacion_ + d.y * .0025f, -.85f, 1.25f);
     }
 }
 glm::vec2 GestorCamaras::movimientoRelativo(glm::vec2 e) const {
@@ -49,9 +49,10 @@ void GestorCamaras::seguir(glm::vec3 p, glm::vec3 frente, float dt,
         deseado = p + glm::vec3(std::sin(angulo_) * 85, 52, std::cos(angulo_) * 85);
     else {
         float distancia = modo_ == ModoCamara::Viaje ? 24.0f : 10.0f;
-        deseado = p + glm::vec3(-std::sin(angulo_) * distancia * std::cos(inclinacion_),
-                                2 + distancia * std::sin(inclinacion_),
-                                std::cos(angulo_) * distancia * std::cos(inclinacion_));
+        deseado =
+            p + glm::vec3(-std::sin(angulo_) * distancia * std::cos(std::max(-.45f, inclinacion_)),
+                          2 + distancia * std::sin(inclinacion_),
+                          std::cos(angulo_) * distancia * std::cos(std::max(-.45f, inclinacion_)));
         // Al mirar arriba, elevar el enfoque conserva cielo visible aun cuando
         // el suelo limita la altura del ojo. El avatar sigue dentro del encuadre.
         p.y += .7f + (modo_ == ModoCamara::Exploracion ? std::max(0.f, -inclinacion_) * 4.5f : 0.f);
@@ -90,4 +91,22 @@ const char *GestorCamaras::nombre() const {
     default:
         return "OBSERVACION";
     }
+}
+
+void GestorCamaras::seguirEspacio(glm::vec3 nave, glm::vec3 frente, glm::vec3 centro, float dt) {
+    glm::vec3 ojo, objetivo;
+    if (modo_ == ModoCamara::Observacion) {
+        // Recorrido orbital libre alrededor de Gateway y vista de los cuerpos celestes.
+        float elev = std::clamp(inclinacion_, .08f, 1.2f);
+        ojo = centro + glm::vec3(std::sin(angulo_) * 285 * std::cos(elev), 285 * std::sin(elev),
+                                 std::cos(angulo_) * 285 * std::cos(elev));
+        objetivo = centro;
+    } else {
+        objetivo = nave + frente * 6.f;
+        ojo = nave - frente * 18.f + glm::vec3(0, 7, 0);
+    }
+    float u = preparada_ ? 1 - std::exp(-6 * dt) : 1;
+    ojo_ = glm::mix(ojo_, ojo, u);
+    objetivo_ = glm::mix(objetivo_, objetivo, u);
+    preparada_ = true;
 }

@@ -3,6 +3,7 @@
 #include "Pruebas/Verificacion.h"
 #include "Regiones/Planeta1/CircuitoCarreras.h"
 #include "Regiones/Planeta1/Planeta1.h"
+#include "Regiones/Espacio/Espacio.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -33,6 +34,12 @@ Aplicacion::Aplicacion(const std::filesystem::path &r) : recursos_(r), renderiza
 }
 void Aplicacion::cambiarRegion(Region r) {
     ContextoEscena c{renderizador_, recursos_};
+    if (regionPreparada_) {
+        if (escenarios_.actual().id() == r)
+            return;
+        memoriaRegiones_[escenarios_.actual().id()] = {avatar_.guardar(), camaras_, foco_,
+                                                       observandoCohete_};
+    }
     if (escenarios_.activar(r, c)) {
         foco_ = false;
         observandoCohete_ = false;
@@ -41,6 +48,14 @@ void Aplicacion::cambiarRegion(Region r) {
         faseSonora_ = -1;
         avatar_.aparecer(escenarios_.actual());
         camaras_.alCambiarRegion(r);
+        if (memoriaRegiones_.count(r)) {
+            auto &prev = memoriaRegiones_.at(r);
+            avatar_.restaurar(prev.avatar);
+            camaras_ = prev.camara;
+            foco_ = prev.foco;
+            observandoCohete_ = prev.cohete;
+        }
+        regionPreparada_ = true;
         aviso_ = "Region preparada";
     }
 }
@@ -49,7 +64,8 @@ void Aplicacion::solicitarCamara(ModoCamara m) {
     foco_ = false;
     observandoCohete_ = false;
     auto estado = escenarios_.actual().actividad();
-    if (estado.ocupado && m != ModoCamara::Carrera) {
+    if (escenarios_.actual().id() == Region::Planeta1 && estado.ocupado &&
+        m != ModoCamara::Carrera) {
         aviso_ = "Desciende con X antes de cambiar camara";
         return;
     }
@@ -68,6 +84,12 @@ void Aplicacion::aplicarOrden(const OrdenActividad &orden) {
     if (despues.ocupado) {
         foco_ = false;
         observandoCohete_ = false;
+    }
+    if (e.id() == Region::Espacio) {
+        auto destino = dynamic_cast<Espacio &>(e).consumirDestino();
+        if (destino)
+            cambiarRegion(*destino);
+        return;
     }
     if (!antes.ocupado && despues.ocupado)
         camaras_.solicitar(ModoCamara::Carrera, e.id());
@@ -100,6 +122,8 @@ void Aplicacion::procesarEntradas(float dt) {
     o.acelerador = entradas_.mantenida(GLFW_KEY_W) ? 1.0f : 0.0f;
     o.freno = entradas_.mantenida(GLFW_KEY_S) ? 1.0f : 0.0f;
     o.giro = float(entradas_.mantenida(GLFW_KEY_D)) - float(entradas_.mantenida(GLFW_KEY_A));
+    o.vertical = float(entradas_.mantenida(GLFW_KEY_Q)) - float(entradas_.mantenida(GLFW_KEY_Z));
+    o.confirmar = entradas_.pulsada(GLFW_KEY_ENTER);
     o.interactuar = entradas_.pulsada(GLFW_KEY_X);
     o.reiniciar = entradas_.pulsada(GLFW_KEY_R);
     o.recuperar = entradas_.pulsada(GLFW_KEY_C);
@@ -107,6 +131,11 @@ void Aplicacion::procesarEntradas(float dt) {
     o.lanzar = entradas_.pulsada(GLFW_KEY_L);
     o.reiniciarCohete = entradas_.pulsada(GLFW_KEY_T);
     o.reaccion = entradas_.pulsada(GLFW_KEY_G);
+    o.titan = entradas_.pulsada(GLFW_KEY_B);
+    o.hunter = entradas_.pulsada(GLFW_KEY_H);
+    o.saludo = entradas_.pulsada(GLFW_KEY_J);
+    o.reflector = entradas_.pulsada(GLFW_KEY_P);
+    o.inspeccion = entradas_.pulsada(GLFW_KEY_K);
     bool explorar = escenarios_.actual().id() == Region::Planeta1 &&
                     !escenarios_.actual().actividad().ocupado &&
                     camaras_.modo() == ModoCamara::Exploracion;
@@ -129,12 +158,14 @@ void Aplicacion::actualizarCamara(float dt) {
     auto &e = escenarios_.actual();
     auto r = e.id();
     auto actividad = e.actividad();
+    if (r == Region::Espacio) {
+        camaras_.seguirEspacio(mundo_.aGlobal(r, actividad.objetivo), actividad.direccion,
+                               mundo_.aGlobal(r, {0, 0, 0}), dt);
+        return;
+    }
     if (observandoCohete_ && r == Region::Planeta1 && !actividad.ocupado) {
         auto &p = dynamic_cast<Planeta1 &>(e);
-        auto centro =
-            p.sistemas().cohete() + glm::vec3(0, p.sistemas().lanzamiento >= 11 ? 40 : 24, 0);
-        centro.y = std::clamp(centro.y, 29.22f, 240.f);
-        camaras_.encuadrarEvento(mundo_.aGlobal(r, centro));
+        camaras_.encuadrarEvento(mundo_.aGlobal(r, p.sistemas().objetivoObservacion()));
         return;
     }
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
@@ -164,21 +195,24 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     auto vp = camaras_.proyeccion(float(a) / b) * camaras_.vista(glm::vec3(0));
     auto ambiente = e.ambiente();
     auto &il = ambiente.iluminacion;
-    il.foco = foco_ && !observandoCohete_ && !actividad.ocupado && r == Region::Planeta1 &&
-              camaras_.modo() == ModoCamara::Exploracion;
-    // El haz gira con el Engineer: su origen queda dentro del cuerpo y no en la camara.
-    il.focoPos = mundo_.aGlobal(r, avatar_.posicion() + glm::vec3(0, .8f, 0));
-    il.focoDir = glm::normalize(glm::vec3(
-        mundo_.transformacion(r) * glm::vec4(avatar_.direccion() + glm::vec3(0, -.10f, 0), 0)));
+    // Spotlight fijo del hangar; el Engineer solo usa la puntual corporal.
+    auto &energia = il.puntuales[8];
+    energia.encendida = foco_ && !observandoCohete_ && !actividad.ocupado &&
+                        r == Region::Planeta1 && camaras_.modo() == ModoCamara::Exploracion;
+    energia.posicion = mundo_.aGlobal(r, avatar_.posicion() + glm::vec3(0, 1.1f, 0));
+    energia.color = {.12f, .65f, 1.f};
+    energia.intensidad = 1.65f;
+    energia.atenuacion = {1, .09f, .025f};
     renderizador_.iniciar(a, b, vp, ambiente, camaras_.ojo());
     ContextoEscena c{renderizador_, recursos_};
     e.dibujar(c, mundo_.transformacion(r));
     if (r != Region::Espacio && !actividad.ocupado)
-        avatar_.dibujar(c, mundo_.transformacion(r));
+        avatar_.dibujar(c, mundo_.transformacion(r), energia.encendida);
     auto lineas = actividad.mensajes;
     if (r == Region::Planeta1 && !actividad.ocupado)
-        lineas.push_back(observandoCohete_ ? "O / VOLVER A EXPLORACION"
-                                           : "F LINTERNA / O COHETE / M SILENCIO / - + VOLUMEN");
+        lineas.push_back(observandoCohete_
+                             ? "O / VOLVER A EXPLORACION"
+                             : "F ENERGIA CORPORAL / O COHETE / M SILENCIO / - + VOLUMEN");
     if (lineas.empty())
         lineas = {std::string(e.nombre()) + " / " + camaras_.nombre(),
                   "MODULO DE ETAPA 0 CONSERVADO / F1-F4 CAMARAS"};
@@ -187,8 +221,7 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     if (!captura.empty())
         renderizador_.capturar(captura, a, b);
     Renderizador::comprobarErrores();
-    ventana_.titulo(std::string("PROYECTO ESPACIAL | ") + e.nombre() + " | " + camaras_.nombre() +
-                    " | " + aviso_);
+    ventana_.titulo("PROYECTO ESPACIAL");
     ventana_.presentar();
 }
 int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Region inicial) {
@@ -221,6 +254,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
         std::cout << "INTEGRACION_OK 9 transiciones, 36 intentos camara, misma ventana, shaders "
                      "y GL sin errores\n";
         probarCarrera(evidencias);
+        probarEspacio(evidencias);
         escenarios_.liberar();
         Renderizador::comprobarErrores();
         return 0;
@@ -462,14 +496,19 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
 
 void Aplicacion::actualizarAudio() {
     bool activo = escenarios_.actual().id() == Region::Planeta1;
-    audio_.bucle(Audio::Musica, activo ? .65f : 0);
+    audio_.bucle(Audio::Musica, activo                                         ? .65f
+                                : escenarios_.actual().id() == Region::Espacio ? .45f
+                                                                               : 0);
     audio_.bucle(Audio::Ambiente, activo ? .7f : 0);
     if (!activo) {
         audio_.bucle(Audio::Motor, 0);
         audio_.bucle(Audio::Cohete, 0);
+        audio_.bucle(Audio::Covenant, 0);
         return;
     }
     auto &p = dynamic_cast<Planeta1 &>(escenarios_.actual());
+    float distanciaCovenant = glm::length(avatar_.posicion() - glm::vec3(-145, 5, -63));
+    audio_.bucle(Audio::Covenant, .65f / (1 + distanciaCovenant * distanciaCovenant / 225.f));
     audio_.bucle(Audio::Cohete, p.sistemas().motor()
                                     ? .8f * Audio::atenuacionDistancia(glm::length(
                                                 avatar_.posicion() - p.sistemas().fuenteMotor()))

@@ -25,14 +25,14 @@ void Avatar::mover(glm::vec2 d, float dt, const Escenario &e, bool correr) {
         orientacion_ = std::atan2(-d.y, d.x);
     posicion_.y = e.altura(posicion_.x, posicion_.z) + 1;
 }
-void Avatar::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
+void Avatar::dibujar(ContextoEscena &c, const glm::mat4 &m, bool energia) const {
     if (sobrePlaneta1_) {
         if (!engineer_)
             engineer_ = std::make_unique<Engineer>(c.recursos / "Modelos/Engineer.gltf");
         engineer_->animar(tiempo_, actividad_);
-        auto modelo = glm::translate(m, posicion_ + glm::vec3(0, .65f, 0));
+        auto modelo = glm::translate(m, posicion_ + glm::vec3(0, 1.0f, 0));
         modelo = glm::rotate(modelo, orientacion_, glm::vec3(0, 1, 0));
-        engineer_->dibujar(c.renderizador, glm::scale(modelo, glm::vec3(1.05f)));
+        engineer_->dibujar(c.renderizador, glm::scale(modelo, glm::vec3(1.26f)), energia);
         return;
     }
     auto apoyo = posicion_ + glm::vec3(0, sobrePlaneta1_ ? -.3f : 0.0f, 0);

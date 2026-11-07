@@ -10,8 +10,8 @@
 Audio::Audio(const std::filesystem::path &r) {
     const char *nombres[] = {"Orbita_ambiental", "Viento_instalaciones", "Puerta_hangar",
                              "Propulsion",       "Motor_nave",           "Inicio_carrera",
-                             "Final_carrera"};
-    for (int i = 0; i < 7; ++i) {
+                             "Final_carrera",    "Energia_Covenant"};
+    for (int i = 0; i < 8; ++i) {
         std::ifstream f(r / "Audio" / (std::string(nombres[i]) + ".wav"), std::ios::binary);
         std::vector<char> b((std::istreambuf_iterator<char>(f)), {});
         if (b.size() < 44 || std::memcmp(b.data(), "RIFF", 4))
@@ -145,7 +145,7 @@ void Audio::ejecutar() {
 
 void Audio::detenerEfectos() {
     std::lock_guard<std::mutex> l(mutex_);
-    for (int i = 2; i < 7; ++i)
+    for (int i = 2; i < 8; ++i)
         voces_[i].objetivo = 0;
 }
 

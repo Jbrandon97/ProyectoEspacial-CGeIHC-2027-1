@@ -23,8 +23,10 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
         if (seleccionCielo_ != ambiente.cielo) {
             cieloDia_ =
                 std::make_unique<Textura>(recursos_ / "Cielos" / ambiente.cielo / "skybox-day.png");
-            cieloNoche_ = std::make_unique<Textura>(recursos_ / "Cielos" / ambiente.cielo /
-                                                    "skybox-night.png");
+            cieloNoche_ = ambiente.cielo == "Espacio"
+                              ? nullptr
+                              : std::make_unique<Textura>(recursos_ / "Cielos" / ambiente.cielo /
+                                                          "skybox-night.png");
             seleccionCielo_ = ambiente.cielo;
         }
         cielo_.usar();
@@ -32,13 +34,18 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
         cielo_.vector("ojo", ojo);
         cielo_.vector("mezcla", {l.noche, 0, 0});
         glm::vec3 astro = glm::normalize(glm::vec3(-.54f, .78f, .31f));
-        cielo_.matriz("rotDia", glm::mat4_cast(glm::rotation(glm::normalize(l.sol), astro)));
-        cielo_.matriz("rotNoche", glm::mat4_cast(glm::rotation(-glm::normalize(l.sol), astro)));
+        cielo_.matriz("rotDia", ambiente.cielo == "Espacio"
+                                    ? glm::mat4(1)
+                                    : glm::mat4_cast(glm::rotation(glm::normalize(l.sol), astro)));
+        cielo_.matriz("rotNoche",
+                      ambiente.cielo == "Espacio"
+                          ? glm::mat4(1)
+                          : glm::mat4_cast(glm::rotation(-glm::normalize(l.sol), astro)));
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cieloDia_->id());
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, cieloNoche_->id());
+        glBindTexture(GL_TEXTURE_2D, (cieloNoche_ ? cieloNoche_->id() : cieloDia_->id()));
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         cielo_.entero("dia", 0);
         cielo_.entero("noche", 1);
@@ -57,7 +64,7 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
     shader_.vector("solDir", l.sol);
     shader_.vector("solColor", l.colorSol);
     shader_.vector("ojo", ojo);
-    for (int i = 0; i < 8; ++i) {
+    for (int i = 0; i < 16; ++i) {
         auto &p = l.puntuales[i];
         auto nombre = "pLuces[" + std::to_string(i) + "]";
         shader_.vector((nombre + ".pos").c_str(), p.posicion);

@@ -24,6 +24,9 @@ class Renderizador {
     void recortarDebajo(float altura) {
         shader_.vector("recorte", {altura, 0, 0});
     }
+    void densidadHumo(float transparencia) {
+        shader_.vector("humo", {transparencia, 0, 0});
+    }
     void material(float rugosidad, float metal = 0);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));

@@ -6,9 +6,11 @@ class GestorCamaras {
     ModoCamara modo_ = ModoCamara::Exploracion;
     float angulo_ = 0, inclinacion_ = .28f;
     glm::vec3 ojo_{0}, objetivo_{0};
-    bool preparada_ = false;
+    bool preparada_ = false, cabina_ = false;
 
   public:
+    void alternarCabina() { cabina_ = !cabina_; preparada_ = false; }
+    bool cabina() const { return cabina_; }
     static bool compatible(ModoCamara modo, Region region);
     bool solicitar(ModoCamara modo, Region region);
     void alCambiarRegion(Region region);

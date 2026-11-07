@@ -11,6 +11,7 @@ struct OrdenActividad {
     bool puerta = false, lanzar = false, reiniciarCohete = false, reaccion = false;
     float vertical = 0;
     bool confirmar = false;
+    glm::vec2 mirada{0};
 };
 struct EstadoActividad {
     bool ocupado = false;

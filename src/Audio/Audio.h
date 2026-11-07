@@ -16,7 +16,7 @@ class Audio {
         float objetivo = 0, ganancia = 0;
         bool bucle = false, activa = false;
     };
-    std::array<Voz, 8> voces_;
+    std::array<Voz, 9> voces_;
     HWAVEOUT salida_ = nullptr;
     std::thread hilo_;
     std::mutex mutex_;
@@ -27,7 +27,7 @@ class Audio {
     void ejecutar();
 
   public:
-    enum Sonido { Musica, Ambiente, Puerta, Cohete, Motor, Inicio, Final, Covenant };
+    enum Sonido { Musica, Ambiente, Puerta, Cohete, Motor, Inicio, Final, Covenant, MusicaEspacio };
     explicit Audio(const std::filesystem::path &);
     ~Audio();
     // Distancia en unidades del mundo; a 45 unidades queda la mitad de energia.
@@ -37,6 +37,7 @@ class Audio {
         size_t cursor;
         bool activa;
         unsigned inicios;
+        float ganancia;
     };
     EstadoVoz estado(Sonido);
     void bucle(Sonido, float);

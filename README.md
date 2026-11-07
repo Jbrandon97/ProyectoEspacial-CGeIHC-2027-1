@@ -43,9 +43,15 @@ El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsul
 - `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: interfaces y servicios compartidos; coordinar cambios.
 - `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y preparación reproducible.
 
-Rama de trabajo: `planeta1--BRAND-ON`. Conserva todos los avances de Planeta 1 y la versión de Espacio que ya había sido integrada por el equipo. Las mejoras nuevas de vuelo, primera persona y música espacial se desarrollan exclusivamente en `espacio-DAVID`, en otra carpeta; no forman parte del ZIP `Proyecto_Espacial_Final_1.zip`.
+Rama de trabajo: `espacio-DAVID`, carpeta independiente. Incorporamos la base funcional publicada conservando el historial; el remoto anterior de David sólo contenía el módulo provisional. Los cambios nuevos están en Espacio y sus interfaces de entrada, cámara y audio. Planeta 1 conserva su base y Planeta 2 no se modifica.
 
-La posición, orientación, cámara y sistemas se conservan entre regiones mientras el programa está abierto; sus relojes se pausan al salir. Las teclas 1–3 permanecen. No se modifican Planeta 2 ni main. La integración definitiva requiere revisar las ramas de los compañeros.
+En Espacio: F3 piloto, V alterna primera persona/exterior, F4 observación de Gateway. W acelera y S frena; A/D giran; mouse orienta la nave horizontal y verticalmente. Q/Z conservan ascenso/descenso, C recuperación y Enter visita contextual al planeta cercano. F4 conserva órbita con mouse/flechas; los mandos de vuelo sólo se aplican en F3. 1–3 mantienen el cambio de región.
+
+El piloto y la nave comparten posición y orientación. Los giros se amortiguan, velocidad limitada a 40 u/s y colisiones en subpasos. El modelo Banshee no contiene una cabina interior: en primera persona ocultamos su exterior para evitar ver polígonos desde dentro, sin inventar otra nave ni una cámara libre. La cámara sigue fija al piloto.
+
+`Horizonte_espacial.wav` es una composición ambiental original de 48 s con frecuencias y envolventes periódicas. Entra y sale mediante fundidos; la música de Planeta 1 conserva su recurso. El mezclador existente maneja ambas pistas por región. Generación: `Herramientas/generar_audio_espacio.py` con NumPy.
+
+La posición, orientación, cámara y sistemas regionales se conservan durante la ejecución. No hay guardado al cerrar. La entrega `Proyecto_Espacial_Final_1.zip` corresponde exclusivamente a la rama `planeta1--BRAND-ON`, por lo que estas mejoras nuevas se prueban y desarrollan desde esta rama de David.
 
 ## Atribuciones
 

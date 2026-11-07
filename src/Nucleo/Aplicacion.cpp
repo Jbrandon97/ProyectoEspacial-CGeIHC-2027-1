@@ -115,7 +115,9 @@ void Aplicacion::procesarEntradas(float dt) {
         audio_.volumen(-.1f);
     if (entradas_.pulsada(GLFW_KEY_EQUAL))
         audio_.volumen(.1f);
-    camaras_.mirar(entradas_.raton());
+    bool pilotando = escenarios_.actual().id() == Region::Espacio && camaras_.modo() == ModoCamara::Viaje;
+    if (pilotando && entradas_.pulsada(GLFW_KEY_V)) camaras_.alternarCabina();
+    if (!pilotando) camaras_.mirar(entradas_.raton());
     camaras_.orbitar(entradas_.orbita() * dt);
     OrdenActividad o;
     o.avatar = avatar_.posicion();
@@ -124,6 +126,8 @@ void Aplicacion::procesarEntradas(float dt) {
     o.giro = float(entradas_.mantenida(GLFW_KEY_D)) - float(entradas_.mantenida(GLFW_KEY_A));
     o.vertical = float(entradas_.mantenida(GLFW_KEY_Q)) - float(entradas_.mantenida(GLFW_KEY_Z));
     o.confirmar = entradas_.pulsada(GLFW_KEY_ENTER);
+    if (pilotando) o.mirada = entradas_.raton();
+    if (escenarios_.actual().id() == Region::Espacio && !pilotando) o.acelerador = o.freno = o.giro = o.vertical = 0;
     o.interactuar = entradas_.pulsada(GLFW_KEY_X);
     o.reiniciar = entradas_.pulsada(GLFW_KEY_R);
     o.recuperar = entradas_.pulsada(GLFW_KEY_C);
@@ -159,6 +163,7 @@ void Aplicacion::actualizarCamara(float dt) {
     auto r = e.id();
     auto actividad = e.actividad();
     if (r == Region::Espacio) {
+        dynamic_cast<Espacio &>(e).mostrarNave(!(camaras_.modo() == ModoCamara::Viaje && camaras_.cabina()));
         camaras_.seguirEspacio(mundo_.aGlobal(r, actividad.objetivo), actividad.direccion,
                                mundo_.aGlobal(r, {0, 0, 0}), dt);
         return;
@@ -499,12 +504,12 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
 
 void Aplicacion::actualizarAudio() {
     bool activo = escenarios_.actual().id() == Region::Planeta1;
-    audio_.bucle(Audio::Musica, activo                                         ? .65f
-                                : escenarios_.actual().id() == Region::Espacio ? .45f
-                                                                               : 0);
+    bool espacio = escenarios_.actual().id() == Region::Espacio;
+    audio_.bucle(Audio::Musica, activo ? .65f : 0);
+    audio_.bucle(Audio::MusicaEspacio, espacio ? .55f : 0);
     audio_.bucle(Audio::Ambiente, activo ? .7f : 0);
     if (!activo) {
-        audio_.bucle(Audio::Motor, 0);
+        audio_.bucle(Audio::Motor, espacio ? .10f * dynamic_cast<Espacio &>(escenarios_.actual()).velocidad() / 40.f : 0);
         audio_.bucle(Audio::Cohete, 0);
         audio_.bucle(Audio::Covenant, 0);
         return;

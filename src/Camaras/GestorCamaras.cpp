@@ -94,6 +94,15 @@ const char *GestorCamaras::nombre() const {
 }
 
 void GestorCamaras::seguirEspacio(glm::vec3 nave, glm::vec3 frente, glm::vec3 centro, float dt) {
+    if (modo_ == ModoCamara::Viaje && cabina_) {
+        auto derecha = glm::normalize(glm::cross(frente, glm::vec3(0, 1, 0)));
+        auto arriba = glm::cross(derecha, frente);
+        // El piloto comparte la transformacion de la nave; su giro ya esta amortiguado.
+        ojo_ = nave + arriba * 1.6f + frente * .55f;
+        objetivo_ = ojo_ + frente * 20.f;
+        preparada_ = true;
+        return;
+    }
     glm::vec3 ojo, objetivo;
     if (modo_ == ModoCamara::Observacion) {
         // Recorrido orbital libre alrededor de Gateway y vista de los cuerpos celestes.

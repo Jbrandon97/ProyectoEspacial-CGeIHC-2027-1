@@ -43,10 +43,12 @@ void Espacio::cargar(ContextoEscena &c) {
     satelite_ = std::make_unique<Malla>(v);
 }
 glm::vec3 Espacio::direccion() const {
-    return {std::sin(rumbo_), 0, -std::cos(rumbo_)};
+    return {std::sin(rumbo_) * std::cos(cabeceo_), std::sin(cabeceo_), -std::cos(rumbo_) * std::cos(cabeceo_)};
 }
 void Espacio::controlar(const OrdenActividad &o) {
     orden_ = o;
+    rumboObjetivo_ += glm::clamp(o.mirada.x, -100.f, 100.f) * .0022f;
+    cabeceoObjetivo_ = glm::clamp(cabeceoObjetivo_ - glm::clamp(o.mirada.y, -100.f, 100.f) * .0022f, -1.1f, 1.1f);
     if (o.confirmar)
         for (int i = 0; i < 2; ++i)
             if (glm::length(posicion_ - glm::vec3(i ? 210.f : -210.f, 0, 0)) < 28)
@@ -54,7 +56,8 @@ void Espacio::controlar(const OrdenActividad &o) {
     if (o.recuperar) {
         posicion_ = {-210, 0, 0};
         velocidad_ = 0;
-        rumbo_ = pi / 2;
+        rumbo_ = rumboObjetivo_ = pi / 2;
+        cabeceo_ = cabeceoObjetivo_ = ascenso_ = 0;
     }
 }
 std::optional<Region> Espacio::consumirDestino() {
@@ -70,6 +73,7 @@ glm::vec3 Espacio::ajustarMovimiento(glm::vec3 anterior, glm::vec3 p) const {
             return anterior;
     if (glm::length(p - glm::vec3(70, 90, -180)) < 39)
         return anterior;
+    if (glm::length(p - glm::vec3(-65, 30, -65)) < 12) return anterior;
     // Volumen conservador de Gateway: protege sus paneles sin fingir un interior navegable.
     if (std::abs(p.x) < 24 && std::abs(p.y) < 46 && std::abs(p.z) < 37)
         return anterior;
@@ -78,20 +82,37 @@ glm::vec3 Espacio::ajustarMovimiento(glm::vec3 anterior, glm::vec3 p) const {
             return anterior;
     return p;
 }
-void Espacio::actualizar(float dt) {
-    tiempo_ += dt;
-    rumbo_ += orden_.giro * dt * .8f;
-    velocidad_ =
-        std::clamp(velocidad_ + (orden_.acelerador * 18 - orden_.freno * 28) * dt, 0.f, 55.f);
-    if (!orden_.acelerador && !orden_.freno)
-        velocidad_ *= std::exp(-.6f * dt);
-    auto propuesta =
-        posicion_ + (direccion() * velocidad_ + glm::vec3(0, orden_.vertical * 22, 0)) * dt;
-    auto nueva = ajustarMovimiento(posicion_, propuesta);
-    if (glm::length(nueva - propuesta) > .001f)
-        velocidad_ = 0;
-    posicion_ = nueva;
+glm::mat4 Espacio::matrizNave() const {
+    auto frente = direccion();
+    auto derecha = glm::normalize(glm::cross(frente, glm::vec3(0, 1, 0)));
+    auto arriba = glm::cross(derecha, frente);
+    glm::mat4 m(1);
+    m[0] = glm::vec4(derecha, 0); m[1] = glm::vec4(arriba, 0);
+    m[2] = glm::vec4(-frente, 0); m[3] = glm::vec4(posicion_, 1);
+    return m;
 }
+void Espacio::actualizar(float dt) {
+    if (dt <= 0) return;
+    tiempo_ += dt;
+    // Subpasos cortos mantienen la respuesta y las colisiones al variar los FPS.
+    int pasos = std::max(1, int(std::ceil(dt * 120)));
+    float h = dt / pasos;
+    for (int i = 0; i < pasos; ++i) {
+        rumboObjetivo_ += orden_.giro * h * .85f;
+        float diferencia = std::atan2(std::sin(rumboObjetivo_ - rumbo_), std::cos(rumboObjetivo_ - rumbo_));
+        float suavidad = 1 - std::exp(-8 * h);
+        rumbo_ += diferencia * suavidad;
+        cabeceo_ += (cabeceoObjetivo_ - cabeceo_) * suavidad;
+        ascenso_ += (orden_.vertical * 18 - ascenso_) * suavidad;
+        velocidad_ = std::clamp(velocidad_ + (orden_.acelerador * 14 - orden_.freno * 24) * h, 0.f, 40.f);
+        if (!orden_.acelerador && !orden_.freno) velocidad_ *= std::exp(-.7f * h);
+        auto propuesta = posicion_ + (direccion() * velocidad_ + glm::vec3(0, ascenso_, 0)) * h;
+        auto nueva = ajustarMovimiento(posicion_, propuesta);
+        if (glm::length(nueva - propuesta) > .001f) velocidad_ = ascenso_ = 0;
+        posicion_ = nueva;
+    }
+}
+
 glm::vec3 Espacio::trafico(float t) const {
     // Aproximacion, espera en puerto exterior y retirada, ciclo suave de 40 segundos.
     const float tiempos[] = {0, 12, 18, 28, 40};
@@ -120,7 +141,7 @@ void Espacio::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
                     luna_->id(), {.6f, .54f, .48f});
     r.material(.45f, .6f);
     r.dibujar(*satelite_, m * modelo({-65, 30, -65}, {1, 1, 1}, tiempo_ * .2f));
-    nave_->dibujar(r, m * modelo(posicion_, {1, 1, 1}, -rumbo_));
+    if (exterior_) nave_->dibujar(r, m * matrizNave());
     auto p = trafico(tiempo_), d = trafico(tiempo_ + .05f) - p;
     float giro = glm::length(d) > .0001f ? std::atan2(d.x, -d.z) : -pi / 2;
     nave_->dibujar(r, m * modelo(p, {.8f, .8f, .8f}, -giro));
@@ -148,8 +169,8 @@ EstadoActividad Espacio::actividad() const {
     e.ocupado = true;
     e.objetivo = posicion_;
     e.direccion = direccion();
-    e.mensajes = {"ESPACIO / F3 NAVE / F4 OBSERVACION / 1-3 REGIONES",
-                  "W ACELERA / S FRENA / A-D GIRA / Q-Z ALTURA / C RECUPERA"};
+    e.mensajes = {"ESPACIO / F3 NAVE / V CABINA-EXTERIOR / F4 OBSERVACION",
+                  "W-S MOTOR / A-D GIRA / MOUSE RUMBO-ALTURA / Q-Z ASCENSO / C RECUPERA"};
     for (int i = 0; i < 2; ++i)
         if (glm::length(posicion_ - glm::vec3(i ? 210.f : -210.f, 0, 0)) < 28)
             e.mensajes.push_back(i ? "ENTER / VISITAR PLANETA 2" : "ENTER / REGRESAR A PLANETA 1");

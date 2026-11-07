@@ -103,9 +103,15 @@ Iluminacion SistemasPlaneta1::luces() const {
         p.atenuacion = {1.f, .07f, .025f};
         p.encendida = l.noche > .001f;
     }
-    for(int i=0;i<4;++i){auto q=CircuitoCarreras::muestra(CircuitoCarreras::Longitud*(i+.125f)/4);
-        auto &p=l.puntuales[9+i];p.posicion=CircuitoCarreras::origen()+q.posicion+glm::vec3(0,7,0);
-        p.color={.3f,.65f,1};p.intensidad=4*l.noche;p.atenuacion={1,.045f,.008f};p.encendida=l.noche>.001f;}
+    for (int i = 0; i < 4; ++i) {
+        auto q = CircuitoCarreras::muestra(CircuitoCarreras::Longitud * (i + .125f) / 4);
+        auto &p = l.puntuales[9 + i];
+        p.posicion = CircuitoCarreras::origen() + q.posicion + glm::vec3(0, 7, 0);
+        p.color = {.3f, .65f, 1};
+        p.intensidad = 4 * l.noche;
+        p.atenuacion = {1, .045f, .008f};
+        p.encendida = l.noche > .001f;
+    }
     l.foco = reflector;
     l.focoPos = {165, 12, -76};
     l.focoDir = glm::normalize(glm::vec3(0, -.65f, 1));

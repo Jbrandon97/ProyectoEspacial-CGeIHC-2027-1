@@ -1,0 +1,5 @@
+Gateway Core — NASA/JSC/Gateway Program Office.
+Fuente oficial: https://science.nasa.gov/3d-resources/gateway-lunar-space-station/
+Modelo: https://assets.science.nasa.gov/content/dam/science/cds/3d/resources/model/gateway/Gateway%20Core.glb
+Referencia de autores en la propuesta del equipo: Alberto G. Bertolin y Bradley W. Reynolds, Graphics and Animation Lab de JSC.
+Adaptacion: conversion GLB a glTF externo, PNG hasta 1024 px, extraccion de imagenes del buffer y escala uniforme a 80 unidades. Geometria original conservada, 92209 triangulos. No se atribuye el modelo al equipo.

@@ -3,6 +3,7 @@
 #include "Pruebas/Verificacion.h"
 #include "Regiones/Planeta1/CircuitoCarreras.h"
 #include "Regiones/Planeta1/Planeta1.h"
+#include "Regiones/Espacio/Espacio.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -33,9 +34,11 @@ Aplicacion::Aplicacion(const std::filesystem::path &r) : recursos_(r), renderiza
 }
 void Aplicacion::cambiarRegion(Region r) {
     ContextoEscena c{renderizador_, recursos_};
-    if(regionPreparada_){
-        if(escenarios_.actual().id()==r)return;
-        memoriaRegiones_[escenarios_.actual().id()]={avatar_.guardar(),camaras_,foco_,observandoCohete_};
+    if (regionPreparada_) {
+        if (escenarios_.actual().id() == r)
+            return;
+        memoriaRegiones_[escenarios_.actual().id()] = {avatar_.guardar(), camaras_, foco_,
+                                                       observandoCohete_};
     }
     if (escenarios_.activar(r, c)) {
         foco_ = false;
@@ -45,8 +48,14 @@ void Aplicacion::cambiarRegion(Region r) {
         faseSonora_ = -1;
         avatar_.aparecer(escenarios_.actual());
         camaras_.alCambiarRegion(r);
-        if(memoriaRegiones_.count(r)){auto &prev=memoriaRegiones_.at(r);avatar_.restaurar(prev.avatar);camaras_=prev.camara;foco_=prev.foco;observandoCohete_=prev.cohete;}
-        regionPreparada_=true;
+        if (memoriaRegiones_.count(r)) {
+            auto &prev = memoriaRegiones_.at(r);
+            avatar_.restaurar(prev.avatar);
+            camaras_ = prev.camara;
+            foco_ = prev.foco;
+            observandoCohete_ = prev.cohete;
+        }
+        regionPreparada_ = true;
         aviso_ = "Region preparada";
     }
 }
@@ -55,7 +64,8 @@ void Aplicacion::solicitarCamara(ModoCamara m) {
     foco_ = false;
     observandoCohete_ = false;
     auto estado = escenarios_.actual().actividad();
-    if (estado.ocupado && m != ModoCamara::Carrera) {
+    if (escenarios_.actual().id() == Region::Planeta1 && estado.ocupado &&
+        m != ModoCamara::Carrera) {
         aviso_ = "Desciende con X antes de cambiar camara";
         return;
     }
@@ -74,6 +84,12 @@ void Aplicacion::aplicarOrden(const OrdenActividad &orden) {
     if (despues.ocupado) {
         foco_ = false;
         observandoCohete_ = false;
+    }
+    if (e.id() == Region::Espacio) {
+        auto destino = dynamic_cast<Espacio &>(e).consumirDestino();
+        if (destino)
+            cambiarRegion(*destino);
+        return;
     }
     if (!antes.ocupado && despues.ocupado)
         camaras_.solicitar(ModoCamara::Carrera, e.id());
@@ -106,6 +122,8 @@ void Aplicacion::procesarEntradas(float dt) {
     o.acelerador = entradas_.mantenida(GLFW_KEY_W) ? 1.0f : 0.0f;
     o.freno = entradas_.mantenida(GLFW_KEY_S) ? 1.0f : 0.0f;
     o.giro = float(entradas_.mantenida(GLFW_KEY_D)) - float(entradas_.mantenida(GLFW_KEY_A));
+    o.vertical = float(entradas_.mantenida(GLFW_KEY_Q)) - float(entradas_.mantenida(GLFW_KEY_Z));
+    o.confirmar = entradas_.pulsada(GLFW_KEY_ENTER);
     o.interactuar = entradas_.pulsada(GLFW_KEY_X);
     o.reiniciar = entradas_.pulsada(GLFW_KEY_R);
     o.recuperar = entradas_.pulsada(GLFW_KEY_C);
@@ -140,6 +158,11 @@ void Aplicacion::actualizarCamara(float dt) {
     auto &e = escenarios_.actual();
     auto r = e.id();
     auto actividad = e.actividad();
+    if (r == Region::Espacio) {
+        camaras_.seguirEspacio(mundo_.aGlobal(r, actividad.objetivo), actividad.direccion,
+                               mundo_.aGlobal(r, {0, 0, 0}), dt);
+        return;
+    }
     if (observandoCohete_ && r == Region::Planeta1 && !actividad.ocupado) {
         auto &p = dynamic_cast<Planeta1 &>(e);
         camaras_.encuadrarEvento(mundo_.aGlobal(r, p.sistemas().objetivoObservacion()));
@@ -231,6 +254,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
         std::cout << "INTEGRACION_OK 9 transiciones, 36 intentos camara, misma ventana, shaders "
                      "y GL sin errores\n";
         probarCarrera(evidencias);
+        probarEspacio(evidencias);
         escenarios_.liberar();
         Renderizador::comprobarErrores();
         return 0;
@@ -472,7 +496,9 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
 
 void Aplicacion::actualizarAudio() {
     bool activo = escenarios_.actual().id() == Region::Planeta1;
-    audio_.bucle(Audio::Musica, activo ? .65f : 0);
+    audio_.bucle(Audio::Musica, activo                                         ? .65f
+                                : escenarios_.actual().id() == Region::Espacio ? .45f
+                                                                               : 0);
     audio_.bucle(Audio::Ambiente, activo ? .7f : 0);
     if (!activo) {
         audio_.bucle(Audio::Motor, 0);

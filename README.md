@@ -1,6 +1,6 @@
 # Proyecto Espacial — Planeta 1 Halo / Titanfall
 
-Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión continúa el Bloque E y la integración local del Saturn V; incorpora la terminación de Planeta 1. Conservamos la arquitectura C++17/OpenGL/GLFW y los módulos provisionales de Planeta 2 y Espacio.
+Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión continúa el Bloque E y la integración local del Saturn V; incorpora la terminación de Planeta 1. Conservamos la arquitectura C++17/OpenGL/GLFW. Espacio está integrado en una rama propia; Planeta 2 conserva la base provisional y espera la integración del trabajo remoto de sus integrantes.
 
 ## Abrir, compilar y ejecutar
 
@@ -10,7 +10,7 @@ Proyecto de Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Esta versión
 4. En la carpeta preparada para revisión también puede abrirse directamente `ProyectoEspacial.exe`, situado junto a `Recursos` para evitar duplicarlos.
 5. Pruebas automatizadas: `ProyectoEspacial.exe --pruebas --evidencias carpeta_destino`.
 
-El informe y las capturas están en [Documentacion/Informe_tecnico.html](Documentacion/Informe_tecnico.html); el registro distingue ejecución automatizada, revisión visual y pruebas no realizadas. No se necesita Python para jugar. `Herramientas/generar_audio.py` (NumPy) permite regenerar los WAV; `Herramientas/preparar_bt.py` (Pillow) convierte el GLB de BT suministrado.
+El registro técnico está en [Documentacion/Registro_Final_Integracion.txt](Documentacion/Registro_Final_Integracion.txt) y las capturas reales en `Documentacion/Evidencias`; el registro distingue ejecución automatizada, revisión visual y pruebas no realizadas. No se necesita Python para jugar. `Herramientas/generar_audio.py` (NumPy) permite regenerar los WAV; `Herramientas/preparar_bt.py` (Pillow) convierte el GLB de BT suministrado.
 
 ## Controles
 
@@ -30,7 +30,7 @@ El informe y las capturas están en [Documentacion/Informe_tecnico.html](Documen
 | L / T / O | Lanzar / solicitar reposición / observar o regresar |
 | M / - / + / Esc | Silencio / volumen / salir |
 
-El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. La retirada de restos es gradual y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
+El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. Los restos permanecen apoyados hasta reiniciar y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
 
 ## Organización del equipo
 
@@ -41,8 +41,14 @@ El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsul
 - `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: interfaces y servicios compartidos; coordinar cambios.
 - `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y preparación reproducible.
 
-Esta revisión es local: no realizamos commits, merges ni publicaciones. Quedan como dependencias grupales la persistencia entre regiones, conservar cámara/posición al regresar y completar los recorridos espaciales tercero y cuarto. Los módulos locales de otras regiones son provisionales; no representan entregas definitivas de los compañeros.
+La base de Planeta 1 se publica en `planeta1-john`; Espacio y las adaptaciones compartidas están en `codex/integracion-planeta1-espacio`, sin modificar `main` ni las ramas de compañeros. Las regiones conservan avatar, orientación, cámara y sistemas al regresar; sus relojes se pausan mientras están inactivas. No se guarda la partida al cerrar el programa.
+
+En Espacio, F3 sigue la nave y F4 permite observar Gateway con mouse/flechas. W acelera, S frena, A/D giran, Q/Z cambian altura, C recupera junto a Planeta 1. Enter permite entrar al planeta al estar cerca del punto de llegada (x=-210 o +210, y=z=0). Las teclas 1–3 siguen disponibles. Gateway tiene un volumen de colisión conservador, sin interior transitable. Una segunda Banshee recorre una aproximación, espera y retirada cada 40 s. Las esferas planetarias son referencias visuales, no sustituyen el escenario de Planeta 2. La música continúa en Espacio.
+
+La entrega ZIP contiene EXE y PDB de Release x64 en su raíz. El PDB es para depuración, no hace falta para jugar. `Herramientas/preparar_espacio.py` requiere NumPy y Pillow únicamente para regenerar recursos desde el GLB de NASA.
 
 ## Atribuciones
 
 Conservamos las atribuciones de recursos Halo/Titanfall y Saturn V en `Recursos/Modelos`, la licencia CC0 de Kenney en `Recursos/Cielos` y las licencias de bibliotecas en `Dependencias`. BT-7274: Palurdas Arts, licencia CC-BY-4.0 declarada en el archivo; fuente y adaptación en `Recursos/Modelos/BT7274/ATRIBUCION.txt`. Los WAV se sintetizan para el proyecto y no contienen música comercial. La revisión académica privada no cambia los derechos de recursos de terceros.
+
+Gateway: recurso oficial NASA/JSC/Gateway Program Office; procedencia y adaptación en `Recursos/Modelos/Gateway/PROCEDENCIA.txt`. Texturas planetarias y cielo espacial: síntesis propia, no fotografías científicas.

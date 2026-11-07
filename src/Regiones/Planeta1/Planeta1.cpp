@@ -65,13 +65,23 @@ void Planeta1::cargar(ContextoEscena &c) {
     ColisionesPlaneta1 apoyosPaisaje;
     apoyosPaisaje.agregar(TerrenoPlaneta1::paisaje(), {0, 0, 0});
     std::vector<Vertice> marcas;
-    for(int i=0;i<48;++i)for(int lado:{-1,1}){
-        auto q=CircuitoCarreras::muestra(i*CircuitoCarreras::Longitud/48,lado*(CircuitoCarreras::Ancho*.5f+.15f));
-        std::vector<Vertice> tramo;Geometria::caja(tramo,{0,0,0},{.18f,.1f,4.f},{1,1,1});
-        auto m=glm::rotate(glm::translate(glm::mat4(1),CircuitoCarreras::origen()+q.posicion+glm::vec3(0,.28f,0)),std::atan2(q.tangente.x,q.tangente.z),glm::vec3(0,1,0));
-        for(auto v:tramo){v.posicion=glm::vec3(m*glm::vec4(v.posicion,1));v.normal=glm::mat3(m)*v.normal;marcas.push_back(v);}
-    }
-    marcasPista_=std::make_unique<Malla>(marcas);
+    for (int i = 0; i < 48; ++i)
+        for (int lado : {-1, 1}) {
+            auto q = CircuitoCarreras::muestra(i * CircuitoCarreras::Longitud / 48,
+                                               lado * (CircuitoCarreras::Ancho * .5f + .15f));
+            std::vector<Vertice> tramo;
+            Geometria::caja(tramo, {0, 0, 0}, {.18f, .1f, 4.f}, {1, 1, 1});
+            auto m =
+                glm::rotate(glm::translate(glm::mat4(1), CircuitoCarreras::origen() + q.posicion +
+                                                             glm::vec3(0, .28f, 0)),
+                            std::atan2(q.tangente.x, q.tangente.z), glm::vec3(0, 1, 0));
+            for (auto v : tramo) {
+                v.posicion = glm::vec3(m * glm::vec4(v.posicion, 1));
+                v.normal = glm::mat3(m) * v.normal;
+                marcas.push_back(v);
+            }
+        }
+    marcasPista_ = std::make_unique<Malla>(marcas);
     sistemas_.calibrarApoyo(modelos_.at("SaturnV")->verticesEtapas(), [&](float x, float z) {
         return apoyosPaisaje.apoyo(x, z, TerrenoPlaneta1::altura(x, z));
     });
@@ -203,8 +213,9 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         if (r.visible(glm::vec3(modelo[3]) + glm::vec3(0, 8, 0), 17))
             modelos_.at("Pino")->dibujar(r, modelo);
     }
-    float noche=sistemas_.luces().noche;
-    if(noche>.001f)r.texturada(*marcasPista_,m,0,{.08f,.2f,.3f},glm::vec3(.12f,.5f,.8f)*noche);
+    float noche = sistemas_.luces().noche;
+    if (noche > .001f)
+        r.texturada(*marcasPista_, m, 0, {.08f, .2f, .3f}, glm::vec3(.12f, .5f, .8f) * noche);
     auto circuito = glm::translate(m, CircuitoCarreras::origen());
     r.dibujar(*pista_, circuito);
     r.dibujar(*detalles_, circuito);

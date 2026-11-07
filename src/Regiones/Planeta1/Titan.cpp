@@ -35,7 +35,7 @@ Titan::Titan(const std::filesystem::path &ruta) {
             throw std::runtime_error("BT jerarquia fuera de orden");
         cgltf_node_transform_local(&r, glm::value_ptr(n.local));
         cgltf_node_transform_world(&r, glm::value_ptr(n.global));
-        n.reposo=n.global;
+        n.reposo = n.global;
     }
     auto &skin = raw->skins[0];
     for (size_t j = 0; j < skin.joints_count; ++j) {
@@ -132,27 +132,40 @@ void Titan::animar(float t, float saludo) {
         andando ? glm::smoothstep(0.f, .35f, tramo) * (1 - glm::smoothstep(4.65f, 5.f, tramo)) : 0;
     // Dos segmentos por pierna: mismos objetivos de apoyo, fases opuestas y paso ligado al avance.
     // Corregimos la asimetria de la pose original antes de aplicar el ciclo.
-    std::array<glm::vec3,2> correcciones{};
-    auto sitioReposo=[&](const std::string &nombre){for(auto &n:nodos_)if(n.nombre==nombre)return glm::vec3(n.reposo[3])*escala_;throw std::runtime_error("BT rig de pierna ausente");};
-    for(int lado=0;lado<2;++lado){
-        auto hip=sitioReposo(lado?"def_r_thigh_0134":"def_l_thigh_0119");
-        auto rod=sitioReposo(lado?"def_r_knee_0136":"def_l_knee_0121");
-        auto tob=sitioReposo(lado?"def_r_ankle_0137":"def_l_ankle_0122");
-        float l1=glm::length(glm::vec2(rod.y-hip.y,rod.z-hip.z));
-        float l2=glm::length(glm::vec2(tob.y-rod.y,tob.z-rod.z));
-        float u=std::fmod(fase+lado*.5f,1.f), z,levantamiento=0;
-        if(u<.5f)z=.375f-1.5f*u;
-        else {float v=(u-.5f)*2;z=glm::mix(-.375f,.375f,glm::smoothstep(0.f,1.f,v));levantamiento=.32f*std::sin(v*3.14159265f);}
-        float referenciaHip=std::min(sitioReposo("def_l_thigh_0119").y,sitioReposo("def_r_thigh_0134").y);
-        float y=referenciaHip-hip.y-.92f*(l1+l2)+levantamiento;
-        float d=std::min(std::sqrt(y*y+z*z),l1+l2-.001f);
-        float apertura=std::acos(glm::clamp((l1*l1+d*d-l2*l2)/(2*l1*d),-1.f,1.f));
-        float direccion=std::atan2(z,-y)+apertura;
-        float ky=-l1*std::cos(direccion),kz=l1*std::sin(direccion);
-        auto envolver=[](float x){return std::atan2(std::sin(x),std::cos(x));};
-        float a=envolver(std::atan2(kz,ky)-std::atan2(rod.z-hip.z,rod.y-hip.y));
-        float b=envolver(std::atan2(z-kz,y-ky)-std::atan2(tob.z-rod.z,tob.y-rod.y)-a);
-        correcciones[lado]={a,b,-a-b};
+    std::array<glm::vec3, 2> correcciones{};
+    auto sitioReposo = [&](const std::string &nombre) {
+        for (auto &n : nodos_)
+            if (n.nombre == nombre)
+                return glm::vec3(n.reposo[3]) * escala_;
+        throw std::runtime_error("BT rig de pierna ausente");
+    };
+    for (int lado = 0; lado < 2; ++lado) {
+        auto hip = sitioReposo(lado ? "def_r_thigh_0134" : "def_l_thigh_0119");
+        auto rod = sitioReposo(lado ? "def_r_knee_0136" : "def_l_knee_0121");
+        auto tob = sitioReposo(lado ? "def_r_ankle_0137" : "def_l_ankle_0122");
+        float l1 = glm::length(glm::vec2(rod.y - hip.y, rod.z - hip.z));
+        float l2 = glm::length(glm::vec2(tob.y - rod.y, tob.z - rod.z));
+        float u = std::fmod(fase + lado * .5f, 1.f), z, levantamiento = 0;
+        if (u < .5f)
+            z = .375f - 1.5f * u;
+        else {
+            float v = (u - .5f) * 2;
+            z = glm::mix(-.375f, .375f, glm::smoothstep(0.f, 1.f, v));
+            levantamiento = .32f * std::sin(v * 3.14159265f);
+        }
+        float referenciaHip =
+            std::min(sitioReposo("def_l_thigh_0119").y, sitioReposo("def_r_thigh_0134").y);
+        float y = referenciaHip - hip.y - .92f * (l1 + l2) + levantamiento;
+        float d = std::min(std::sqrt(y * y + z * z), l1 + l2 - .001f);
+        float apertura =
+            std::acos(glm::clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1.f, 1.f));
+        float direccion = std::atan2(z, -y) + apertura;
+        float ky = -l1 * std::cos(direccion), kz = l1 * std::sin(direccion);
+        auto envolver = [](float x) { return std::atan2(std::sin(x), std::cos(x)); };
+        float a = envolver(std::atan2(kz, ky) - std::atan2(rod.z - hip.z, rod.y - hip.y));
+        float b =
+            envolver(std::atan2(z - kz, y - ky) - std::atan2(tob.z - rod.z, tob.y - rod.y) - a);
+        correcciones[lado] = {a, b, -a - b};
     }
     for (size_t i = 0; i < nodos_.size(); ++i) {
         auto &n = nodos_[i];
@@ -163,32 +176,46 @@ void Titan::animar(float t, float saludo) {
         float u = fase + (der ? .5f : 0);
         if (izq || der) {
             if (nombre.find("_thigh_") != std::string::npos)
-                ang = correcciones[der?1:0].x;
+                ang = correcciones[der ? 1 : 0].x;
             if (nombre.find("_knee_") != std::string::npos)
-                ang = correcciones[der?1:0].y;
+                ang = correcciones[der ? 1 : 0].y;
             if (nombre.find("_ankle_") != std::string::npos)
-                ang = correcciones[der?1:0].z;
+                ang = correcciones[der ? 1 : 0].z;
             if (nombre.find("_shoulder_") != std::string::npos)
                 ang = clave(u, {.24f, 0, -.24f, 0, .24f});
             if (nombre.find("_elbow_") != std::string::npos)
                 ang = clave(u, {0, .16f, .24f, .1f, 0});
         }
-        float angSaludo=0,lateral=0;
-        if(saludo>=0){
-            float levantar=glm::smoothstep(0.f,1.2f,saludo)*(1-glm::smoothstep(4.8f,6.f,saludo));
-            if(nombre=="def_r_shoulder_096")angSaludo=-1.05f*levantar;
-            if(nombre=="def_r_elbow_097")angSaludo=-1.4f*levantar;
-            const float vaiven[]={0,-.38f,.38f,-.38f,.38f,-.38f,.38f,0};
-            float faseSaludo=glm::clamp((saludo-1.2f)/.5f,0.f,7.f);int k=std::min(6,int(faseSaludo));
-            float onda=glm::mix(vaiven[k],vaiven[k+1],glm::smoothstep(0.f,1.f,faseSaludo-k))*levantar;
-            if(nombre=="def_r_elbow_097")lateral=onda*.6f;
-            if(nombre=="def_r_wrist_098")lateral=onda*.4f;
+        float angSaludo = 0, lateral = 0;
+        if (saludo >= 0) {
+            float levantar =
+                glm::smoothstep(0.f, 1.2f, saludo) * (1 - glm::smoothstep(4.8f, 6.f, saludo));
+            if (nombre == "def_r_shoulder_096")
+                angSaludo = -1.05f * levantar;
+            if (nombre == "def_r_elbow_097")
+                angSaludo = -1.4f * levantar;
+            const float vaiven[] = {0, -.38f, .38f, -.38f, .38f, -.38f, .38f, 0};
+            float faseSaludo = glm::clamp((saludo - 1.2f) / .5f, 0.f, 7.f);
+            int k = std::min(6, int(faseSaludo));
+            float onda =
+                glm::mix(vaiven[k], vaiven[k + 1], glm::smoothstep(0.f, 1.f, faseSaludo - k)) *
+                levantar;
+            if (nombre == "def_r_elbow_097")
+                lateral = onda * .6f;
+            if (nombre == "def_r_wrist_098")
+                lateral = onda * .4f;
         }
         auto padre = n.padre < 0 ? glm::mat4(1) : nodos_[n.padre].global;
         glm::vec3 piv(local[3]);
-        auto girar=[&](float angulo,glm::vec3 mundo){if(angulo==0)return;auto eje=glm::normalize(glm::inverse(glm::mat3(padre))*mundo);
-            local=glm::translate(glm::mat4(1),piv)*glm::rotate(glm::mat4(1),angulo,eje)*glm::translate(glm::mat4(1),-piv)*local;};
-        girar(ang*amplitud+angSaludo,{1,0,0});girar(lateral,{0,0,1});
+        auto girar = [&](float angulo, glm::vec3 mundo) {
+            if (angulo == 0)
+                return;
+            auto eje = glm::normalize(glm::inverse(glm::mat3(padre)) * mundo);
+            local = glm::translate(glm::mat4(1), piv) * glm::rotate(glm::mat4(1), angulo, eje) *
+                    glm::translate(glm::mat4(1), -piv) * local;
+        };
+        girar(ang * amplitud + angSaludo, {1, 0, 0});
+        girar(lateral, {0, 0, 1});
         n.global = padre * local;
     }
     std::vector<glm::mat4> m(juntas_.size());

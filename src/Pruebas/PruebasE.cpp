@@ -1,5 +1,6 @@
 #include "Nucleo/Aplicacion.h"
 #include "Regiones/Planeta1/Planeta1.h"
+#include "Regiones/Espacio/Espacio.h"
 #include "Regiones/Planeta1/TerrenoPlaneta1.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
@@ -256,16 +257,29 @@ void Aplicacion::probarFinalPlaneta1(const std::filesystem::path &dir) {
     p.actualizar(0);
     observandoCohete_ = false;
     // Persistencia real de region, avatar y camara sin recargar los sistemas.
-    s.tiempo=37;s.lanzamiento=24;auto restos=s.etapas();s.lanzamiento=65;
-    for(int i=0;i<2;++i)for(int k=0;k<4;++k)exigir(glm::length(restos[i][k]-s.etapas()[i][k])<.001f,"Etapa se hunde tras aterrizar");
-    auto avatarGuardado=avatar_.guardar();auto ojoGuardado=camaras_.ojo();
-    cambiarRegion(Region::Planeta2);cambiarRegion(Region::Espacio);cambiarRegion(Region::Planeta1);
-    exigir(s.tiempo==37 && s.lanzamiento==65,"Region reiniciada");
-    exigir(glm::length(avatar_.posicion()-avatarGuardado.posicion)<.001f && glm::length(camaras_.ojo()-ojoGuardado)<.001f,"Avatar/camara no restaurados");
-    s=original;
-    std::cout<<"PERSISTENCIA_OK avatar camara reloj cohete; restos sin hundimiento\n";
-    s.faseInicial=5.f/6;s.tiempo=0;foto("Final_Pista_noche",{210,65,240},{110,3,135});
-    s=original;
+    s.tiempo = 37;
+    s.lanzamiento = 24;
+    auto restos = s.etapas();
+    s.lanzamiento = 65;
+    for (int i = 0; i < 2; ++i)
+        for (int k = 0; k < 4; ++k)
+            exigir(glm::length(restos[i][k] - s.etapas()[i][k]) < .001f,
+                   "Etapa se hunde tras aterrizar");
+    auto avatarGuardado = avatar_.guardar();
+    auto ojoGuardado = camaras_.ojo();
+    cambiarRegion(Region::Planeta2);
+    cambiarRegion(Region::Espacio);
+    cambiarRegion(Region::Planeta1);
+    exigir(s.tiempo == 37 && s.lanzamiento == 65, "Region reiniciada");
+    exigir(glm::length(avatar_.posicion() - avatarGuardado.posicion) < .001f &&
+               glm::length(camaras_.ojo() - ojoGuardado) < .001f,
+           "Avatar/camara no restaurados");
+    s = original;
+    std::cout << "PERSISTENCIA_OK avatar camara reloj cohete; restos sin hundimiento\n";
+    s.faseInicial = 5.f / 6;
+    s.tiempo = 0;
+    foto("Final_Pista_noche", {210, 65, 240}, {110, 3, 135});
+    s = original;
     ModeloGltf centinela(recursos_ / "Modelos/Sentinel.gltf");
     for (int j = 0; j < 2; ++j) {
         glm::vec3 ojo = j ? glm::vec3(8, 4, 0) : glm::vec3(0, 4, 8);
@@ -280,4 +294,74 @@ void Aplicacion::probarFinalPlaneta1(const std::filesystem::path &dir) {
 
     std::cout << "FINAL_OK Saturn sin orbita 3 ciclos automaticos; BT articulado repetible; Hunter "
                  "H; Covenant atenuado; 16 luces\n";
+}
+
+void Aplicacion::probarEspacio(const std::filesystem::path &dir) {
+    auto exigir = [](bool b, const char *m) {
+        if (!b)
+            throw std::runtime_error(m);
+    };
+    cambiarRegion(Region::Espacio);
+    auto &e = dynamic_cast<Espacio &>(escenarios_.actual());
+    OrdenActividad o;
+    o.recuperar = true;
+    aplicarOrden(o);
+    o = {};
+    o.acelerador = 1;
+    aplicarOrden(o);
+    for (int i = 0; i < 120; ++i)
+        e.actualizar(1.f / 60);
+    auto p = e.actividad().objetivo;
+    exigir(p.x > -190, "Nave espacial no avanza");
+    o = {};
+    o.vertical = 1;
+    o.giro = 1;
+    aplicarOrden(o);
+    e.actualizar(.5f);
+    exigir(e.actividad().objetivo.y > p.y + 10, "Nave sin ascenso");
+    exigir(e.actividad().direccion.z > .3f, "Nave sin giro");
+    o = {};
+    aplicarOrden(o);
+    auto reloj = e.reloj();
+    p = e.actividad().objetivo;
+    cambiarRegion(Region::Planeta1);
+    cambiarRegion(Region::Espacio);
+    exigir(e.reloj() == reloj && glm::length(p - e.actividad().objetivo) < .001f,
+           "Espacio pierde estado");
+    exigir(glm::length(e.ajustarMovimiento(p, {0, 0, 0}) - p) < .001f, "Gateway atravesable");
+    exigir(glm::length(e.trafico(0) - e.trafico(40)) < .001f, "Trafico no ciclico");
+    exigir(glm::length(e.trafico(12) - e.trafico(18)) < .001f, "Trafico sin espera");
+    int w, h;
+    ventana_.dimensiones(w, h);
+    ContextoEscena c{renderizador_, recursos_};
+    auto foto = [&](const char *nombre, glm::vec3 ojo, glm::vec3 centro) {
+        ojo = mundo_.aGlobal(Region::Espacio, ojo);
+        centro = mundo_.aGlobal(Region::Espacio, centro);
+        auto vp = glm::perspective(glm::radians(55.f), float(w) / h, .1f, 1500.f) *
+                  glm::lookAt(ojo, centro, {0, 1, 0});
+        renderizador_.iniciar(w, h, vp, e.ambiente(), ojo);
+        e.dibujar(c, mundo_.transformacion(Region::Espacio));
+        renderizador_.capturar(dir / (std::string(nombre) + ".ppm"), w, h);
+        Renderizador::comprobarErrores();
+    };
+    foto("Espacio_Gateway", {90, 45, 100}, {0, 0, 0});
+    foto("Espacio_Conjunto", {0, 140, 460}, {0, 0, 0});
+    foto("Espacio_Luna_Satelite", {-100, 90, 80}, {40, 45, -110});
+    solicitarCamara(ModoCamara::Viaje);
+    for (int i = 0; i < 90; ++i)
+        actualizarCamara(1.f / 60);
+    dibujar(dir / "Espacio_F3_nave.ppm");
+    solicitarCamara(ModoCamara::Observacion);
+    for (int i = 0; i < 90; ++i)
+        actualizarCamara(1.f / 60);
+    dibujar(dir / "Espacio_F4.ppm");
+    o = {};
+    o.recuperar = true;
+    aplicarOrden(o);
+    o = {};
+    o.confirmar = true;
+    aplicarOrden(o);
+    exigir(escenarios_.actual().id() == Region::Planeta1, "Portal no retorna a planeta1");
+    std::cout << "ESPACIO_OK navegacion avance giro altura, colision Gateway, trafico40s, "
+                 "persistencia, F3/F4, portal Planeta1\n";
 }

@@ -728,6 +728,12 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
     GestorCamaras nuevas;
     nuevas.alCambiarRegion(Region::Espacio);
     exigir(!nuevas.cabina(), "Primera visita no es exterior");
+    for(float limite:{8.f,24.f,30.f,40.f}) {
+        auto antes=(esp.posicionTrafico(0,limite-.001f)-esp.posicionTrafico(0,limite-.011f))/.01f;
+        auto despues=(esp.posicionTrafico(0,limite+.011f)-esp.posicionTrafico(0,limite+.001f))/.01f;
+        exigir(glm::length(antes-despues)<.5f,"Trafico cambia velocidad bruscamente entre tramos");
+        exigir(glm::length(antes)>7.f,"Nave se detiene fuera del muelle");
+    }
     for (int i = 0; i < 2; ++i)
         for (int k = 0; k < 4000; ++k) {
             float t = k * .01f;

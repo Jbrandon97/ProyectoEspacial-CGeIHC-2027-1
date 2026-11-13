@@ -189,11 +189,12 @@ struct Tramo {
     float inicio, fin;
     glm::vec3 a, b, c, d;
 };
-const Tramo rutas[] = {{0, 8, {0, 18, 155}, {0, 18, 130}, {0, 6, 110}, {0, 6, 85}},
-                       {8, 12, {0, 6, 85}, {0, 6, 70}, {0, .5f, 60}, {0, .5f, 52}},
-                       {18, 24, {0, .5f, 52}, {0, .5f, 68}, {0, 24, 120}, {0, 24, 150}},
-                       {24, 30, {0, 24, 150}, {0, 24, 185}, {65, 30, 245}, {65, 30, 210}},
-                       {30, 40, {65, 30, 210}, {65, 30, 145}, {0, 18, 200}, {0, 18, 155}}};
+// Los extremos comparten velocidad de 8 u/s; solo se frena al entrar al muelle.
+const Tramo rutas[] = {{0, 8, {0, 18, 155}, {0, 18, 133.666667f}, {0, 6, 106.333333f}, {0, 6, 85}},
+                       {8, 12, {0, 6, 85}, {0, 6, 74.333333f}, {0, .5f, 60}, {0, .5f, 52}},
+                       {18, 24, {0, .5f, 52}, {0, .5f, 68}, {0, 24, 134}, {0, 24, 150}},
+                       {24, 30, {0, 24, 150}, {0, 24, 166}, {65, 30, 226}, {65, 30, 210}},
+                       {30, 40, {65, 30, 210}, {65, 30, 183.333333f}, {0, 18, 181.666667f}, {0, 18, 155}}};
 glm::vec3 trayectoria(float t, bool tangente) {
     float f = std::fmod(std::max(0.f, t), 40.f);
     if (f >= 12 && f <= 18) {
@@ -206,7 +207,10 @@ glm::vec3 trayectoria(float t, bool tangente) {
             r = &tr;
             break;
         }
-    float u = glm::smoothstep(r->inicio, r->fin, f), v = 1 - u;
+    float u = glm::clamp((f-r->inicio)/(r->fin-r->inicio),0.f,1.f);
+    if(r->inicio==8) u=u+u*u-u*u*u;
+    if(r->inicio==18) u=2*u*u-u*u*u;
+    float v = 1 - u;
     if (tangente)
         return glm::normalize(3.f * v * v * (r->b - r->a) + 6.f * v * u * (r->c - r->b) +
                               3.f * u * u * (r->d - r->c));

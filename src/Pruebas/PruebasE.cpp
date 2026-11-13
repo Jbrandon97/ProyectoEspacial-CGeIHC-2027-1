@@ -695,6 +695,34 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
         ventana_.eventos();
         return pix;
     };
+    cambiarRegion(Region::Planeta1);
+    auto &p1=dynamic_cast<Planeta1 &>(escenarios_.actual());
+    auto &s1=p1.sistemas();
+    OrdenActividad holo; holo.holocron=true; holo.avatar={-125,2,-43};
+    s1.holocron=-1; p1.controlar(holo);
+    exigir(s1.holocron==0,"Holocron no responde a interaccion cercana");
+    auto matrizInicialHolo=s1.matrizHolocron();
+    for(float t:{0.f,2.f,5.f,8.f,12.f}) {
+        s1.holocron=t;
+        foto("Cierre_Holocron_"+std::to_string(int(t)),{-105,15,-22},{-125,8,-48});
+    }
+    s1.holocron=5;
+    exigir(glm::length(glm::vec3(s1.matrizHolocron()[0]))>glm::length(glm::vec3(matrizInicialHolo[0]))*3.4f,"Holocron sin crecimiento visible");
+    s1.holocron=12; p1.actualizar(.01f);
+    exigir(s1.holocron<0 && glm::length(glm::vec3(s1.matrizHolocron()[3]-matrizInicialHolo[3]))<.001f,"Holocron no vuelve al pedestal");
+    auto faseGuardada=s1.faseInicial; auto tiempoGuardado=s1.tiempo;
+    s1.tiempo=0;s1.faseInicial=.7f;s1.reflectorCovenant=false;
+    auto sin=foto("Cierre_Covenant_OFF",{-105,15,-22},{-135,3,-53});
+    holo.holocron=false;holo.luzServicio=true;p1.controlar(holo);
+    auto con=foto("Cierre_Covenant_ON",{-105,15,-22},{-135,3,-53});
+    size_t iluminados=0;for(size_t i=0;i<sin.size();++i)if(con[i]>sin[i]+3)++iluminados;
+    exigir(iluminados>2000,"Segundo reflector P1 sin efecto visible");
+    s1.reflectorCovenant=false;s1.faseInicial=faseGuardada;s1.tiempo=tiempoGuardado;
+    solicitarCamara(ModoCamara::Viaje);
+    for(int i=0;i<120;++i)actualizarCamara(1.f/60);
+    dibujar(dir/"Cierre_P1_F3.ppm");
+    solicitarCamara(ModoCamara::Exploracion);
+    std::cout<<"CIERRE_P1_OK holocron12s escala3.5 retorno; segundo foco pixeles="<<iluminados<<"; F3 colonia\n";
     cambiarRegion(Region::Espacio);
     auto &esp = dynamic_cast<Espacio &>(escenarios_.actual());
     GestorCamaras nuevas;

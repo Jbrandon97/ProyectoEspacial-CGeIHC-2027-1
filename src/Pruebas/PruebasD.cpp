@@ -66,15 +66,14 @@ void Aplicacion::probarD(const std::filesystem::path &dir) {
     orden.interactuar = true;
     carrera.controlar(orden);
     auto mensajes = carrera.estado().mensajes;
-    exigir(mensajes.size() == 3, "D: HUD de inicio excesivo");
-    for (auto &l : mensajes)
-        exigir(l.find("VELOCIDAD") == std::string::npos &&
-                   l.find("POSICION") == std::string::npos &&
-                   l.find("CHECKPOINT") == std::string::npos,
-               "D: HUD sin simplificar");
+    exigir(mensajes.size() == 5, "HUD de salida incompleto");
+    exigir(mensajes[2].find("VELOCIDAD 0.0 U/S") != std::string::npos,
+           "HUD no refleja velocidad detenida");
+    exigir(mensajes[3].find("C RECUPERAR") != std::string::npos,
+           "HUD omite controles reales");
     for (int i = 0; i < 600; ++i)
         carrera.actualizar(1.f / 120);
-    exigir(carrera.estado().mensajes.size() == 2, "D: HUD de carrera excesivo");
+    exigir(carrera.estado().mensajes.size() == 4, "HUD de carrera incompleto");
     s = original;
     s.tiempo = 0;
     s.faseInicial = 1.f / 3;

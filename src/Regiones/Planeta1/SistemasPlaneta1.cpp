@@ -30,6 +30,7 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
 }
 void SistemasPlaneta1::actualizar(float dt) {
     tiempo += dt;
+    if (holocron >= 0 && (holocron += dt) >= 12) holocron = -1;
     if (inspeccion >= 0 && (inspeccion += dt) >= 8)
         inspeccion = -1;
     if (saludo >= 0 && (saludo += dt) >= 6)
@@ -80,7 +81,7 @@ Iluminacion SistemasPlaneta1::luces() const {
     float dia = glm::smoothstep(-.15f, .2f, l.sol.y);
     l.noche = 1 - dia;
     l.fuerzaSol = glm::smoothstep(-.04f, .3f, l.sol.y) * .95f;
-    l.ambiente = .15f + .115f * dia;
+    l.ambiente = .18f + .085f * dia;
     l.colorSol = glm::mix(glm::vec3(1, .48f, .23f), glm::vec3(1, .98f, .9f),
                           glm::smoothstep(0.f, .55f, l.sol.y));
     const glm::vec3 pos[] = {{165, 11, -72}, {40, 9, -95},  {90, 9, -66},
@@ -112,6 +113,16 @@ Iluminacion SistemasPlaneta1::luces() const {
         p.atenuacion = {1, .045f, .008f};
         p.encendida = l.noche > .001f;
     }
+    // Dos luminarias de paso; mantienen el contraste nocturno fuera del camino.
+    const glm::vec3 pasos[] = {{132, 7, -70}, {172, 7, -10}};
+    for (int i=0;i<2;++i) {
+        auto &p=l.puntuales[13+i]; p.posicion=pasos[i]; p.color={1,.75f,.48f};
+        p.intensidad=3.2f*l.noche; p.atenuacion={1,.045f,.012f}; p.encendida=l.noche>.001f;
+    }
+    auto &f=l.focales[0]; f.encendida=reflectorCovenant;
+    f.posicion={-130,13,-48}; f.direccion=glm::normalize(glm::vec3(-15,-10,-15));
+    f.color={.55f,.4f,1}; f.intensidad=2.6f; f.interno=20; f.externo=34;
+    f.atenuacion={1,.025f,.0025f};
     l.foco = reflector;
     l.focoPos = {165, 12, -76};
     l.focoDir = glm::normalize(glm::vec3(0, -.65f, 1));
@@ -241,4 +252,17 @@ glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
             m = glm::rotate(m, glm::mix(incl[k], incl[k + 1], s), {1, 0, 0});
     }
     return m;
+}
+
+glm::mat4 SistemasPlaneta1::matrizHolocron() const {
+    struct Clave { float t, altura, escala, giro; };
+    const Clave claves[]={{0,0,1,0},{2,4,1.8f,.8f},{5,8,3.5f,3.14f},
+                         {8,8,3.5f,9.42f},{10,4,1.8f,11.7f},{12,0,1,12.5663706f}};
+    float t=std::max(0.f,holocron); int i=0;
+    while(i<4 && t>claves[i+1].t) ++i;
+    auto a=claves[i], b=claves[i+1];
+    float u=glm::smoothstep(a.t,b.t,t);
+    auto m=glm::translate(glm::mat4(1),{-125,4.4f+glm::mix(a.altura,b.altura,u),-48});
+    m=glm::rotate(m,glm::mix(a.giro,b.giro,u),glm::vec3(0,1,0));
+    return glm::scale(m,glm::vec3(1.5f*glm::mix(a.escala,b.escala,u)));
 }

@@ -61,7 +61,7 @@ Audio::Audio(const std::filesystem::path &r, bool offline)
             throw std::runtime_error("miniaudio: grupo no disponible");
         ++m.gruposListos;
     }
-    const char *nombres[] = {"Orbita_ambiental",   "Viento_instalaciones",
+    const char *nombres[] = {"Exploration_Theme",   "Viento_instalaciones",
                              "Puerta_hangar",      "Propulsion",
                              "Motor_nave",         "Inicio_carrera",
                              "Final_carrera",      "Energia_Covenant",

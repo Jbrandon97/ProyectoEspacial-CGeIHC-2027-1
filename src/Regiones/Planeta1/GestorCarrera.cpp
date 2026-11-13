@@ -102,6 +102,11 @@ EstadoActividad GestorCarrera::estado() const {
     std::ostringstream s;
     s << std::fixed << std::setprecision(1) << "TIEMPO " << tiempo() << " S";
     e.mensajes = {"VUELTA " + std::to_string(std::min(3, reglas_.vueltas() + 1)) + "/3", s.str()};
+    std::ostringstream v;
+    v << std::fixed << std::setprecision(1) << "VELOCIDAD " << nave_.velocidad() << " U/S / POS " << posicion() << "/3";
+    e.mensajes.push_back(v.str());
+    e.mensajes.push_back("W ACELERAR / S FRENAR / A-D GIRAR / R REINICIAR / C RECUPERAR / X BAJAR");
+    if(castigo_>0) e.mensajes.push_back("RECUPERACION / PENALIZACION 2 S");
     if (fase_ == FaseCarrera::CuentaAtras)
         e.mensajes.push_back("SALIDA EN " + std::to_string(std::max(1, int(std::ceil(cuenta_)))));
     else if (fase_ == FaseCarrera::Terminada)

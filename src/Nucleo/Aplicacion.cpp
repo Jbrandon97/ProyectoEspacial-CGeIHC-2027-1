@@ -159,6 +159,7 @@ void Aplicacion::procesarEntradas(float dt) {
     o.saludo = entradas_.pulsada(GLFW_KEY_J);
     o.reflector = entradas_.pulsada(GLFW_KEY_P);
     o.inspeccion = entradas_.pulsada(GLFW_KEY_K);
+    o.holocron = entradas_.pulsada(GLFW_KEY_Y);
     bool explorar = (escenarios_.actual().id() == Region::Planeta1 ||
                      escenarios_.actual().id() == Region::Planeta2) &&
                     !escenarios_.actual().actividad().ocupado &&
@@ -197,10 +198,13 @@ void Aplicacion::actualizarCamara(float dt) {
     }
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
     glm::vec3 direccion = actividad.direccion;
-    if (camaras_.modo() == ModoCamara::Viaje)
-        objetivo = {-11, .3f, 9};
+    if (camaras_.modo() == ModoCamara::Viaje) {
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(20, 4, -10);
+        camaras_.encuadrarEvento(mundo_.aGlobal(r, objetivo));
+        return;
+    }
     if (camaras_.modo() == ModoCamara::Observacion)
-        objetivo = {0, 4, 0};
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(20, 4, -10);
     auto alturaGlobal = [&](float x, float z) {
         auto p = mundo_.aLocal(r, {x, 0, z});
         return mundo_.aGlobal(r, {p.x, e.altura(p.x, p.z), p.z}).y;
@@ -247,6 +251,12 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     if (r != Region::Espacio && !actividad.ocupado)
         avatar_.dibujar(c, mundo_.transformacion(r), energia.encendida);
     auto lineas = actividad.mensajes;
+    if (r == Region::Planeta1 && !actividad.ocupado &&
+        (observandoCohete_ || camaras_.modo() != ModoCamara::Exploracion))
+        for (auto &texto : lineas)
+            if (texto.rfind("WASD", 0) == 0)
+                texto = observandoCohete_ ? "O VOLVER / OBSERVACION DEL LANZAMIENTO"
+                                         : "F1 EXPLORAR / F3 COLONIA / F4 PANORAMICA";
     lineas.erase(std::remove_if(lineas.begin(), lineas.end(), [](const std::string &texto) {
                      return texto.rfind("M SILENCIO", 0) == 0;
                  }), lineas.end());

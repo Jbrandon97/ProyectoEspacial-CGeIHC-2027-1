@@ -13,6 +13,10 @@ void Planeta1::cargar(ContextoEscena &c) {
     sistemas_ = SistemasPlaneta1();
     sistemas_.configurar(c.recursos / "Configuracion_C.txt");
     eventoPuerta_ = 0;
+    modelos_["Holocron"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/EspacioBloque1/Holocron.gltf", true);
+    std::vector<Vertice> pedestal;
+    Geometria::caja(pedestal, {-125,2.7f,-48}, {4,1.4f,4}, {.23f,.18f,.3f});
+    pedestalHolocron_ = std::make_unique<Malla>(pedestal);
     puertaAltura_ = puertaDestino_ = 7;
     for (auto &e : Distribucion::edificios)
         modelos_[e.modelo] = std::make_unique<ModeloGltf>(
@@ -122,6 +126,8 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
                 r, modelo, std::string(e.modelo) == "Hangar" ? puertaAltura_ - 7 : 0);
     }
     r.dibujar(*rampaPeatonal_, m);
+    r.dibujar(*pedestalHolocron_,m);
+    modelos_.at("Holocron")->dibujar(r,m*sistemas_.matrizHolocron());
     struct Instancia {
         const char *modelo;
         glm::vec3 sitio;
@@ -234,6 +240,7 @@ void Planeta1::liberar() noexcept {
     marcoCompuerta_.reset();
     colisionPuerta_.limpiar();
     rampaPeatonal_.reset();
+    pedestalHolocron_.reset();
     modelos_.clear();
     suelo_.reset();
     agua_.reset();
@@ -289,6 +296,9 @@ void Planeta1::controlar(const OrdenActividad &o) {
         ++eventoPuerta_;
     }
     if (!carrera_.ocupado()) {
+        bool cercaCovenant=glm::length(glm::vec2(o.avatar.x+125,o.avatar.z+48))<24;
+        if(o.holocron && cercaCovenant && sistemas_.holocron<0) sistemas_.holocron=0;
+        if(o.luzServicio && cercaCovenant) sistemas_.reflectorCovenant=!sistemas_.reflectorCovenant;
         if (o.titan && sistemas_.saludo < 0 && sistemas_.titan < 0 &&
             glm::length(o.avatar - Titan::posicion(-1)) < 18)
             sistemas_.titan = 0;
@@ -319,6 +329,8 @@ EstadoActividad Planeta1::actividad() const {
     if (!e.ocupado && glm::length(glm::vec2(visitante_.x - 165, visitante_.z + 70)) < 30)
         e.mensajes.push_back("E HANGAR / P REFLECTOR / SENSOR DE PASO");
     if (!e.ocupado) {
+        if(glm::length(glm::vec2(visitante_.x+125,visitante_.z+48))<24)
+            e.mensajes.push_back("Y HOLOCRON / I REFLECTOR COVENANT");
         if (glm::length(visitante_ - glm::vec3(-65, 2, 162)) < 12)
             e.mensajes.push_back("K / INSPECCION GRUNT 2");
         if (glm::length(visitante_ - Titan::posicion(-1)) < 18)

@@ -1,6 +1,6 @@
 Composición Orbita ambiental y seis ambientes/efectos originales sintetizados para el proyecto. Sin muestras ni música comercial de Halo/Titanfall. PCM estéreo 44 100 Hz, 16 bits. Generación reproducible en Herramientas/generar_audio.py. Música: progresión armónica de cuatro acordes, arpegios y timbres de pad; bucle de 32 segundos.
 Ambiente Energia_Covenant: sintesis original periodica de 8 s; tonos de maquinaria y modulacion lenta, sin muestras externas.
 
-Horizonte espacial: composición ambiental original, síntesis aditiva estéreo, siete voces armónicas y modulaciones periódicas lentas, bucle de 48 segundos. Sin grabaciones ni música comercial. Generación reproducible: Herramientas/generar_audio_espacio.py (NumPy). Exclusiva de la rama espacio-DAVID.
-
-Ambiente Planeta2: pad original sintetizado en la integracion; tres tonos sinusoidales, sin muestras comerciales, estereo PCM 44.1 kHz/16 bits, bucle de 12 s.
+Revisión integral: Horizonte_espacial.wav se sustituyó por una composición original de 48 s, cuatro acordes solapados y armónicos suaves. Ambiente_Planeta2.wav contiene una composición tecnológica original de 32 s con acordes y arpegios discretos.
+Cabina_espacial, Instalaciones_Planeta2, Motor_trafico y Boost son síntesis original sin muestras externas. Motor_trafico y Boost son mono para su uso como efectos; las composiciones y ambientes son estéreo.
+Generación reproducible: Herramientas/generar_audio_integral.py (Python, NumPy). Los scripts previos se conservan para los recursos heredados; ejecutar el integral al final para obtener estas versiones. No atribuimos esta revisión a una rama ni integrante anterior. No se utilizó música comercial.

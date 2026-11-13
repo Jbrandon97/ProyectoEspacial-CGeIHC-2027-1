@@ -1,0 +1,38 @@
+{
+  "Horizonte_espacial": {
+    "duracion": 48.0,
+    "pico": 0.139411284704897,
+    "RMS": 0.04439406903897824,
+    "salto_bucle_PCM": 90
+  },
+  "Ambiente_Planeta2": {
+    "duracion": 32.0,
+    "pico": 0.08271996018662696,
+    "RMS": 0.025940562175319013,
+    "salto_bucle_PCM": 51
+  },
+  "Cabina_espacial": {
+    "duracion": 16.0,
+    "pico": 0.08835346496403328,
+    "RMS": 0.01985550029662833,
+    "salto_bucle_PCM": 7
+  },
+  "Instalaciones_Planeta2": {
+    "duracion": 16.0,
+    "pico": 0.08860533427116986,
+    "RMS": 0.019754617411173892,
+    "salto_bucle_PCM": 10
+  },
+  "Motor_trafico": {
+    "duracion": 4.0,
+    "pico": 0.21650146216099175,
+    "RMS": 0.07893215530847063,
+    "salto_bucle_PCM": 56
+  },
+  "Boost": {
+    "duracion": 4.0,
+    "pico": 0.36629172980657165,
+    "RMS": 0.07137811578972235,
+    "salto_bucle_PCM": 140
+  }
+}

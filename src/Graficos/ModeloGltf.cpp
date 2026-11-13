@@ -42,7 +42,7 @@ Textura::Textura(const std::filesystem::path &p) {
 Textura::~Textura() {
     glDeleteTextures(1, &id_);
 }
-ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
+ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
     cgltf_options opciones{};
     cgltf_data *raw = nullptr;
     if (cgltf_parse_file(&opciones, p.string().c_str(), &raw) != cgltf_result_success)
@@ -92,6 +92,17 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
                 parte.metal = pbr.metallic_factor;
                 parte.color = glm::make_vec3(pbr.base_color_factor);
                 parte.emision = glm::make_vec3(mat.emissive_factor);
+                if (indexada && mat.emissive_texture.texture &&
+                    mat.emissive_texture.texture->image &&
+                    mat.emissive_texture.texture->image->uri) {
+                    auto ruta = (p.parent_path() / mat.emissive_texture.texture->image->uri)
+                                    .lexically_normal();
+                    parte.emisionTextura = cache[ruta].lock();
+                    if (!parte.emisionTextura) {
+                        parte.emisionTextura = std::make_shared<Textura>(ruta);
+                        cache[ruta] = parte.emisionTextura;
+                    }
+                }
                 if (pbr.base_color_texture.texture) {
                     auto *im = pbr.base_color_texture.texture->image;
                     if (!im || !im->uri)
@@ -106,9 +117,10 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
             }
             size_t count = pr.indices ? pr.indices->count : pos->count;
             std::vector<Vertice> v;
-            v.reserve(count);
-            for (size_t a = 0; a < count; ++a) {
-                size_t ix = pr.indices ? cgltf_accessor_read_index(pr.indices, a) : a;
+            v.reserve(indexada ? pos->count : count);
+            for (size_t a = 0; a < (indexada ? pos->count : count); ++a) {
+                size_t ix =
+                    indexada ? a : (pr.indices ? cgltf_accessor_read_index(pr.indices, a) : a);
                 Vertice vert{};
                 if (!cgltf_accessor_read_float(pos, ix, glm::value_ptr(vert.posicion), 3) ||
                     !cgltf_accessor_read_float(normal, ix, glm::value_ptr(vert.normal), 3))
@@ -117,15 +129,27 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p) {
                     throw std::runtime_error("UV invalida");
                 v.push_back(vert);
             }
-            for (auto &vert : v)
-                (parte.puerta ? puerta_ : triangulos_)
-                    .push_back(glm::vec3(parte.local * glm::vec4(vert.posicion, 1)));
+            glm::vec3 minimo(1e20f),maximo(-1e20f);
+            for(const auto &vert:v){minimo=glm::min(minimo,vert.posicion);maximo=glm::max(maximo,vert.posicion);}
+            parte.centro=(minimo+maximo)*.5f;
+            parte.radio=glm::length(maximo-minimo)*.5f;
+            if (!indexada)
+                for (auto &vert : v)
+                    (parte.puerta ? puerta_ : triangulos_)
+                        .push_back(glm::vec3(parte.local * glm::vec4(vert.posicion, 1)));
             if (parte.etapa >= 0)
                 for (auto &vert : v)
                     verticesEtapas_[parte.etapa].push_back(
                         glm::vec3(parte.local * glm::vec4(vert.posicion, 1)));
             vertices += count;
-            parte.malla = std::make_unique<Malla>(v);
+            if (indexada) {
+                std::vector<unsigned> indices(count);
+                for (size_t a = 0; a < count; ++a)
+                    indices[a] =
+                        unsigned(pr.indices ? cgltf_accessor_read_index(pr.indices, a) : a);
+                parte.malla = std::make_unique<Malla>(v, indices);
+            } else
+                parte.malla = std::make_unique<Malla>(v);
             partes_.push_back(std::move(parte));
         }
     }
@@ -152,7 +176,12 @@ void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPue
             local = (*moverPartes)[p.indiceNodo] * local;
         if (p.puerta)
             local = glm::translate(glm::mat4(1), {0, elevacionPuerta, 0}) * local;
-        r.texturada(*p.malla, m * local, p.textura ? p.textura->id() : 0, p.color, p.emision,
-                    p.rugosidad, p.metal);
+        auto mundo=m*local;
+        float escala=std::sqrt(glm::dot(glm::vec3(mundo[0]),glm::vec3(mundo[0]))+
+                              glm::dot(glm::vec3(mundo[1]),glm::vec3(mundo[1]))+
+                              glm::dot(glm::vec3(mundo[2]),glm::vec3(mundo[2])));
+        if(!r.visible(glm::vec3(mundo*glm::vec4(p.centro,1)),p.radio*escala)) continue;
+        r.texturada(*p.malla, mundo, p.textura ? p.textura->id() : 0, p.color, p.emision,
+                    p.rugosidad, p.metal, p.emisionTextura ? p.emisionTextura->id() : 0);
     }
 }

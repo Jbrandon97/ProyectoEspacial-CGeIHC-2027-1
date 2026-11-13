@@ -21,8 +21,10 @@ class Textura {
 class ModeloGltf {
     struct Parte {
         std::unique_ptr<Malla> malla;
-        std::shared_ptr<Textura> textura;
+        std::shared_ptr<Textura> textura, emisionTextura;
         glm::mat4 local{1};
+        glm::vec3 centro{0};
+        float radio=0;
         glm::vec3 color{1}, emision{0};
         bool puerta = false;
         int etapa = -1;
@@ -43,7 +45,7 @@ class ModeloGltf {
     const std::vector<glm::vec3> &puerta() const {
         return puerta_;
     }
-    explicit ModeloGltf(const std::filesystem::path &);
+    explicit ModeloGltf(const std::filesystem::path &, bool indexada = false);
     void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,
                  const std::array<glm::mat4, 4> *etapas = nullptr,
                  const std::vector<glm::mat4> *moverPartes = nullptr) const;

@@ -4,12 +4,14 @@
 #include "Graficos/Shader.h"
 #include "Mundo/Tipos.h"
 #include <memory>
+#include <map>
 // Servicio GPU unico. Las regiones envian instancias, no crean renderizadores.
 class Renderizador {
     Shader shader_;
     Malla cubo_;
     Shader cielo_;
-    std::unique_ptr<Textura> cieloDia_, cieloNoche_;
+    std::shared_ptr<Textura> cieloDia_, cieloNoche_;
+    std::map<std::string, std::pair<std::shared_ptr<Textura>, std::shared_ptr<Textura>>> cielos_;
     std::filesystem::path recursos_;
     GLuint vaoCielo_ = 0;
     std::string seleccionCielo_;
@@ -22,7 +24,9 @@ class Renderizador {
     void iniciar(int ancho, int alto, const glm::mat4 &vistaProyeccion, Ambiente ambiente,
                  glm::vec3 ojo = glm::vec3(0));
     ~Renderizador();
-    void permitirCapturas(bool valor) { capturasHabilitadas_ = valor; }
+    void permitirCapturas(bool valor) {
+        capturasHabilitadas_ = valor;
+    }
     void recortarDebajo(float altura) {
         shader_.vector("recorte", {altura, 0, 0});
     }
@@ -30,10 +34,12 @@ class Renderizador {
         shader_.vector("humo", {transparencia, 0, 0});
     }
     void material(float rugosidad, float metal = 0);
+    void locomocionRobot(float fase, bool activa);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));
     void texturada(const Malla &, const glm::mat4 &, GLuint textura, glm::vec3 color,
-                   glm::vec3 emision = glm::vec3(0), float rugosidad = .85f, float metal = 0);
+                   glm::vec3 emision = glm::vec3(0), float rugosidad = .85f, float metal = 0,
+                   GLuint emisionTextura = 0);
     bool visible(glm::vec3 centro, float radio) const;
     void interfaz(const Malla &malla, int ancho, int alto);
     void capturar(const std::filesystem::path &archivo, int ancho, int alto) const;

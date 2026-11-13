@@ -1,62 +1,42 @@
-# Proyecto Espacial — integración final
+# Proyecto Espacial — revisión integral
 
-Computación Gráfica e IHC, FI UNAM, semestre 2027-1. Integramos Halo/Titanfall, Ratchet & Clank/Warframe y Espacio en C++17, OpenGL 3.3 y GLFW.
+Computación Gráfica e IHC, FI UNAM, 2027-1. C++17, OpenGL 3.3, GLFW y miniaudio. Conservamos Halo/Titanfall, Ratchet & Clank/Warframe y Freeport. Esta revisión es local: no está publicada en GitHub.
 
-## Ejecutar 
+## Ejecutar y compilar
 
-Descargar `ProyectoEspacial_Ejecutable_Final.zip` desde [GitHub Releases — v1.0-final](https://github.com/Jbrandon97/ProyectoEspacial-CGeIHC-2027-1/releases/tag/v1.0-final). Extraer el ZIP completo y abrir `ProyectoEspacial.exe` con doble clic dentro de `Entrega_Ejecutable`. Mantener `Recursos` junto al EXE. No se necesita un archivo CMD ni compilar para jugar.
+Extraer el ZIP completo y abrir **ProyectoEspacial.exe**. Mantener **Recursos** junto al EXE; no ejecutar dentro del ZIP. Incluimos el PDB correspondiente. Se necesita Windows x64 y un controlador OpenGL 3.3 con dispositivo de reproducción de audio disponible.
 
-## Abrir, compilar y ejecutar
+Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK. Seleccionar **Release | x64** y ProyectoEspacial como proyecto de inicio. Las dependencias están incluidas; no se requieren descargas ni DLL adicionales de terceros. La compilación copia Recursos a `bin/x64/Release`.
 
-1. Abrir `ProyectoEspacial.sln` con Visual Studio 2022, carga de trabajo Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK.
-2. Seleccionar **Release | x64**, proyecto de inicio **ProyectoEspacial**, compilar y ejecutar.
-3. La compilación genera `bin/x64/Release/ProyectoEspacial.exe` y copia `Recursos` junto a él. Las dependencias están incluidas.
-4. En la carpeta preparada para revisión también puede abrirse directamente `ProyectoEspacial.exe`, situado junto a `Recursos` para evitar duplicarlos.
-5. Pruebas automatizadas: `ProyectoEspacial.exe --pruebas --evidencias carpeta_destino`.
+## Controles principales
 
-Para verificar sin generar capturas: `ProyectoEspacial.exe --pruebas --sin-capturas`. Conservamos los tests porque forman parte de la solución. No se necesita Python para jugar; las herramientas de síntesis y conversión sólo se usan para regenerar recursos.
+| Contexto | Controles |
+|---|---|
+| General | 1/2/3 regiones; Esc salir; Tab liberar cursor |
+| Audio | M silencio; N selecciona general/música/ambiente/efectos; −/+ ajustan el canal seleccionado |
+| Planetas | WASD movimiento; Shift correr; mouse cámara; F1 exploración; F3 vista existente |
+| Planeta 1 | X abordar/descender; R reiniciar carrera; C recuperar con penalización; E hangar; P reflector; F energía corporal |
+| Interacciones de P1 | G Grunt; K inspección; H Hunter; B caminar BT; J saludo BT; L lanzar; T reponer; O observar/regresar. Las acciones de personajes, hangar y cohete requieren proximidad |
+| Planeta 2 | F energía corporal; P reflector del recinto; NPC, Railjack y Aphelion tienen ciclos propios |
+| Espacio, F3 pilotaje | W/S acelerar/frenar; A/D girar; mouse orientación; Q/Z subir/bajar; Shift boost; C recuperar; V alterna exterior/cabina; Enter portal cercano |
+| Observación espacial | F4 órbita; F5 estación; F6 asteroides; F3 volver a pilotaje; U/I focos independientes |
 
-GLFW y GLAD se compilan como biblioteca estática; GLM es de cabeceras. No hacen falta DLL de terceros ni redistribuible de MSVC: Release utiliza /MT. Windows y un controlador compatible con OpenGL 3.3 son necesarios. Los filtros organizan los archivos en Visual Studio; el proyecto ejecutable es el proyecto de inicio. El depurador usa la carpeta del EXE y el PDB correspondiente se genera en cada compilación.
+La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva la cámara elegida. F2 conserva la cámara de carrera y requiere abordar. No se reasignaron 1–3, F1–F4 ni C. El HUD muestra controles según región y modo; el listado detallado está en `Evidencias/Controles.csv`.
 
-## Controles
+## Comprobaciones y evidencia
 
-| Tecla | Acción |
-| --- | --- |
-| 1 / 2 / 3 | Planeta 1 / Planeta 2 / Espacio |
-| F1–F4 | Cámaras originales, según compatibilidad de región |
-| WASD / Shift | Caminar 15 / correr 30 unidades/s, relativo a cámara |
-| Mouse / flechas / Tab | Cámara / órbita / liberar cursor |
-| X | Abordar o descender de Banshee, en proximidad y detenida |
-| W/S/A/D en carrera | Acelerar / frenar / dirigir |
-| R / C | Reiniciar carrera / recuperar con penalización de 2 s |
-| E / P | Hangar cercano / reflector fijo del hangar |
-| F | Energía corporal cian omnidireccional del Engineer |
-| G / K / H | Reacción de Grunt 1 / inspección de Grunt 2 / vigilancia de Hunter; en proximidad |
-| B / J | Caminata / saludo articulado del BT-7274, en proximidad y sin otra animación suya activa |
-| L / T / O | Lanzar / solicitar reposición / observar o regresar |
-| M / - / + / Esc | Silencio / volumen / salir |
+- `ProyectoEspacial.exe --pruebas --evidencias carpeta`: regresión de las tres regiones y capturas reales.
+- `--pruebas --sin-capturas`: misma regresión sin guardar imágenes (las comprobaciones de píxeles siguen ejecutándose).
+- `--pruebas-integrales --evidencias carpeta`: comprobaciones específicas de esta revisión y mezcla PCM de audio.
+- `--medir-integral`: medición de fotogramas con simulación, HUD y audio en las tres regiones.
+- `--medir-espacio`: medición de dibujo en tres vistas fijas, comparable al bloque anterior.
 
-El cohete conserva dos separaciones principales, a los 7 y 11 s. S-IVB y cápsula siguen juntas hacia el cielo; no orbitan. Los restos permanecen apoyados hasta reiniciar y la reposición automática empieza a los 70 s; la compuerta/elevador tarda 8,5 s. L funciona a 8–65 unidades de la plataforma; T a 9–90. Si T se pulsa antes de finalizar, espera al cierre del vuelo. No se transporta al avatar.
+Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Evidencias/Revision_Integral.md**. La presentación **Evidencias/Revision_visual.html** reúne capturas y enlaces. **Evidencias/Audio_Tecnico.md** contiene la evidencia para la futura investigación; no es el reporte académico final.
 
-## Estructura e integración
+## Organización y recursos
 
-- `src/Regiones/Planeta1/`: Halo/Titanfall, base de `planeta1--BRAND-ON`.
-- `src/Regiones/Planeta2/`: región única Ratchet & Clank/Warframe; fuente principal `planeta2--PEDRO`. La rama `planeta2--MIGUEL` conserva el historial y los originales del colaborador, sin otro merge redundante.
-- `src/Regiones/Espacio/`: Gateway, navegación, cuerpos celestes y tráfico; base `espacio-DAVID` y revisión del ZIP.
-- `src/Mundo`, `src/Camaras`, `src/Nucleo`, `src/Graficos`, `src/Audio`: servicios compartidos; coordinar cambios entre integrantes.
-- `Recursos`, `Dependencias`, `Herramientas`: recursos relativos, bibliotecas y scripts de preparación/audio.
-- `integracion-final`: base validada e incorporada a `main` mediante merge, conservando los historiales.
+`src/Regiones` conserva los módulos de cada región; `src/Audio`, `src/Graficos`, `src/Camaras` y `src/Nucleo` contienen servicios compartidos. `Recursos` y `Dependencias` conservan sus licencias y procedencias. No atribuimos modelos de terceros ni cambios actuales a integrantes concretos.
 
-Conservamos las interfaces de ambos sectores de Planeta 2; su distribución conjunta se dibuja una sola vez desde SectorRatchet. No duplicar los modelos Warframe en SectorWarframe. Mantener las rutas relativas, revisar cambios compartidos y probar las tres regiones antes de integrar.
+miniaudio 0.11.23 se compila una sola vez desde `src/Audio/Audio.cpp`; no queda un motor waveOut propio. Música y ambientes son síntesis original: no incorporamos música comercial. Para regenerar las revisiones de Espacio y Planeta 2, ejecutar `Herramientas/generar_audio_integral.py` al final de los scripts de audio previos. Python y NumPy sólo son necesarios para esa regeneración, no para jugar.
 
-En Espacio: F3 piloto, V primera persona/exterior, F4 observación; W/S aceleración/freno, A/D giro, mouse orientación, Q/Z ascenso/descenso, C recuperación y Enter visita contextual. F4 permite órbita con mouse/flechas. Las teclas 1–3 y F1–F4 se conservan; la selección automática de cámara sigue activa según el modo.
-
-La posición, orientación, cámara y reloj regional se conservan durante la sesión; no se guardan al cerrar. Los WAV originales se regeneran con los scripts `Herramientas/generar_audio*.py` (Python y NumPy), innecesarios para jugar.
-
-El cargador real es **cgltf**, acompañado de stb_image, GLM, GLAD y GLFW. Esta base no utiliza Assimp; no se añadió una biblioteca ni DLL que el código no necesita.
-
-## Entrega y atribuciones
-
-El paquete fuente permite compilar. `ProyectoEspacial_Ejecutable_Final.zip` contiene `Entrega_Ejecutable` con EXE, PDB y Recursos; extraer la carpeta completa y abrir el EXE. No ejecutar dentro del ZIP ni separar el EXE de sus recursos.
-
-Las procedencias y licencias permanecen en Recursos y Dependencias. Los modelos de terceros no se presentan como propios; la finalidad académica no cambia sus derechos. La revisión y las limitaciones verificadas están en `Informe_Tecnico_Integracion.md`.
+Las posiciones, cámaras y relojes se conservan durante la sesión; no se guardan al cerrar. Antes de integrar estos cambios en las ramas del equipo, revisar el inventario y las pruebas de `Evidencias`. Esta entrega no hace commits ni modifica `main`.

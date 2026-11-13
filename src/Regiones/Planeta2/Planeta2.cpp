@@ -7,7 +7,7 @@
 namespace {
 constexpr float Pi = 3.14159265f;
 constexpr float EscalaTerreno = .60f; // 600 originales -> 360 u, croquis compacto.
-constexpr float LimiteX = 171.f; // Dejar montanas en el borde, fuera del recorrido.
+constexpr float LimiteX = 171.f;      // Dejar montanas en el borde, fuera del recorrido.
 constexpr float LimiteZ = 151.f;
 constexpr float PendienteMax = 1.2f;
 const glm::vec3 PosSectorWarframe{-18, 0, 0};
@@ -16,7 +16,7 @@ const glm::vec3 PosSectorRatchet{18, 0, 0};
 
 void Planeta2::cargar(ContextoEscena &c) {
     liberar();
-    terreno_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Terreno2.gltf");
+    terreno_ = std::make_unique<ModeloGltf>(c.recursos / "Modelos/Terreno2.gltf",true);
     alturas_ = std::make_unique<AlturasTerreno>(c.recursos / "Modelos/Alturas_201x201.f32");
     warframe_.cargar(c);
     ratchet_.usarSuelo([this](float x, float z) {
@@ -27,6 +27,8 @@ void Planeta2::cargar(ContextoEscena &c) {
 void Planeta2::controlar(const OrdenActividad &orden) {
     // Reaccion de NPC solo cerca del corral, sin interferir con controles de P1.
     ratchet_.registrarAvatar(orden.avatar - PosSectorRatchet);
+    if (orden.reflector)
+        reflector_ = !reflector_;
 }
 void Planeta2::actualizar(float dt) {
     tiempo_ = std::fmod(tiempo_ + std::max(0.f, dt), 120.f);
@@ -34,7 +36,8 @@ void Planeta2::actualizar(float dt) {
     ratchet_.actualizar(dt);
 }
 void Planeta2::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
-    if (terreno_) terreno_->dibujar(c.renderizador, glm::scale(m, glm::vec3(EscalaTerreno)));
+    if (terreno_)
+        terreno_->dibujar(c.renderizador, glm::scale(m, glm::vec3(EscalaTerreno)));
     warframe_.dibujar(c, glm::translate(m, PosSectorWarframe));
     ratchet_.dibujar(c, glm::translate(m, PosSectorRatchet));
 }
@@ -54,10 +57,13 @@ glm::vec3 Planeta2::ajustarMovimiento(glm::vec3 anterior, glm::vec3 p) const {
     auto choca = [&](glm::vec3 q) {
         return ratchet_.obstaculo(q - PosSectorRatchet) || empinado(anterior, q);
     };
-    if (!choca(p)) return p;
+    if (!choca(p))
+        return p;
     glm::vec3 soloX{p.x, p.y, anterior.z}, soloZ{anterior.x, p.y, p.z};
-    if (!choca(soloX)) return soloX;
-    if (!choca(soloZ)) return soloZ;
+    if (!choca(soloX))
+        return soloX;
+    if (!choca(soloZ))
+        return soloZ;
     return anterior;
 }
 Ambiente Planeta2::ambiente() const noexcept {
@@ -66,8 +72,7 @@ Ambiente Planeta2::ambiente() const noexcept {
     auto &l = a.iluminacion;
     l.activa = true;
     // Igual que Planeta 1: 80 s de dia y 40 s de noche.
-    float angulo = tiempo_ < 80 ? Pi * (tiempo_ / 80.f)
-                                : Pi + Pi * ((tiempo_ - 80.f) / 40.f);
+    float angulo = tiempo_ < 80 ? Pi * (tiempo_ / 80.f) : Pi + Pi * ((tiempo_ - 80.f) / 40.f);
     l.sol = glm::normalize(glm::vec3(std::cos(angulo), std::sin(angulo), .21f));
     float dia = glm::smoothstep(-.15f, .2f, l.sol.y);
     l.noche = 1 - dia;
@@ -88,22 +93,39 @@ Ambiente Planeta2::ambiente() const noexcept {
     auto &aphelion = l.puntuales[7];
     aphelion.posicion = nave + glm::vec3(0, 0, 1);
     aphelion.color = {.25f, .64f, 1.f};
-    aphelion.intensidad = 1.1f + 1.1f*l.noche;
+    aphelion.intensidad = 1.1f + 1.1f * l.noche;
     aphelion.atenuacion = {1, .11f, .045f};
     aphelion.encendida = true;
     // El indice 8 es EXCLUSIVO para la luz del Engineer (Aplicacion.cpp).
     auto &corral = l.puntuales[9];
     corral.posicion = {-67, altura(-67, 35) + 6.f, 35};
     corral.color = {.60f, .39f, 1.f};
-    corral.intensidad = 3.2f*l.noche;
+    corral.intensidad = 3.2f * l.noche;
     corral.atenuacion = {1, .07f, .018f};
     corral.encendida = l.noche > .001f;
     auto &railjack = l.puntuales[10];
     railjack.posicion = ratchet_.railjackPosicion() + PosSectorRatchet;
     railjack.color = {.36f, .68f, 1.f};
-    railjack.intensidad = 1.7f + 1.8f*l.noche;
+    railjack.intensidad = 1.7f + 1.8f * l.noche;
     railjack.atenuacion = {1, .12f, .036f};
     railjack.encendida = true;
 
+    auto &f = l.focales[0];
+    f.posicion = {-67, altura(-67, 35) + 14, 35};
+    f.direccion = glm::normalize(glm::vec3(-8, -12, 5));
+    f.color = {.45f, .74f, 1};
+    f.intensidad = 1.35f;
+    f.interno = 22;
+    f.externo = 38;
+    f.atenuacion = {1, .035f, .003f};
+    f.encendida = reflector_;
     return a;
+}
+EstadoActividad Planeta2::actividad() const {
+    EstadoActividad e;
+    e.mensajes = {"PLANETA 2 / KERWAN + WARFRAME",
+                  "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 VISTA",
+                  "F ENERGIA CORPORAL / P REFLECTOR NPC",
+                  "CLANK - BLARG - WARFRAME EN PATRULLA / RAILJACK CICLO 24 S"};
+    return e;
 }

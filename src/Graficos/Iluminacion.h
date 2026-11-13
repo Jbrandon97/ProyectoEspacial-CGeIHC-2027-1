@@ -7,7 +7,13 @@ struct LuzPuntual {
     glm::vec3 atenuacion{1, .09f, .018f};
     bool encendida = false;
 };
+struct LuzFocal {
+    glm::vec3 posicion{0}, direccion{0, -1, 0}, color{1}, atenuacion{1, .02f, .002f};
+    float intensidad = 0, interno = 20, externo = 30;
+    bool encendida = false;
+};
 struct Iluminacion {
+    std::array<LuzFocal, 2> focales{};
     bool activa = false;
     glm::vec3 sol{0, 1, 0}, colorSol{1};
     float fuerzaSol = 1, ambiente = .2f, noche = 0;

@@ -10,7 +10,8 @@ struct OrdenActividad {
     bool titan = false, hunter = false, saludo = false, reflector = false, inspeccion = false;
     bool puerta = false, lanzar = false, reiniciarCohete = false, reaccion = false;
     float vertical = 0;
-    bool confirmar = false;
+    bool confirmar = false, boost = false;
+    bool luzAcople = false, luzServicio = false;
     glm::vec2 mirada{0};
 };
 struct EstadoActividad {

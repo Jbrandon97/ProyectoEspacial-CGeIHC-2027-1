@@ -27,6 +27,7 @@ void Planeta2::cargar(ContextoEscena &c) {
 void Planeta2::controlar(const OrdenActividad &orden) {
     // Reaccion de NPC solo cerca del corral, sin interferir con controles de P1.
     ratchet_.registrarAvatar(orden.avatar - PosSectorRatchet);
+    if(orden.luzServicio) reflectorOrokin_=!reflectorOrokin_;
     if (orden.reflector)
         reflector_ = !reflector_;
 }
@@ -77,7 +78,7 @@ Ambiente Planeta2::ambiente() const noexcept {
     float dia = glm::smoothstep(-.15f, .2f, l.sol.y);
     l.noche = 1 - dia;
     l.fuerzaSol = .93f * glm::smoothstep(-.04f, .3f, l.sol.y);
-    l.ambiente = .13f + .14f * dia;
+    l.ambiente = .17f + .10f * dia;
     l.colorSol = glm::mix(glm::vec3(1, .56f, .4f), glm::vec3(.95f, .96f, 1),
                           glm::smoothstep(0.f, .65f, l.sol.y));
     // Seis luminarias de fachada sincronizadas con la noche.
@@ -98,7 +99,7 @@ Ambiente Planeta2::ambiente() const noexcept {
     aphelion.encendida = true;
     // El indice 8 es EXCLUSIVO para la luz del Engineer (Aplicacion.cpp).
     auto &corral = l.puntuales[9];
-    corral.posicion = {-67, altura(-67, 35) + 6.f, 35};
+    corral.posicion = {-42, altura(-42, 20) + 6.f, 20};
     corral.color = {.60f, .39f, 1.f};
     corral.intensidad = 3.2f * l.noche;
     corral.atenuacion = {1, .07f, .018f};
@@ -111,21 +112,28 @@ Ambiente Planeta2::ambiente() const noexcept {
     railjack.encendida = true;
 
     auto &f = l.focales[0];
-    f.posicion = {-67, altura(-67, 35) + 14, 35};
-    f.direccion = glm::normalize(glm::vec3(-8, -12, 5));
+    f.posicion = {-32, altura(-42, 20) + 14, 30};
+    f.direccion = glm::normalize(glm::vec3(-10, -12, -10));
     f.color = {.45f, .74f, 1};
     f.intensidad = 1.35f;
     f.interno = 22;
     f.externo = 38;
     f.atenuacion = {1, .035f, .003f};
     f.encendida = reflector_;
+    auto &f2=l.focales[1];f2=f;f2.posicion={104,altura(83,-15)+20,6};
+    f2.direccion=glm::normalize(glm::vec3(-21,-15,-21));f2.color={1,.79f,.4f};f2.intensidad=2.5f;
+    f2.encendida=reflectorOrokin_;
+    const glm::vec2 puntos[]={{-42,90},{-15,20},{38,20},{83,38}};
+    for(int i=0;i<4;++i){auto &p=l.puntuales[11+i];auto q=puntos[i];p.posicion={q.x,altura(q.x,q.y)+4.5f,q.y};
+        p.color={1,.73f,.35f};p.intensidad=2.5f*l.noche;p.encendida=l.noche>.001f;p.atenuacion={1,.06f,.018f};}
+
     return a;
 }
 EstadoActividad Planeta2::actividad() const {
     EstadoActividad e;
     e.mensajes = {"PLANETA 2 / KERWAN + WARFRAME",
-                  "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 VISTA",
-                  "F ENERGIA CORPORAL / P REFLECTOR NPC",
+                  "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
+                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN",
                   "CLANK - BLARG - WARFRAME EN PATRULLA / RAILJACK CICLO 24 S"};
     return e;
 }

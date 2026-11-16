@@ -199,12 +199,12 @@ void Aplicacion::actualizarCamara(float dt) {
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
     glm::vec3 direccion = actividad.direccion;
     if (camaras_.modo() == ModoCamara::Viaje) {
-        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(20, 4, -10);
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(-42, 4, 20);
         camaras_.encuadrarEvento(mundo_.aGlobal(r, objetivo));
         return;
     }
     if (camaras_.modo() == ModoCamara::Observacion)
-        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(20, 4, -10);
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(88, 12, 15);
     auto alturaGlobal = [&](float x, float z) {
         auto p = mundo_.aLocal(r, {x, 0, z});
         return mundo_.aGlobal(r, {p.x, e.altura(p.x, p.z), p.z}).y;
@@ -276,8 +276,8 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
             if (texto.rfind("WASD", 0) == 0)
                 texto = "WASD / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 VISTA / TAB CURSOR";
     if (r == Region::Planeta2 && camaras_.modo() != ModoCamara::Exploracion && lineas.size() > 2) {
-        lineas[1] = "F1 VOLVER A EXPLORACION / F3 VISTA";
-        lineas[2] = "P REFLECTOR NPC";
+        lineas[1] = "F1 EXPLORAR / F3 PLAZA / F4 WARFRAME";
+        lineas[2] = "P FOCO PLAZA / I FOCO OROKIN";
     }
     if (r == Region::Espacio) {
         bool piloto = camaras_.modo() == ModoCamara::Viaje;

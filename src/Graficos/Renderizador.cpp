@@ -200,3 +200,5 @@ void Renderizador::material(float r, float m) {
 void Renderizador::locomocionRobot(float fase, bool activa) {
     shader_.vector("locomocionClank", {fase, activa ? 1.f : 0.f, 0});
 }
+
+void Renderizador::locomocionBlarg(float fase) { shader_.vector("locomocionClank",{fase,2,0}); }

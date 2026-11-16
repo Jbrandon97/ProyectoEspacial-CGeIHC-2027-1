@@ -15,7 +15,7 @@ class SectorRatchet {
     std::array<float, 6> apoyos_{}, huecosBase_{};
     std::array<glm::vec3, 6> lucesEdificios_{}, centrosEdificios_{};
     glm::vec3 avatarLocal_{500, 0, 500};
-    float tiempo_ = 0;
+    float tiempo_ = 0, apoyoTorre_=0, apoyoRailjack_=0;
 
   public:
     const auto &huecosBase() const {

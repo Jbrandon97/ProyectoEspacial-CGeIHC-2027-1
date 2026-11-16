@@ -1,0 +1,29 @@
+PRUEBAS DEL CIERRE LOCAL
+Fecha de ejecución: 2026-11-16
+
+1) Compilación
+- Visual Studio 2022 / MSBuild, ProyectoEspacial.sln, x64 Release: ejecutable generado en bin/x64/Release/ProyectoEspacial.exe.
+- Visual Studio 2022 / MSBuild, x64 Debug: ejecutable generado en bin/x64/Debug/ProyectoEspacial.exe.
+- Resultado: correcto. Advertencias restantes: las propias de miniaudio 0.11.23; no hubo error de compilación.
+
+2) Regresión automatizada
+- Comando: ProyectoEspacial.exe --pruebas --evidencias _trabajo/cierre_teoria/full_final
+- Resultado: salida 0 y texto final CIERRE CORRECTO.
+- Incluye contratos de regiones, carrera, Freeport, cargadores GLTF, iluminación, cielo, P1, P2 y miniaudio.
+
+3) Pruebas integrales relevantes
+- P1: CIERRE_P1_OK; holocrón a 12 s, escala máxima 3.5, retorno al pedestal, reflector Covenant y F3 colonia.
+- Espacio: ESPACIO_B1_GEOMETRIA_OK; 8002 muestras de tráfico sin salto ni colisión.
+- P2: PLANETA2_OK; seis apoyos geométricos, colisiones, seis luces de fachada, ciclo de 120 s y persistencia.
+- P2 integral: 5400 muestras de NPC/suelo/separación; foco con 138492 píxeles modificados.
+- Audio: MINIAUDIO_OK; PCM estéreo 44100 Hz y mezclas con RMS medible.
+
+4) Rendimiento automatizado
+- Comando: ProyectoEspacial.exe --medir-integral
+- GPU: Intel(R) UHD Graphics 620; OpenGL 3.3.0; VSync desactivado por el medidor.
+- P1: 120 muestras, 59.7509 FPS medio, p95 17.5584 ms.
+- P2: 120 muestras, 44.1205 FPS medio, p95 24.1051 ms.
+- Espacio: 120 muestras, 85.7457 FPS medio, p95 15.1583 ms.
+
+5) Límite de verificación
+No se afirma una sesión manual completa ni una evaluación de accesibilidad del profesor. Las capturas incluidas son cuadros producidos por el ejecutable y revisados visualmente.

@@ -787,16 +787,16 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
     for (int t : {0, 6, 12}) {
         if (t)
             p.actualizar(6);
-        foto("Integral_NPC_" + std::to_string(t), {-67, 22, 77}, {-67, 4, 35});
+        foto("Integral_NPC_" + std::to_string(t), {15, 60, 110}, {5, 5, 15});
     }
     OrdenActividad luz;
     luz.reflector = true;
     auto inicial = p.ambiente().iluminacion.focales[0].encendida;
     if (inicial)
         p.controlar(luz);
-    auto apagado = foto("Integral_P2_foco_OFF", {-69, 20, 64}, {-72, 2, 39});
+    auto apagado = foto("Integral_P2_foco_OFF", {-20, 18, 62}, {-42, 3, 20});
     p.controlar(luz);
-    auto encendido = foto("Integral_P2_foco_ON", {-69, 20, 64}, {-72, 2, 39});
+    auto encendido = foto("Integral_P2_foco_ON", {-20, 18, 62}, {-42, 3, 20});
     size_t distintos = 0;
     for (size_t i = 0; i < apagado.size(); ++i)
         if (std::abs(int(apagado[i]) - int(encendido[i])) > 3)
@@ -807,9 +807,23 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
     for (float t : {0.f, 6.f, 13.f, 22.f}) {
         float paso = std::fmod(t - std::fmod(p.ratchet().reloj(), 24.f) + 24.f, 24.f);
         p.actualizar(paso);
-        foto("Integral_Railjack_" + std::to_string(int(t)), {-47, 28, -26}, {-76, 13, -67});
+        foto("Integral_Railjack_" + std::to_string(int(t)), {135, 30, 110}, {98, 9, 65});
     }
-    avatar_.colocar({-67, 0, 62}, p);
+    OrdenActividad oro;oro.luzServicio=true;
+    if(p.ambiente().iluminacion.focales[1].encendida)p.controlar(oro);
+    auto offOro=foto("Cierre_Orokin_OFF",{115,32,45},{83,12,-15});
+    p.controlar(oro);
+    auto onOro=foto("Cierre_Orokin_ON",{115,32,45},{83,12,-15});
+    size_t cambioOro=0;for(size_t i=0;i<offOro.size();++i)if(onOro[i]>offOro[i]+3)++cambioOro;
+    exigir(cambioOro>2000,"Segundo foco Orokin no ilumina superficies");
+    for(int i=0;i<3;++i)for(float dt:{0.f,.45f}) {
+        p.actualizar(dt);auto npc=p.ratchet().posicionNPC(i,p.ratchet().reloj())+glm::vec3(18,0,0);
+        foto("Cierre_NPC"+std::to_string(i)+"_"+std::to_string(int(dt*100)),npc+glm::vec3(9,6,12),npc+glm::vec3(0,2,0));
+    }
+    foto("Cierre_P2_Distribucion",{95,170,225},{10,0,15});
+    solicitarCamara(ModoCamara::Viaje);for(int i=0;i<120;++i)actualizarCamara(1.f/60);dibujar(dir/"Cierre_P2_F3.ppm");
+    solicitarCamara(ModoCamara::Observacion);for(int i=0;i<120;++i)actualizarCamara(1.f/60);dibujar(dir/"Cierre_P2_F4.ppm");
+    avatar_.colocar({-42, 0, 90}, p);
     camaras_.alCambiarRegion(Region::Planeta2);
     dibujar(dir / "Integral_HUD_P2.ppm");
     std::cout << "INTEGRAL_P2_OK 5400 muestras NPC, suelo y separacion; foco canales=" << distintos

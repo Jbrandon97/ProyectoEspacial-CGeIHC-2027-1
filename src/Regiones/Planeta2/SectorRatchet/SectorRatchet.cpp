@@ -12,7 +12,8 @@ constexpr float EscalaEdificios = 2.f;
 constexpr float EscalaRailjack = .16f;
 constexpr glm::vec2 Corral{-85.f, 35.f};
 constexpr glm::vec2 MedioCorral{24.f, 19.f};
-constexpr glm::vec2 PatioRailjack{-94.f, -67.f};
+constexpr glm::vec2 PatioRailjack{80.f, 65.f};
+constexpr glm::vec2 Torre{65.f,-15.f};
 struct Edificio {
     int tipo;
     glm::vec2 posicion;
@@ -20,12 +21,12 @@ struct Edificio {
 };
 // Tres edificios originales + una copia de cada uno. Se mantiene una plaza central.
 constexpr std::array<Edificio, 6> Edificios{{
-    {0, {8, -15}, {2.4f, 1.9f}},
-    {1, {51, -27}, {3.5f, 4.8f}},
-    {2, {38, 45}, {1.6f, 1.7f}},
-    {0, {-25, -52}, {2.4f, 1.9f}},
-    {1, {94, 63}, {3.5f, 4.8f}},
-    {2, {-32, 85}, {1.6f, 1.7f}},
+    {0, {-95, -20}, {2.4f, 1.9f}},
+    {1, {-60, -25}, {3.5f, 4.8f}},
+    {2, {-27, -12}, {1.6f, 1.7f}},
+    {0, {-100, 32}, {2.4f, 1.9f}},
+    {1, {-22, 50}, {3.5f, 4.8f}},
+    {2, {-75, 65}, {1.6f, 1.7f}},
 }};
 // Posiciones fijas, no calculos aleatorios por fotograma.
 constexpr std::array<glm::vec2, 29> Arboles{{
@@ -121,7 +122,7 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     edificio1_ = modelo("Modelos/Kerwan_Edificio1.gltf");
     edificio2_ = modelo("Modelos/Kerwan_Edificio2.gltf");
     edificio3_ = modelo("Modelos/Kerwan_Edificio3.gltf");
-    railjack_ = modelo("Modelos/Railjack/RailjackSeparadoVibraAnimado.gltf", true);
+    railjack_ = modelo("Modelos/Railjack/Railjack_Optimizado.gltf", true);
     orokintower_ = modelo("Originales/OrokinTower/TorreOrokin1.gltf");
     warframe_ = modelo("Modelos/Warframe/Warframe.gltf",true);
     aphelion_ = modelo("Modelos/Aphelion/aphelion.gltf",true);
@@ -166,37 +167,45 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     Geometria::caja(arbol, {0, 1.05f, 0}, {.52f, 2.1f, .52f}, {.38f, .27f, .49f});
     Geometria::elipsoide(arbol, {0, 3.5f, 0}, {2.35f, 2.30f, 2.35f}, {.62f, .35f, .85f}, 10, 6);
     arbol_ = std::make_unique<Malla>(arbol);
-    std::vector<Vertice> vallas;
-    // Dos travesanos por pared y una entrada de 8 u al frente. Se ubican sobre el suelo.
-    auto tramo = [&](float xa, float za, float xb, float zb) {
-        float dx = xb - xa, dz = zb - za;
-        float longitud = std::sqrt(dx * dx + dz * dz);
-        int pasos = std::max(1, int(std::ceil(longitud / 5.f)));
-        for (int i = 0; i <= pasos; ++i) {
-            float t = float(i) / pasos;
-            float x = glm::mix(xa, xb, t), z = glm::mix(za, zb, t);
-            float y = alturaSuelo(x, z);
-            Geometria::caja(vallas, {x, y + 1.3f, z}, {.28f, 2.6f, .28f}, {.52f, .64f, .82f});
-        }
-        for (int i = 0; i < pasos; ++i) {
-            float t = (float(i) + .5f) / pasos;
-            float x = glm::mix(xa, xb, t), z = glm::mix(za, zb, t);
-            float y = alturaSuelo(x, z);
-            glm::vec3 d = std::abs(dx) > std::abs(dz)
-                              ? glm::vec3(longitud / pasos + .25f, .23f, .28f)
-                              : glm::vec3(.28f, .23f, longitud / pasos + .25f);
-            Geometria::caja(vallas, {x, y + 1.0f, z}, d, {.33f, .55f, .74f});
-            Geometria::caja(vallas, {x, y + 2.4f, z}, d, {.47f, .34f, .75f});
+    std::vector<Vertice> piso;
+    auto punto=[&](glm::vec2 v){return glm::vec3(v.x,alturaSuelo(v.x,v.y)+.06f,v.y);};
+    auto camino=[&](glm::vec2 a,glm::vec2 b,float ancho){
+        auto lado=glm::normalize(glm::vec2(-(b-a).y,(b-a).x))*ancho*.5f;
+        int n=int(glm::length(b-a)/3)+1;
+        for(int i=0;i<n;++i){
+            auto c=glm::mix(a,b,float(i)/n),d=glm::mix(a,b,float(i+1)/n);
+            glm::vec3 color=i%5 ? glm::vec3(.38f,.36f,.34f):glm::vec3(.42f,.40f,.37f);
+            Geometria::triangulo(piso,punto(c-lado),punto(d+lado),punto(d-lado),color);
+            Geometria::triangulo(piso,punto(c-lado),punto(c+lado),punto(d+lado),color);
         }
     };
-    const float l = Corral.x - MedioCorral.x, r = Corral.x + MedioCorral.x;
-    const float f = Corral.y - MedioCorral.y, b = Corral.y + MedioCorral.y;
-    tramo(l, f, Corral.x - 4, f);
-    tramo(Corral.x + 4, f, r, f); // entrada
-    tramo(l, b, r, b);
-    tramo(l, f, l, b);
-    tramo(r, f, r, b);
-    vallas_ = std::make_unique<Malla>(vallas);
+    auto disco=[&](glm::vec2 centro,glm::vec2 radio){
+        for(int i=0;i<64;++i){
+            float a=2*Pi*i/64,b=2*Pi*(i+1)/64;
+            auto u=centro+radio*glm::vec2(std::cos(a),std::sin(a));
+            auto v=centro+radio*glm::vec2(std::cos(b),std::sin(b));
+            Geometria::triangulo(piso,punto(centro),punto(v),punto(u),{.42f,.40f,.37f});
+            auto medio=centro+radio*.94f*glm::vec2(std::cos(a),std::sin(a));
+            Geometria::caja(piso,{medio.x,alturaSuelo(medio.x,medio.y)+.12f,medio.y},{.5f,.12f,.5f},{.75f,.57f,.23f});
+        }
+    };
+    camino({-60,118},{-60,20},12);camino({-60,20},{65,20},12);
+    camino({65,20},{65,-15},12);camino({65,20},PatioRailjack,14);
+    camino({0,20},{0,-95},8);
+    disco({-60,20},{28,28});disco(Torre,{24,24});disco(PatioRailjack,{30,36});disco({0,-95},{15,15});
+    float torreMin=1e9f,railMin=1e9f;
+    for(auto v:orokintower_->triangulos())torreMin=std::min(torreMin,v.y);
+    for(auto v:railjack_->triangulos())railMin=std::min(railMin,v.y);
+    apoyoTorre_=alturaSuelo(Torre.x,Torre.y)-torreMin*.85f-.1f;
+    apoyoRailjack_=alturaSuelo(PatioRailjack.x,PatioRailjack.y)-railMin*EscalaRailjack+.12f;
+    // Un pedestal compacto organiza la plaza sin introducir otro modelo descargado.
+    Geometria::caja(piso,{-60,alturaSuelo(-60,20)+.7f,20},{3,1.4f,3},{.38f,.34f,.24f});
+    for(auto v:std::array<glm::vec2,4>{{{-60,90},{-33,20},{20,20},{65,38}}}){
+        float y=alturaSuelo(v.x,v.y);
+        Geometria::caja(piso,{v.x,y+2.2f,v.y},{.4f,4.4f,.4f},{.3f,.32f,.34f});
+        Geometria::caja(piso,{v.x,y+4.5f,v.y},{1,.25f,1},{.75f,.67f,.36f});
+    }
+    vallas_=std::make_unique<Malla>(piso);
     std::vector<Vertice> nube, luz;
     Geometria::elipsoide(nube, {0, 0, 0}, {1, .65f, 1}, {.54f, .60f, .67f}, 8, 4);
     Geometria::elipsoide(luz, {0, 0, 0}, {1, 1, 1}, {1, 1, 1}, 8, 5);
@@ -227,8 +236,7 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
                 r, colocar(m, {e.posicion.x, apoyos_[i], e.posicion.y}, EscalaEdificios));
     }
     if (orokintower_) {
-        const glm::vec2 p{-35, -16};
-        orokintower_->dibujar(r, colocar(m, {p.x, alturaSuelo(p.x, p.y), p.y}, .85f));
+        orokintower_->dibujar(r, colocar(m, {Torre.x, apoyoTorre_, Torre.y}, .85f));
     }
     if (arbol_)
         for (const auto &p : Arboles)
@@ -240,15 +248,15 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     for (int i = 0; i < 3; ++i)
         if (npc[i]) {
             r.locomocionRobot(tiempo_ * 3.5f, i == 0);
+            if(i==1) r.locomocionBlarg(tiempo_*3.2f);
             npc[i]->dibujar(r, m * matrizNPC(i, tiempo_));
         }
     r.locomocionRobot(0, false);
 
     // Railjack: detenido en suelo, abre piezas, asciende, espera, baja y se cierra.
     if (railjack_) {
-        float suelo = alturaSuelo(PatioRailjack.x, PatioRailjack.y);
         auto base = glm::translate(
-            m, {PatioRailjack.x, suelo + 2.85f + ascensoRailjack(tiempo_), PatioRailjack.y});
+            m, {PatioRailjack.x, apoyoRailjack_ + ascensoRailjack(tiempo_), PatioRailjack.y});
         base = glm::rotate(base, -.18f, {0, 1, 0});
         base = glm::scale(base, glm::vec3(EscalaRailjack));
         std::vector<glm::mat4> partes(20, glm::mat4(1));
@@ -308,24 +316,17 @@ bool SectorRatchet::obstaculo(glm::vec3 p, bool personajes) const {
     // Colision con la plataforma Railjack incluso durante el vuelo.
     if (glm::length(glm::vec2(p.x - PatioRailjack.x, p.z - PatioRailjack.y)) < 13.f)
         return true;
-    // Valla cerrada excepto el acceso frontal de 8 unidades.
-    float x = p.x - Corral.x, z = p.z - Corral.y;
-    if (std::abs(x) < MedioCorral.x + 2.2f && std::abs(z) < MedioCorral.y + 2.2f) {
-        if (std::abs(std::abs(x) - MedioCorral.x) < 2.f)
-            return true;
-        if (std::abs(z - MedioCorral.y) < 2.f)
-            return true;
-        if (std::abs(z + MedioCorral.y) < 2.f && std::abs(x) > 4.1f)
-            return true;
-    }
+    if(glm::length(glm::vec2(p.x-Torre.x,p.z-Torre.y))<8.f)return true;
+    if(glm::length(glm::vec2(p.x+60,p.z-20))<2.7f)return true;
     return false;
 }
 
 glm::vec3 SectorRatchet::posicionNPC(int i, float t) const {
-    const glm::vec2 centros[] = {{-98, 34}, {-72, 30}, {-85, 48}};
-    const glm::vec2 radios[] = {{5, 6}, {5, 8}, {9, 3}};
-    const float velocidad[] = {.25f, .19f, .16f};
+    const glm::vec2 centros[] = {{-60, 20}, {5, 20}, {65, -15}};
+    const glm::vec2 radios[] = {{18, 18}, {24, 3}, {18, 16}};
+    const float velocidad[] = {.17f, .15f, .13f};
     float a = t * velocidad[i] + i * 1.7f;
+    if(i==1) a-=.75f*std::sin(a);
     glm::vec3 p(centros[i].x + radios[i].x * std::sin(a), 0,
                 centros[i].y + radios[i].y * std::cos(a));
     p.y = suelo_ ? suelo_(p.x, p.z) : 0;
@@ -336,7 +337,7 @@ glm::mat4 SectorRatchet::matrizNPC(int i, float t) const {
     auto d = posicionNPC(i, t + .02f) - posicionNPC(i, t - .02f);
     float angulo = std::atan2(d.x, d.z) - (i == 1 ? Pi / 2 : 0);
     const float escala[] = {.27f, .48f, 4.f};
-    auto m = glm::translate(glm::mat4(1), p + glm::vec3(0, i == 2 ? .009f : 0, 0));
+    auto m = glm::translate(glm::mat4(1), p + glm::vec3(0, i == 2 ? .8f+.12f*std::sin(t*1.2f) : .025f, 0));
     m = glm::rotate(m, angulo, {0, 1, 0});
     return glm::scale(m, glm::vec3(escala[i]));
 }

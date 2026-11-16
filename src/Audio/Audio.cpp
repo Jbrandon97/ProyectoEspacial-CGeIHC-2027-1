@@ -65,7 +65,7 @@ Audio::Audio(const std::filesystem::path &r, bool offline)
                              "Puerta_hangar",      "Propulsion",
                              "Motor_nave",         "Inicio_carrera",
                              "Final_carrera",      "Energia_Covenant",
-                             "Airy", "Ambiente_Planeta2",
+                             "Airy", "Our_Expanse_Chill",
                              "Cabina_espacial",    "Instalaciones_Planeta2",
                              "Motor_trafico",      "Boost"};
     for (int i = 0; i < Cantidad; ++i) {

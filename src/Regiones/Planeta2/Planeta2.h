@@ -14,7 +14,7 @@ class Planeta2 final : public Escenario {
     std::unique_ptr<ModeloGltf> terreno_;
     std::unique_ptr<AlturasTerreno> alturas_;
     float tiempo_ = 24.0f;
-    bool reflector_ = true;
+    bool reflector_ = true, reflectorOrokin_ = false;
 
   public:
     const SectorRatchet &ratchet() const {
@@ -35,7 +35,7 @@ class Planeta2 final : public Escenario {
     void dibujar(ContextoEscena &servicios, const glm::mat4 &alMundo) const override;
     void liberar() noexcept override;
     glm::vec3 aparicion() const noexcept override {
-        return {4, 1, 24};
+        return {-42, 1, 115};
     }
     float altura(float x, float z) const noexcept override {
         return alturas_ ? .60f * alturas_->altura(x / .60f, z / .60f) : 0.0f;

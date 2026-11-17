@@ -27,11 +27,13 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 
 - `ProyectoEspacial.exe --pruebas --evidencias carpeta`: regresión de las tres regiones y capturas reales.
 - `--pruebas --sin-capturas`: misma regresión sin guardar imágenes (las comprobaciones de píxeles siguen ejecutándose).
-- `--pruebas-integrales --evidencias carpeta`: comprobaciones específicas de esta revisión y mezcla PCM de audio.
+- `--pruebas-integrales --evidencias carpeta`: comprobaciones específicas, incluido Railjack en reposo/vuelo con luz fija, continuidad del cielo y mezcla PCM de audio.
 - `--medir-integral`: medición de fotogramas con simulación, HUD y audio en las tres regiones.
 - `--medir-espacio`: medición de dibujo en tres vistas fijas, comparable al bloque anterior.
 
 Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Revision_Cierre/Revision_Integral.md**. La presentación **Revision_Cierre/Revision_visual.html** reúne capturas y enlaces. **Revision_Cierre/Audio_Tecnico.md** contiene la evidencia de audio; no es el reporte académico final.
+
+La última compilación Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. También corrige el apoyo del Railjack indexado mediante el límite real de la malla. Las capturas comparativas de marcha del Grunt 1, las seis bases de P2 y el Railjack están en **Revision_Cierre/Capturas**; son imágenes producidas por las pruebas automatizadas, no una sesión manual. El registro de consola más reciente está en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt`.
 
 ## Organización y recursos
 

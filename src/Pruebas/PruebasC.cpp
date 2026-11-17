@@ -172,9 +172,13 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
                        "Circuitos NPC demasiado cercanos");
         }
     }
-    exigir(distanciaPatrullada[3] / s.periodoPatrulla(3) <
-                   distanciaPatrullada[0] / s.periodoPatrulla(0) &&
-               distanciaPatrullada[3] < distanciaPatrullada[0],
+    const float velocidades[] = {distanciaPatrullada[0] / 31.f,
+                                 distanciaPatrullada[1] / 31.f,
+                                 distanciaPatrullada[2] / 31.f,
+                                 distanciaPatrullada[3] / 31.f};
+    exigir(velocidades[0] > 1.4f && velocidades[1] > 1.2f && velocidades[2] > 1.1f &&
+               velocidades[3] > .85f && velocidades[3] < velocidades[2] &&
+               distanciaPatrullada[3] < distanciaPatrullada[2],
            "Hunter no tiene circuito mas corto y lento");
     const char *nombresPatrulla[] = {"Grunt1", "Grunt2", "Grunt3", "Hunter"};
     const auto flagsSalida = std::cout.flags();
@@ -186,14 +190,44 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         exigir(neto > .5f, "NPC no termina en una posicion distinta tras 31 s");
         std::cout << "P1_PATRULLA_POS " << nombresPatrulla[i] << " inicio=(" << inicios[i].x << ','
                   << inicios[i].y << ") fin=(" << fin.x << ',' << fin.z << ") neto=" << neto
-                  << "u recorrido=" << distanciaPatrullada[i] << "u periodo="
+                  << "u recorrido=" << distanciaPatrullada[i] << "u velocidad_media="
+                  << velocidades[i] << "u/s periodo="
                   << s.periodoPatrulla(i) << "s\n";
     }
     std::cout.flags(flagsSalida);
     std::cout.precision(precisionSalida);
     vista("C_P1_Patrulla_31s", {-46, 13, 188}, {-65, 3, 158});
     std::cout << "P1_PATRULLA_OK 4 modelos trasladados en circuitos cerrados dentro del recinto; "
-                 "orientacion, suelo, colision; Hunter corto/lento\n";
+                 "orientacion, suelo, colision, marcha de piernas; Hunter corto/lento\n";
+
+    s.reiniciarPatrullas();
+    auto vistaGrunt1 = [&](const char *nombre, bool reaccion) {
+        const auto pos = s.posicionPatrulla(0);
+        const float rumbo = s.orientacionPatrulla(0);
+        const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
+        glm::vec3 centro = pos + glm::vec3(0, 1.05f, 0);
+        if (reaccion)
+            centro += frente * 1.3f;
+        vista(nombre, centro + frente * 6.f + glm::vec3(0, 1.1f, 0), centro);
+    };
+    const auto gruntInicio = s.posicionPatrulla(0);
+    vistaGrunt1("C_P1_Grunt1_SinReaccion_0s", false);
+    s.actualizar(3.f);
+    const auto gruntPaso = s.posicionPatrulla(0);
+    exigir(glm::length(glm::vec2(gruntPaso.x - gruntInicio.x, gruntPaso.z - gruntInicio.z)) > 4.f,
+           "Grunt 1 no cambia de posicion en 3 s");
+    vistaGrunt1("C_P1_Grunt1_Paso_3s", false);
+    std::cout << "P1_GRUNT1_CAPTURAS t=0 (" << gruntInicio.x << ',' << gruntInicio.z
+              << ") t=3 (" << gruntPaso.x << ',' << gruntPaso.z << ") piernas alternadas\n";
+    OrdenActividad saludoGrunt;
+    saludoGrunt.avatar = gruntPaso + glm::vec3(0, 1, 0);
+    saludoGrunt.reaccion = true;
+    p.controlar(saludoGrunt);
+    exigir(s.reaccion == 0, "G no activa reaccion durante la captura cercana");
+    p.actualizar(2.f);
+    exigir(glm::length(s.posicionPatrulla(0) - gruntPaso) < .001f,
+           "El reloj de patrulla avanza durante la reaccion G");
+    vistaGrunt1("C_P1_Grunt1_Reaccion_G", true);
 
     auto probarReaccion = [&](int npc, float duracion, glm::vec3 sitio, bool grunt, bool inspeccion,
                               const char *durante, const char *despues) {

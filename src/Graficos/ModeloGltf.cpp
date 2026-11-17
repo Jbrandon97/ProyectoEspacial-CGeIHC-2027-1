@@ -133,6 +133,9 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
             for(const auto &vert:v){minimo=glm::min(minimo,vert.posicion);maximo=glm::max(maximo,vert.posicion);}
             parte.centro=(minimo+maximo)*.5f;
             parte.radio=glm::length(maximo-minimo)*.5f;
+            for (const auto &vert : v)
+                minimoY_ = std::min(minimoY_,
+                                    glm::vec3(parte.local * glm::vec4(vert.posicion, 1)).y);
             if (!indexada)
                 for (auto &vert : v)
                     (parte.puerta ? puerta_ : triangulos_)

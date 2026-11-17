@@ -10,6 +10,7 @@
 #include <thread>
 #include <fstream>
 #include <chrono>
+#include <vector>
 void Aplicacion::probarE(const std::filesystem::path &dir) {
     auto exigir = [](bool ok, const char *mensaje) {
         if (!ok)
@@ -682,10 +683,11 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
     int w, h;
     ventana_.dimensiones(w, h);
     ContextoEscena contexto{renderizador_, recursos_};
-    auto foto = [&](std::string n, glm::vec3 ojo, glm::vec3 centro, bool soloCielo = false) {
+    auto foto = [&](std::string n, glm::vec3 ojo, glm::vec3 centro, bool soloCielo = false,
+                    const Ambiente *ambienteFijo = nullptr) {
         auto &e = escenarios_.actual();
         auto region = e.id();
-        auto a = e.ambiente();
+        auto a = ambienteFijo ? *ambienteFijo : e.ambiente();
         for (auto &l : a.iluminacion.puntuales)
             l.posicion = mundo_.aGlobal(region, l.posicion);
         for (auto &l : a.iluminacion.focales)
@@ -819,11 +821,59 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
     exigir(distintos > 2000, "Foco P2 sin efecto real");
     if (!inicial)
         p.controlar(luz);
+    Ambiente ambienteRailjack = p.ambiente();
+    ambienteRailjack.iluminacion.sol = glm::normalize(glm::vec3(-.42f, .86f, .28f));
+    ambienteRailjack.iluminacion.noche = 0.f;
+    ambienteRailjack.iluminacion.fuerzaSol = 1.f;
+    ambienteRailjack.iluminacion.ambiente = .24f;
+    ambienteRailjack.iluminacion.colorSol = glm::vec3(1.f);
+    for (auto &l : ambienteRailjack.iluminacion.puntuales)
+        l.encendida = false;
+    for (auto &f : ambienteRailjack.iluminacion.focales)
+        f.encendida = false;
+    float railjackSueloY = 0.f, railjackAireY = 0.f;
+    float railjackApoyoSueloY = 0.f, railjackApoyoAireY = 0.f;
+    std::vector<unsigned char> railjackSueloPix, railjackAirePix;
     for (float t : {0.f, 6.f, 13.f, 22.f}) {
         float paso = std::fmod(t - std::fmod(p.ratchet().reloj(), 24.f) + 24.f, 24.f);
         p.actualizar(paso);
-        foto("Integral_Railjack_" + std::to_string(int(t)), {135, 30, 110}, {98, 9, 65});
+        const float altura = p.ratchet().railjackPosicion().y;
+        const float apoyo = p.ratchet().railjackAlturaBase();
+        if (t == 0.f) {
+            railjackSueloY = altura;
+            railjackApoyoSueloY = apoyo;
+            exigir(std::abs(apoyo - p.altura(98.f, 65.f) - .12f) < .02f,
+                   "Railjack no apoya su malla indexada en el terreno");
+        }
+        else if (t == 13.f) {
+            railjackAireY = altura;
+            railjackApoyoAireY = apoyo;
+            exigir(std::abs((altura - railjackSueloY) - 19.f) < .02f,
+                   "Railjack no llega a 19 unidades de altura");
+            exigir(std::abs((apoyo - railjackApoyoSueloY) - 19.f) < .02f,
+                   "Malla Railjack no acompana el ascenso");
+        } else {
+            exigir(std::abs(altura - railjackSueloY) < .02f,
+                   "Railjack no esta apoyado al inicio/retorno");
+            exigir(std::abs(apoyo - railjackApoyoSueloY) < .02f,
+                   "Malla Railjack no regresa al apoyo en suelo");
+        }
+        auto pix = foto("Integral_Railjack_" + std::to_string(int(t)), {118, 41, 105},
+                        {98, 22, 65}, false, &ambienteRailjack);
+        if (t == 0.f)
+            railjackSueloPix = std::move(pix);
+        else if (t == 13.f)
+            railjackAirePix = std::move(pix);
     }
+    size_t railjackCanalesDiferentes = 0;
+    for (size_t i = 0; i < railjackSueloPix.size(); ++i)
+        if (std::abs(int(railjackSueloPix[i]) - int(railjackAirePix[i])) > 8)
+            ++railjackCanalesDiferentes;
+    exigir(railjackCanalesDiferentes > 100000,
+           "Railjack no produce un cambio visual suficiente en suelo/aire");
+    std::cout << "P2_RAILJACK_OK sueloY=" << railjackSueloY << " aireY="
+              << railjackAireY << " baseY=" << railjackApoyoSueloY << " aireBaseY="
+              << railjackApoyoAireY << " canales_diferentes=" << railjackCanalesDiferentes << "\n";
     OrdenActividad oro;oro.luzServicio=true;
     if(p.ambiente().iluminacion.focales[1].encendida)p.controlar(oro);
     auto offOro=foto("Cierre_Orokin_OFF",{115,32,45},{83,12,-15});

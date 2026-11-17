@@ -140,22 +140,36 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         {"EnergySword", {-151, .04f, -61}, 0}, {"EnergySword", {-137, .04f, -61}, .4f}};
     int numero = 0;
     for (auto &n : npc) {
+        const int indice = numero;
         auto p = n.sitio;
         p.y += TerrenoPlaneta1::altura(p.x, p.z);
         float giro = n.giro;
-        if (numero < 4) {
-            p = sistemas_.posicionPatrulla(numero);
-            giro = sistemas_.orientacionPatrulla(numero);
-        } else if (numero == 4 || numero == 5) {
-            p = sistemas_.sentinel(numero - 4);
-            giro = sistemas_.giroSentinel(numero - 4);
+        if (indice < 4) {
+            p = sistemas_.posicionPatrulla(indice);
+            giro = sistemas_.orientacionPatrulla(indice);
+            const bool reaccionando = indice == 0 ? sistemas_.reaccion >= 0
+                                      : indice == 1 ? sistemas_.inspeccion >= 0
+                                      : indice == 3 ? sistemas_.hunter >= 0
+                                                    : false;
+            if (!reaccionando) {
+                const float ciclosPaso = indice == 3 ? 16.f : 24.f;
+                const float fase = 6.28318530718f * ciclosPaso *
+                                   sistemas_.relojPatrulla(indice) /
+                                   sistemas_.periodoPatrulla(indice);
+                r.locomocionPatrulla(fase, indice == 3);
+            }
+        } else if (indice == 4 || indice == 5) {
+            p = sistemas_.sentinel(indice - 4);
+            giro = sistemas_.giroSentinel(indice - 4);
         }
         auto local = glm::rotate(glm::translate(m, p), giro, glm::vec3(0, 1, 0)) *
-                     sistemas_.animacionNPC(numero);
+                     sistemas_.animacionNPC(indice);
 
-        ++numero;
         if (r.visible(glm::vec3(local[3]), 8))
             modelos_.at(n.modelo)->dibujar(r, local);
+        if (indice < 4)
+            r.locomocionRobot(0, false);
+        ++numero;
     }
     r.dibujar(*marcoCompuerta_, glm::translate(m, {205, 0, 21}));
     for (int signo : {-1, 1}) {

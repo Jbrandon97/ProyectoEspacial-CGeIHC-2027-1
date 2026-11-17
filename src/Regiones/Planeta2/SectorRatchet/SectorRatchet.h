@@ -49,4 +49,5 @@ class SectorRatchet {
     }
     glm::vec3 aphelionPosicion() const;
     glm::vec3 railjackPosicion() const;
+    float railjackAlturaBase() const;
 };

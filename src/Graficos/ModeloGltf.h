@@ -34,6 +34,7 @@ class ModeloGltf {
     std::vector<Parte> partes_;
     std::array<std::vector<glm::vec3>, 4> verticesEtapas_;
     std::vector<glm::vec3> triangulos_, puerta_;
+    float minimoY_ = 1e20f;
 
   public:
     const auto &verticesEtapas() const {
@@ -44,6 +45,9 @@ class ModeloGltf {
     }
     const std::vector<glm::vec3> &puerta() const {
         return puerta_;
+    }
+    float minimoY() const noexcept {
+        return minimoY_;
     }
     explicit ModeloGltf(const std::filesystem::path &, bool indexada = false);
     void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,

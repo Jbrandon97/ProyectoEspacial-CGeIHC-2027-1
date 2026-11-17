@@ -44,3 +44,15 @@ No se afirma una sesión manual completa ni una evaluación de accesibilidad del
 - ZIP ejecutable extraído sin errores: EXE, PDB, README, controles y 334 archivos bajo `Recursos`, igual al Release.
 - SHA-256 del EXE extraído: `A58C9DECAE97D44C04D4F6EA9140A4F3F903150386B6F671800F7C5780E31555`, idéntico al EXE Release.
 - `ProyectoEspacial.exe --pruebas --sin-capturas` ejecutado desde la extracción: salida 0 y `CIERRE CORRECTO`.
+
+8) Revalidación final de la patrulla y Railjack — 2026-11-17
+- Se reconstruyó Release x64 tras los cambios de locomoción y de pruebas: 0 errores. Permanecen advertencias de GLFW/miniaudio y APIENTRY; no se modificaron esas dependencias.
+- `ProyectoEspacial.exe --pruebas --evidencias <carpeta>`: salida 0, `CIERRE CORRECTO`. `ProyectoEspacial.exe --pruebas-integrales --evidencias <carpeta>`: salida 0, `CIERRE CORRECTO`.
+- Marcha de patrulla: `--pruebas` registra al Grunt 1 en `(-77,153)` en t=0 y `(-72.4655,151.274)` en t=3 s; cambió 4.85 unidades en el plano. El shader alterna las piernas. Las capturas `P1_Grunt1_t0.bmp` y `P1_Grunt1_t3.bmp` son del mismo modelo y el mismo encuadre de seguimiento.
+- Trayectos medidos en 31 s: Grunt1 48.57 u (1.57 u/s), Grunt2 42.97 u (1.39 u/s), Grunt3 38.58 u (1.24 u/s), Hunter 30.91 u (1.00 u/s). Periodos: 22/25/28/30 s. Las rutas conservaron suelo, separación, colisión, rumbo y límite del recinto.
+- El ciclo de reacción G congela el reloj del Grunt 1; las salidas `P1_GRUNT1_CAPTURAS` y `P1_PATRULLA_OK` registran puntos y prueba de marcha. Titán y Sentinel no aparecen modificados.
+- Las seis bases de P2 se inspeccionaron de día y noche. Hundimiento inferior mínimo: 0.12 u en cada una; máximos por base 0.343, 1.181, 0.386, 0.841, 1.923 y 0.753 u. Sin hueco observado ni ajuste de apoyos o colisiones. Evidencia en `Capturas/P2_Bases_Dia_Noche.bmp`.
+- Se corrigió el apoyo del Railjack indexado: `triangulos()` estaba vacío para ese modo de carga y el cálculo previo no encontraba la altura de la malla. `ModeloGltf::minimoY()` ahora obtiene el mínimo transformado sin duplicar vértices y `SectorRatchet` lo usa para ubicar la nave.
+- Railjack: `Railjack_Optimizado.gltf` carga 117153 triángulos; el mínimo de la malla queda a Y=3.5444 (terreno+0.12), y en vuelo a Y=22.5444. El centro pasa de Y=12.4244 a Y=31.4244. Las capturas con iluminación diurna controlada difieren en 234526 canales RGB en `--pruebas` y 234843 en `--pruebas-integrales`. Evidencia: `Capturas/P2_Railjack_Suelo.bmp`, `Capturas/P2_Railjack_Altura.bmp` y `Capturas/P2_Railjack_Regreso.bmp`.
+- `C_ANIMACIONES_OK`: 3 animaciones básicas (puerta/G1/G2), 3 continuas (Engineer/Sentinel1/Sentinel2) y 2 por keyframes (SaturnV/Holocron). Las patrullas son adicionales y no se contabilizan dos veces.
+- Se actualizaron `Revision_Cierre/Revision_Integral.md`, `Revision_Cierre/Avances.md` y este registro. No se generó PDF. Las capturas se revisaron visualmente; no se afirma una partida manual.

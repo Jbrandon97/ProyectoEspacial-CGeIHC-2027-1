@@ -81,7 +81,7 @@ float SistemasPlaneta1::faseSolar() const {
 namespace {
 constexpr float DosPi = 6.28318530718f;
 constexpr glm::vec2 InicioPatrulla[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
-constexpr glm::vec2 RadioPatrulla[] = {{4, 3}, {4, 2}, {4, 3}, {2.1f, 4}};
+constexpr glm::vec2 RadioPatrulla[] = {{6, 5}, {6, 5}, {6, 5}, {4.5f, 5}};
 constexpr float FasePatrulla[] = {0, 3.14159265359f, 0, 1.57079632679f};
 constexpr float PeriodoPatrulla[] = {22, 25, 28, 30};
 float faseNPC(int npc, float reloj) {
@@ -96,7 +96,9 @@ glm::vec3 SistemasPlaneta1::posicionPatrulla(int npc) const {
     const float fase = faseNPC(npc, relojesPatrulla_[npc]);
     const float inicial = FasePatrulla[npc];
     const float x = inicio.x + radio.x * (std::sin(fase) - std::sin(inicial));
-    const float z = inicio.y + radio.y * (std::cos(fase) - std::cos(inicial));
+    // Hunter recorre el arco superior del patio; mantiene su volumen separado del Grunt 2.
+    const float sentidoZ = npc == 3 ? -1.f : 1.f;
+    const float z = inicio.y + sentidoZ * radio.y * (std::cos(fase) - std::cos(inicial));
     return {x, TerrenoPlaneta1::altura(x, z), z};
 }
 float SistemasPlaneta1::orientacionPatrulla(int npc) const {
@@ -105,7 +107,8 @@ float SistemasPlaneta1::orientacionPatrulla(int npc) const {
     const float fase = faseNPC(npc, relojesPatrulla_[npc]);
     const float velocidadAngular = DosPi / PeriodoPatrulla[npc];
     const float dx = RadioPatrulla[npc].x * std::cos(fase) * velocidadAngular;
-    const float dz = -RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
+    const float sentidoZ = npc == 3 ? 1.f : -1.f;
+    const float dz = sentidoZ * RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
     return std::atan2(dx, dz);
 }
 float SistemasPlaneta1::relojPatrulla(int npc) const {

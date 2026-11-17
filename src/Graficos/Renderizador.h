@@ -36,6 +36,7 @@ class Renderizador {
     void material(float rugosidad, float metal = 0);
     void locomocionBlarg(float fase);
     void locomocionRobot(float fase, bool activa);
+    void locomocionPatrulla(float fase, bool hunter);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));
     void texturada(const Malla &, const glm::mat4 &, GLuint textura, glm::vec3 color,

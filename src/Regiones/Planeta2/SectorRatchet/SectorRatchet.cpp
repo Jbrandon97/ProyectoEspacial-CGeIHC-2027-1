@@ -198,11 +198,10 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     camino({65,20},{65,-15},12);camino({65,20},PatioRailjack,14);
     camino({0,20},{0,-95},8);
     disco({-60,20},{28,28});disco(Torre,{24,24});disco(PatioRailjack,{30,36});disco({0,-95},{15,15});
-    float torreMin=1e9f,railMin=1e9f;
+    float torreMin=1e9f;
     for(auto v:orokintower_->triangulos())torreMin=std::min(torreMin,v.y);
-    for(auto v:railjack_->triangulos())railMin=std::min(railMin,v.y);
     apoyoTorre_=alturaSuelo(Torre.x,Torre.y)-torreMin*.85f-.1f;
-    apoyoRailjack_=alturaSuelo(PatioRailjack.x,PatioRailjack.y)-railMin*EscalaRailjack+.12f;
+    apoyoRailjack_=alturaSuelo(PatioRailjack.x,PatioRailjack.y)-railjack_->minimoY()*EscalaRailjack+.12f;
     // Un pedestal compacto organiza la plaza sin introducir otro modelo descargado.
     Geometria::caja(piso,{-60,alturaSuelo(-60,20)+.7f,20},{3,1.4f,3},{.38f,.34f,.24f});
     for(auto v:std::array<glm::vec2,4>{{{-60,90},{-33,20},{20,20},{65,38}}}){
@@ -229,6 +228,9 @@ glm::vec3 SectorRatchet::railjackPosicion() const {
             (suelo_ ? suelo_(PatioRailjack.x, PatioRailjack.y) : 0.f) + ascensoRailjack(tiempo_) +
                 9.f,
             PatioRailjack.y};
+}
+float SectorRatchet::railjackAlturaBase() const {
+    return apoyoRailjack_ + railjack_->minimoY() * EscalaRailjack + ascensoRailjack(tiempo_);
 }
 void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     auto &r = c.renderizador;

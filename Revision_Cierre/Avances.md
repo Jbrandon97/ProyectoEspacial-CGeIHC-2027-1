@@ -2,7 +2,7 @@
 
 ## Base
 
-La rama `mejoras-teoria-final` partió de `main` en `9eb34c8` y conserva los commits previos del proyecto junto con las correcciones finales de este cierre. Las fechas y pruebas se limitan a las registradas aquí; no se agregan commits históricos ficticios.
+La rama histórica `mejoras-teoria-final` partió de `main` en `9eb34c8` y sus cambios quedaron integrados en `main`; se eliminó localmente en el cierre anterior. En esta revisión trabajamos únicamente en `main`, sin modificar ramas de los compañeros.
 
 ## Planeta 1 — 13 de noviembre de 2026
 
@@ -37,4 +37,14 @@ En Planeta 1 agregamos cuatro circuitos elípticos independientes: Grunt 1 (22 s
 La revisión de las seis bases de Planeta 2 capturó cada edificio durante día y noche. El análisis de sus vértices inferiores no encontró huecos: hundimiento mínimo medido de 0.12 unidades en los seis apoyos; máximos por edificio 0.343, 1.181, 0.386, 0.841, 1.923 y 0.753. El modelo 4 queda más enterrado por la pendiente de su huella, pero en las vistas no aparece flotación ni hueco; se mantuvo el margen de apoyo de 0.12 y no cambiamos colisiones.
 
 Las hojas `Capturas/P1_Patrullas_Reacciones.jpg`, `Capturas/P2_Bases_Dia_Noche.jpg` y `Capturas/HUD_Limpio_3_Regiones.jpg` se generaron del ejecutable y muestran movimiento, respuestas, apoyo en ambos ciclos y HUD final. `--pruebas` termina en `CIERRE CORRECTO`; la salida contiene `P1_PATRULLA_OK`, `C_ANIMACIONES_OK` con SaturnV/Holocron como los dos objetos por keyframes, y `PLANETA2_OK`.
+
+## Revisión final de marcha y vuelo — 16 de noviembre de 2026
+
+La auditoría comprobó que las patrullas ya trasladaban el cuerpo completo; para hacer visible el paso añadimos una fase alternada de piernas a Grunts y Hunter en `Renderizador::locomocionPatrulla` y `Recursos/Shaders/basico.vert`. La prueba reciente sitúa al Grunt 1 en `(-77,153)` al inicio y `(-72.4655,151.274)` a los tres segundos; recorre 48.57 unidades en 31 segundos. Sus capturas individuales `P1_Grunt1_t0.bmp` y `P1_Grunt1_t3.bmp` muestran al mismo NPC en ambos momentos.
+
+El código fuente auditado no reproduce los canales de piel/animación GLTF de Grunt/Hunter; implementa el paso con deformación de vértices. Las seis bases de P2 vuelven a inspeccionarse en la hoja `P2_Bases_Dia_Noche.bmp`. Railjack se capturó a Y=12.4244 en reposo y Y=31.4244 en vuelo con iluminación constante; las evidencias son `P2_Railjack_Suelo.bmp` y `P2_Railjack_Altura.bmp`. Las pruebas `--pruebas` y `--pruebas-integrales` terminan en `CIERRE CORRECTO` en la compilación Release x64.
+
+## Corrección del apoyo del Railjack — 17 de noviembre de 2026
+
+La revisión visual detectó que el modelo no aparecía pese a que su reloj calculaba ascenso. La causa estaba en el cargador: los modelos indexados no agregan vértices a `triangulos()`, pero el cálculo del mínimo del Railjack leía esa lista vacía. Añadimos `ModeloGltf::minimoY()`, que acumula el mínimo considerando las transformaciones de nodos sin copiar la malla, y cambiamos `SectorRatchet` para usarlo al calcular el apoyo. La prueba comprueba la base de malla a 0.12 unidades sobre el terreno, su elevación de 19 unidades y el retorno. La nave ahora se ve tanto en el pad como durante el vuelo en `P2_Railjack_Suelo.bmp`, `P2_Railjack_Altura.bmp` y `P2_Railjack_Regreso.bmp`.
 

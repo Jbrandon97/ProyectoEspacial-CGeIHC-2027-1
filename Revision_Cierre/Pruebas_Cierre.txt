@@ -38,3 +38,9 @@ No se afirma una sesión manual completa ni una evaluación de accesibilidad del
 - Titán y Sentinel no se modificaron; sus funciones `titan`, `saludo`, `sentinel` y `giroSentinel` permanecen fuera del diff.
 - Implementación: `SistemasPlaneta1::posicionPatrulla` calcula las cuatro posiciones elípticas con altura del terreno; `Planeta1::dibujar` usa esas posiciones como traslación del modelo completo. `Aplicacion::probarC` verifica el avance por deltaTime, separación, colisión, rumbo y cambio de posición.
 - La revisión de costura del cielo P2 sigue cubierta por la captura y la prueba `INTEGRAL_CIELO_OK P2 diferencia_media_union=0.295`.
+
+7) ZIP y extracción limpia
+- ZIP de cierre extraído sin errores: 999 archivos; incluye solución, fuentes, recursos de las tres regiones y los informes de `Revision_Cierre`; no incluye ejecutable ni carpetas de compilación.
+- ZIP ejecutable extraído sin errores: EXE, PDB, README, controles y 334 archivos bajo `Recursos`, igual al Release.
+- SHA-256 del EXE extraído: `A58C9DECAE97D44C04D4F6EA9140A4F3F903150386B6F671800F7C5780E31555`, idéntico al EXE Release.
+- `ProyectoEspacial.exe --pruebas --sin-capturas` ejecutado desde la extracción: salida 0 y `CIERRE CORRECTO`.

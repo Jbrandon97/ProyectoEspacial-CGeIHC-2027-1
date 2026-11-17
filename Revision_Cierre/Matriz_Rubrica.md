@@ -9,7 +9,7 @@
 | Holocrón, Engineer, carrera y lanzamiento P1 | Cumplido en la rama y cubierto por regresión | `CIERRE_P1_OK`, captura P1 |
 | Audio continuo, ambiente y mezcla por región | Cumplido técnicamente; escucha humana pendiente | `MINIAUDIO_*`, `Musica_licencias.md` |
 | Cuatro recorridos académicos completos | Parcial: P1/Freeport preparados; recorrido final de equipo pendiente | `Revision_Integral.md` |
-| Integración final con ramas de compañeros | Pendiente de merge autorizado | rama `mejoras-teoria-final`, sin push |
+| Integración final del cierre en main | Cumplido y publicado | Merge normal, sin reescribir historial; las ramas de colaboración no se modificaron |
 | Validación del profesor y autoría de recursos de terceros | Pendiente externa; procedencias conservadas | licencias y atribuciones en `Recursos` |
 | HUD sin rótulos técnicos | Cumplido y revisado en capturas de las tres regiones | `Capturas/HUD_Limpio_3_Regiones.jpg` |
 | Patrullas P1 y pausas G/K/H | Cumplido y probado por muestreo/captura | `Capturas/P1_Patrullas_Reacciones.jpg`, log `P1_PATRULLA_OK` |

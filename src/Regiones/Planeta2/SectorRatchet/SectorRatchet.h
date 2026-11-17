@@ -13,21 +13,40 @@ class SectorRatchet {
     std::unique_ptr<Malla> arbol_, vallas_, humo_, propulsor_;
     std::function<float(float, float)> suelo_;
     std::array<float, 6> apoyos_{}, huecosBase_{};
+    std::array<glm::vec2, 6> contactoBase_{};
     std::array<glm::vec3, 6> lucesEdificios_{}, centrosEdificios_{};
     glm::vec3 avatarLocal_{500, 0, 500};
-    float tiempo_ = 0;
+    float tiempo_ = 0, apoyoTorre_=0, apoyoRailjack_=0;
 
   public:
-    const auto &huecosBase() const { return huecosBase_; }
-    const auto &centrosEdificios() const { return centrosEdificios_; }
-    glm::vec3 luzEdificio(size_t i) const { return lucesEdificios_.at(i); }
-    void usarSuelo(std::function<float(float, float)> suelo) { suelo_ = std::move(suelo); }
+    const auto &huecosBase() const {
+        return huecosBase_;
+    }
+    const auto &contactoBase() const {
+        return contactoBase_;
+    }
+    const auto &centrosEdificios() const {
+        return centrosEdificios_;
+    }
+    glm::vec3 luzEdificio(size_t i) const {
+        return lucesEdificios_.at(i);
+    }
+    void usarSuelo(std::function<float(float, float)> suelo) {
+        suelo_ = std::move(suelo);
+    }
     void cargar(ContextoEscena &servicios);
     void actualizar(float deltaTime);
-    void registrarAvatar(glm::vec3 p) { avatarLocal_ = p; }
+    void registrarAvatar(glm::vec3 p) {
+        avatarLocal_ = p;
+    }
     void dibujar(ContextoEscena &servicios, const glm::mat4 &sectorAlMundo) const;
     void liberar() noexcept;
-    bool obstaculo(glm::vec3 posLocal) const;
+    bool obstaculo(glm::vec3 posLocal, bool personajes = true) const;
+    glm::vec3 posicionNPC(int i, float t) const;
+    glm::mat4 matrizNPC(int i, float t) const;
+    float reloj() const {
+        return tiempo_;
+    }
     glm::vec3 aphelionPosicion() const;
     glm::vec3 railjackPosicion() const;
 };

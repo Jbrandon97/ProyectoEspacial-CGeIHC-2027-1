@@ -12,7 +12,7 @@
 class Planeta1 final : public Escenario {
     std::unique_ptr<Malla> terreno_, paisaje_, agua_, pista_, detalles_;
     std::unique_ptr<Titan> titan_;
-    std::unique_ptr<Malla> humo_, marcasPista_;
+    std::unique_ptr<Malla> humo_, marcasPista_, pedestalHolocron_;
     GestorCarrera carrera_;
     SistemasPlaneta1 sistemas_;
     std::unique_ptr<Malla> propulsion_, hojaCompuerta_, marcoCompuerta_;

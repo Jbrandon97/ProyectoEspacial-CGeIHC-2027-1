@@ -29,7 +29,13 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
     }
 }
 void SistemasPlaneta1::actualizar(float dt) {
+    const float avance = std::max(0.f, dt);
+    const bool pausados[] = {reaccion >= 0, inspeccion >= 0, false, hunter >= 0};
+    for (int i = 0; i < 4; ++i)
+        if (!pausados[i])
+            relojesPatrulla_[i] += avance;
     tiempo += dt;
+    if (holocron >= 0 && (holocron += dt) >= 12) holocron = -1;
     if (inspeccion >= 0 && (inspeccion += dt) >= 8)
         inspeccion = -1;
     if (saludo >= 0 && (saludo += dt) >= 6)
@@ -72,6 +78,45 @@ float SistemasPlaneta1::faseSolar() const {
     float avance = u + (pendiente - 1) * u * (1 - u) * (1 - 2 * u);
     return (dia ? 0.f : .5f) + .5f * avance;
 }
+namespace {
+constexpr float DosPi = 6.28318530718f;
+constexpr glm::vec2 InicioPatrulla[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
+constexpr glm::vec2 RadioPatrulla[] = {{4, 3}, {4, 2}, {4, 3}, {2.1f, 4}};
+constexpr float FasePatrulla[] = {0, 3.14159265359f, 0, 1.57079632679f};
+constexpr float PeriodoPatrulla[] = {22, 25, 28, 30};
+float faseNPC(int npc, float reloj) {
+    return FasePatrulla[npc] + DosPi * reloj / PeriodoPatrulla[npc];
+}
+}
+glm::vec3 SistemasPlaneta1::posicionPatrulla(int npc) const {
+    if (npc < 0 || npc >= 4)
+        return {};
+    const auto inicio = InicioPatrulla[npc];
+    const auto radio = RadioPatrulla[npc];
+    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float inicial = FasePatrulla[npc];
+    const float x = inicio.x + radio.x * (std::sin(fase) - std::sin(inicial));
+    const float z = inicio.y + radio.y * (std::cos(fase) - std::cos(inicial));
+    return {x, TerrenoPlaneta1::altura(x, z), z};
+}
+float SistemasPlaneta1::orientacionPatrulla(int npc) const {
+    if (npc < 0 || npc >= 4)
+        return 0;
+    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float velocidadAngular = DosPi / PeriodoPatrulla[npc];
+    const float dx = RadioPatrulla[npc].x * std::cos(fase) * velocidadAngular;
+    const float dz = -RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
+    return std::atan2(dx, dz);
+}
+float SistemasPlaneta1::relojPatrulla(int npc) const {
+    return npc < 0 || npc >= 4 ? 0.f : relojesPatrulla_[npc];
+}
+float SistemasPlaneta1::periodoPatrulla(int npc) const {
+    return npc < 0 || npc >= 4 ? 0.f : PeriodoPatrulla[npc];
+}
+void SistemasPlaneta1::reiniciarPatrullas() {
+    relojesPatrulla_.fill(0.f);
+}
 Iluminacion SistemasPlaneta1::luces() const {
     Iluminacion l;
     l.activa = true;
@@ -80,7 +125,7 @@ Iluminacion SistemasPlaneta1::luces() const {
     float dia = glm::smoothstep(-.15f, .2f, l.sol.y);
     l.noche = 1 - dia;
     l.fuerzaSol = glm::smoothstep(-.04f, .3f, l.sol.y) * .95f;
-    l.ambiente = .15f + .115f * dia;
+    l.ambiente = .18f + .085f * dia;
     l.colorSol = glm::mix(glm::vec3(1, .48f, .23f), glm::vec3(1, .98f, .9f),
                           glm::smoothstep(0.f, .55f, l.sol.y));
     const glm::vec3 pos[] = {{165, 11, -72}, {40, 9, -95},  {90, 9, -66},
@@ -112,6 +157,16 @@ Iluminacion SistemasPlaneta1::luces() const {
         p.atenuacion = {1, .045f, .008f};
         p.encendida = l.noche > .001f;
     }
+    // Dos luminarias de paso; mantienen el contraste nocturno fuera del camino.
+    const glm::vec3 pasos[] = {{132, 7, -70}, {172, 7, -10}};
+    for (int i=0;i<2;++i) {
+        auto &p=l.puntuales[13+i]; p.posicion=pasos[i]; p.color={1,.75f,.48f};
+        p.intensidad=3.2f*l.noche; p.atenuacion={1,.045f,.012f}; p.encendida=l.noche>.001f;
+    }
+    auto &f=l.focales[0]; f.encendida=reflectorCovenant;
+    f.posicion={-130,13,-48}; f.direccion=glm::normalize(glm::vec3(-15,-10,-15));
+    f.color={.55f,.4f,1}; f.intensidad=2.6f; f.interno=20; f.externo=34;
+    f.atenuacion={1,.025f,.0025f};
     l.foco = reflector;
     l.focoPos = {165, 12, -76};
     l.focoDir = glm::normalize(glm::vec3(0, -.65f, 1));
@@ -224,8 +279,6 @@ glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
         m = glm::translate(m, {0, 0, 2.8f * caminar});
         return glm::rotate(m, .4f * std::sin(u * 6.2831853f), {0, 1, 0});
     }
-    if (i == 2)
-        return glm::rotate(m, .22f * std::sin(tiempo * .8f), glm::vec3(0, 1, 0));
     if (i == 1 || i == 3) {
         // Dos objetos distintos: Grunt 2 inspecciona; Hunter gira en vigilancia.
         const float t[] = {0, 2, 4, 6, 8};
@@ -241,4 +294,17 @@ glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
             m = glm::rotate(m, glm::mix(incl[k], incl[k + 1], s), {1, 0, 0});
     }
     return m;
+}
+
+glm::mat4 SistemasPlaneta1::matrizHolocron() const {
+    struct Clave { float t, altura, escala, giro; };
+    const Clave claves[]={{0,0,1,0},{2,4,1.8f,.8f},{5,8,3.5f,3.14f},
+                         {8,8,3.5f,9.42f},{10,4,1.8f,11.7f},{12,0,1,12.5663706f}};
+    float t=std::max(0.f,holocron); int i=0;
+    while(i<4 && t>claves[i+1].t) ++i;
+    auto a=claves[i], b=claves[i+1];
+    float u=glm::smoothstep(a.t,b.t,t);
+    auto m=glm::translate(glm::mat4(1),{-125,4.4f+glm::mix(a.altura,b.altura,u),-48});
+    m=glm::rotate(m,glm::mix(a.giro,b.giro,u),glm::vec3(0,1,0));
+    return glm::scale(m,glm::vec3(1.5f*glm::mix(a.escala,b.escala,u)));
 }

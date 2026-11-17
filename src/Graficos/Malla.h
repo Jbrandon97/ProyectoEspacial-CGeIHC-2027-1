@@ -9,12 +9,14 @@ struct Vertice {
 };
 // Malla GPU RAII no copiable. El constructor vacio mantiene el cubo de Etapa 0.
 class Malla {
-    GLuint vao_ = 0, vbo_ = 0;
+    GLuint vao_ = 0, vbo_ = 0, ebo_ = 0;
+    bool indexada_ = false;
     GLsizei cantidad_ = 0;
 
   public:
     Malla();
     explicit Malla(const std::vector<Vertice> &vertices);
+    Malla(const std::vector<Vertice> &, const std::vector<unsigned> &);
     ~Malla();
     Malla(const Malla &) = delete;
     Malla &operator=(const Malla &) = delete;

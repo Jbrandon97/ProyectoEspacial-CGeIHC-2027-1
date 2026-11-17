@@ -8,6 +8,7 @@
 class SistemasPlaneta1 {
     KeyframesCohete animacionCohete_;
     std::array<float, 3> ajusteSuelo_{};
+    std::array<float, 4> relojesPatrulla_{};
 
   public:
     const KeyframesCohete &keyframes() const {
@@ -19,7 +20,9 @@ class SistemasPlaneta1 {
 
     float tiempo = 0, ciclo = 120, faseInicial = .22f, lanzamiento = -1, reaccion = -1;
     float reposicion = -1, titan = -1, hunter = -1, saludo = -1, inspeccion = -1;
-    bool reflector = false;
+    float holocron = -1;
+    bool reflector = false, reflectorCovenant = false;
+    glm::mat4 matrizHolocron() const;
     bool retirarPreparado = false, reposicionPendiente = false;
     unsigned eventoCohete = 0, eventoGrunt = 0;
     void configurar(const std::filesystem::path &);
@@ -41,6 +44,11 @@ class SistemasPlaneta1 {
     float fase() const;
     float faseSolar() const;
     Iluminacion luces() const;
+    glm::vec3 posicionPatrulla(int npc) const;
+    float orientacionPatrulla(int npc) const;
+    float relojPatrulla(int npc) const;
+    float periodoPatrulla(int npc) const;
+    void reiniciarPatrullas();
     glm::vec3 cohete() const;
     glm::vec3 fuenteMotor() const;
     glm::vec3 sentinel(int i) const;

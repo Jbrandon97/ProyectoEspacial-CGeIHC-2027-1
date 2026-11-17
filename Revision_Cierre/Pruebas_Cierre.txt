@@ -1,0 +1,40 @@
+PRUEBAS DEL CIERRE LOCAL
+Fecha de ejecución: 2026-11-16
+
+1) Compilación
+- Visual Studio 2022 / MSBuild, ProyectoEspacial.sln, x64 Release: reconstrucción completa y ejecutable generado en bin/x64/Release/ProyectoEspacial.exe.
+- Resultado: correcto, 0 errores; las advertencias de compilación proceden de dependencias incluidas (GLFW/miniaudio y definición APIENTRY).
+
+2) Regresión automatizada
+- Comando: ProyectoEspacial.exe --pruebas --evidencias _trabajo/cierre_teoria/cierre_final_evidencias
+- Resultado: salida 0 y texto final CIERRE CORRECTO.
+- Incluye contratos de regiones, carrera, Freeport, cargadores GLTF, iluminación, cielo, P1, P2 y miniaudio.
+
+3) Pruebas integrales relevantes
+- P1: CIERRE_P1_OK; holocrón a 12 s, escala máxima 3.5, retorno al pedestal, reflector Covenant y F3 colonia.
+- Espacio: ESPACIO_B1_GEOMETRIA_OK; 8002 muestras de tráfico sin salto ni colisión.
+- P2: PLANETA2_OK; seis apoyos geométricos, colisiones, seis luces de fachada, ciclo de 120 s y persistencia.
+- P2 integral: 5400 muestras de NPC/suelo/separación; foco con 137963 canales de píxel modificados.
+- Audio: MINIAUDIO_OK; PCM estéreo 44100 Hz y mezclas con RMS medible.
+
+4) Rendimiento automatizado
+- Comando: ProyectoEspacial.exe --medir-integral
+- GPU: Intel(R) UHD Graphics 620; OpenGL 3.3.0; VSync desactivado por el medidor.
+- P1: 120 muestras, 59.7509 FPS medio, p95 17.5584 ms.
+- P2: 120 muestras, 44.1205 FPS medio, p95 24.1051 ms.
+- Espacio: 120 muestras, 85.7457 FPS medio, p95 15.1583 ms.
+
+5) Límite de verificación
+No se afirma una sesión manual completa ni una evaluación de accesibilidad del profesor. Las capturas incluidas son cuadros producidos por el ejecutable y revisados visualmente.
+
+6) Última fase de correcciones
+- Release x64 reconstruido después de la limpieza del HUD, patrullas de Planeta 1 y diagnóstico de bases de P2; 0 errores.
+- --pruebas y --pruebas-integrales --sin-capturas: salida 0, CIERRE CORRECTO.
+- P1_PATRULLA_OK: cuatro cuerpos se trasladan en ciclos cerrados de 22/25/28/30 s; alturas de terreno, orientación, límites del recinto, separación y colisión comprobados cada 0.1 s durante 31 s. `P1_PATRULLA_POS` registra inicio y final distintos: Grunt1 (-77,153)->(-74.84,147.48), 30.92 u recorridas; Grunt2 (-65,162)->(-68.99,163.87), 24.09 u; Grunt3 (-53,153)->(-50.51,152.35), 24.71 u; Hunter (-65,174)->(-65.05,173.17), 20.46 u.
+- G/K/H: cada reacción congeló el reloj y posición de patrulla; duraciones 5/8/8 s; reanudación validada con desplazamiento menor de 0.2 unidades en 0.1 s.
+- Capturas producidas: P1_Patrulla_0s/31s, Grunt1 G durante/después, Grunt2 K durante/después, Hunter H durante/después; seis bases de P2 en día y noche; HUD de las tres regiones.
+- Bases P2: hundimiento min=0.12 unidades en cada base; máximos por índice 0.343, 1.181, 0.386, 0.841, 1.923, 0.753. Sin hueco medido. Sin ajuste del margen 0.12 ni de las colisiones.
+- C_ANIMACIONES_OK registra tres objetos básicos distintos (puerta/E, Grunt1/G, Grunt2/K), tres continuos distintos (Engineer/Sentinel1/Sentinel2) y dos keyframes distintos (SaturnV/Holocron). Las cuatro patrullas P1 son una función adicional y no se cuentan como keyframes ni como objetos de los dos grupos anteriores.
+- Titán y Sentinel no se modificaron; sus funciones `titan`, `saludo`, `sentinel` y `giroSentinel` permanecen fuera del diff.
+- Implementación: `SistemasPlaneta1::posicionPatrulla` calcula las cuatro posiciones elípticas con altura del terreno; `Planeta1::dibujar` usa esas posiciones como traslación del modelo completo. `Aplicacion::probarC` verifica el avance por deltaTime, separación, colisión, rumbo y cambio de posición.
+- La revisión de costura del cielo P2 sigue cubierta por la captura y la prueba `INTEGRAL_CIELO_OK P2 diferencia_media_union=0.295`.

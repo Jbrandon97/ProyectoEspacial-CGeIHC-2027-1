@@ -1,0 +1,6 @@
+miniaudio 0.11.23 — David Reid y colaboradores.
+Fuente: https://github.com/mackron/miniaudio/tree/0.11.23
+Cabecera: https://raw.githubusercontent.com/mackron/miniaudio/0.11.23/miniaudio.h
+Licencia incluida: LICENSE. Para esta distribución se conserva la alternativa MIT-0.
+No modificamos la cabecera. La implementación se compila una sola vez en src/Audio/Audio.cpp.
+MA_NO_WINMM desactiva ese backend de audio. El programa usa un ma_engine y tres grupos.

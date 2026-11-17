@@ -4,6 +4,7 @@
 #include "Regiones/Planeta1/CircuitoCarreras.h"
 #include "Regiones/Planeta1/Planeta1.h"
 #include "Regiones/Espacio/Espacio.h"
+#include "Regiones/Planeta2/Planeta2.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
@@ -55,11 +56,7 @@ void Aplicacion::cambiarRegion(Region r) {
             foco_ = prev.foco;
             observandoCohete_ = prev.cohete;
         }
-        // Siempre se aborda la nave al entrar a Espacio; V alterna la vista exterior.
-        if (r == Region::Espacio) {
-            camaras_.solicitar(ModoCamara::Viaje, r);
-            if (!camaras_.cabina()) camaras_.alternarCabina();
-        }
+        // La primera visita usa tercera persona; al regresar conserva la cámara elegida.
         regionPreparada_ = true;
         aviso_ = "Region preparada";
     }
@@ -112,17 +109,28 @@ void Aplicacion::procesarEntradas(float dt) {
         if (entradas_.pulsada(GLFW_KEY_1 + i))
             cambiarRegion(Region(i));
     for (int i = 0; i < 4; ++i)
-        if (entradas_.pulsada(GLFW_KEY_F1 + i)) solicitarCamara(ModoCamara(i));
+        if (entradas_.pulsada(GLFW_KEY_F1 + i))
+            solicitarCamara(ModoCamara(i));
+    if (escenarios_.actual().id() == Region::Espacio) {
+        if (entradas_.pulsada(GLFW_KEY_F5))
+            camaras_.observarEspacio(1);
+        if (entradas_.pulsada(GLFW_KEY_F6))
+            camaras_.observarEspacio(2);
+    }
+    if (entradas_.pulsada(GLFW_KEY_N))
+        audio_.siguienteCanal();
     if (entradas_.pulsada(GLFW_KEY_M))
         audio_.silenciar();
     if (entradas_.pulsada(GLFW_KEY_MINUS))
         audio_.volumen(-.1f);
     if (entradas_.pulsada(GLFW_KEY_EQUAL))
         audio_.volumen(.1f);
-    bool pilotando = escenarios_.actual().id() == Region::Espacio &&
-                      camaras_.modo() == ModoCamara::Viaje;
-    if (pilotando && entradas_.pulsada(GLFW_KEY_V)) camaras_.alternarCabina();
-    if (!pilotando) camaras_.mirar(entradas_.raton());
+    bool pilotando =
+        escenarios_.actual().id() == Region::Espacio && camaras_.modo() == ModoCamara::Viaje;
+    if (pilotando && entradas_.pulsada(GLFW_KEY_V))
+        camaras_.alternarCabina();
+    if (!pilotando)
+        camaras_.mirar(entradas_.raton());
     camaras_.orbitar(entradas_.orbita() * dt);
     OrdenActividad o;
     o.avatar = avatar_.posicion();
@@ -131,7 +139,12 @@ void Aplicacion::procesarEntradas(float dt) {
     o.giro = float(entradas_.mantenida(GLFW_KEY_D)) - float(entradas_.mantenida(GLFW_KEY_A));
     o.vertical = float(entradas_.mantenida(GLFW_KEY_Q)) - float(entradas_.mantenida(GLFW_KEY_Z));
     o.confirmar = entradas_.pulsada(GLFW_KEY_ENTER);
-    if (pilotando) o.mirada = entradas_.raton();
+    o.boost = pilotando && (entradas_.mantenida(GLFW_KEY_LEFT_SHIFT) ||
+                            entradas_.mantenida(GLFW_KEY_RIGHT_SHIFT));
+    o.luzAcople = entradas_.pulsada(GLFW_KEY_U);
+    o.luzServicio = entradas_.pulsada(GLFW_KEY_I);
+    if (pilotando)
+        o.mirada = entradas_.raton();
     if (escenarios_.actual().id() == Region::Espacio && !pilotando)
         o.acelerador = o.freno = o.giro = o.vertical = 0;
     o.interactuar = entradas_.pulsada(GLFW_KEY_X);
@@ -146,6 +159,7 @@ void Aplicacion::procesarEntradas(float dt) {
     o.saludo = entradas_.pulsada(GLFW_KEY_J);
     o.reflector = entradas_.pulsada(GLFW_KEY_P);
     o.inspeccion = entradas_.pulsada(GLFW_KEY_K);
+    o.holocron = entradas_.pulsada(GLFW_KEY_Y);
     bool explorar = (escenarios_.actual().id() == Region::Planeta1 ||
                      escenarios_.actual().id() == Region::Planeta2) &&
                     !escenarios_.actual().actividad().ocupado &&
@@ -171,8 +185,8 @@ void Aplicacion::actualizarCamara(float dt) {
     auto r = e.id();
     auto actividad = e.actividad();
     if (r == Region::Espacio) {
-        dynamic_cast<Espacio &>(e).mostrarNave(!(camaras_.modo() == ModoCamara::Viaje &&
-                                                camaras_.cabina()));
+        dynamic_cast<Espacio &>(e).mostrarNave(
+            !(camaras_.modo() == ModoCamara::Viaje && camaras_.cabina()));
         camaras_.seguirEspacio(mundo_.aGlobal(r, actividad.objetivo), actividad.direccion,
                                mundo_.aGlobal(r, {0, 0, 0}), dt);
         return;
@@ -184,10 +198,13 @@ void Aplicacion::actualizarCamara(float dt) {
     }
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
     glm::vec3 direccion = actividad.direccion;
-    if (camaras_.modo() == ModoCamara::Viaje)
-        objetivo = {-11, .3f, 9};
+    if (camaras_.modo() == ModoCamara::Viaje) {
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(-42, 4, 20);
+        camaras_.encuadrarEvento(mundo_.aGlobal(r, objetivo));
+        return;
+    }
     if (camaras_.modo() == ModoCamara::Observacion)
-        objetivo = {0, 4, 0};
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(88, 12, 15);
     auto alturaGlobal = [&](float x, float z) {
         auto p = mundo_.aLocal(r, {x, 0, z});
         return mundo_.aGlobal(r, {p.x, e.altura(p.x, p.z), p.z}).y;
@@ -197,7 +214,6 @@ void Aplicacion::actualizarCamara(float dt) {
     camaras_.seguir(mundo_.aGlobal(r, objetivo), direccionGlobal, dt, alturaGlobal);
 }
 void Aplicacion::dibujar(const std::filesystem::path &captura) {
-    actualizarAudio();
     int a, b;
     ventana_.dimensiones(a, b);
     if (a <= 0 || b <= 0)
@@ -206,14 +222,19 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     auto r = e.id();
     auto actividad = e.actividad();
     actualizarCamara(deltaCuadro_);
+    actualizarAudio();
     auto vp = camaras_.proyeccion(float(a) / b) * camaras_.vista(glm::vec3(0));
     auto ambiente = e.ambiente();
     auto &il = ambiente.iluminacion;
     // Las regiones trabajan en coordenadas locales; pasar luces a mundo para el shader.
     if (r != Region::Planeta1) {
         for (auto &p : il.puntuales)
-            if (p.encendida) p.posicion = mundo_.aGlobal(r, p.posicion);
-        if (il.foco) il.focoPos = mundo_.aGlobal(r, il.focoPos);
+            if (p.encendida)
+                p.posicion = mundo_.aGlobal(r, p.posicion);
+        if (il.foco)
+            il.focoPos = mundo_.aGlobal(r, il.focoPos);
+        for (auto &f : il.focales)
+            f.posicion = mundo_.aGlobal(r, f.posicion);
     }
     // Spotlight fijo del hangar; el Engineer solo usa la puntual corporal.
     auto &energia = il.puntuales[8];
@@ -230,17 +251,40 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     if (r != Region::Espacio && !actividad.ocupado)
         avatar_.dibujar(c, mundo_.transformacion(r), energia.encendida);
     auto lineas = actividad.mensajes;
+    if (r == Region::Planeta1 && !actividad.ocupado &&
+        (observandoCohete_ || camaras_.modo() != ModoCamara::Exploracion))
+        for (auto &texto : lineas)
+            if (texto.rfind("WASD", 0) == 0)
+                texto = observandoCohete_ ? "O VOLVER / OBSERVACION DEL LANZAMIENTO"
+                                         : "F1 EXPLORAR / F3 COLONIA / F4 PANORAMICA";
     if (r == Region::Planeta1 && !actividad.ocupado)
-        lineas.push_back(observandoCohete_
-                             ? "O / VOLVER A EXPLORACION"
-                             : "F ENERGIA CORPORAL / O COHETE / M SILENCIO / - + VOLUMEN");
+        lineas.push_back(observandoCohete_ ? "O / VOLVER A EXPLORACION"
+                                           : (camaras_.modo() == ModoCamara::Exploracion
+                                                  ? "F ENERGIA CORPORAL / O OBSERVAR COHETE"
+                                                  : "F1 VOLVER A EXPLORACION"));
     if (lineas.empty() && r == Region::Planeta2)
-        lineas = {"PLANETA 2 / KERWAN + WARFRAME / APHELION Y RAILJACK",
-                  "WASD MOVER / SHIFT CORRER / M SILENCIO / 1-3 REGIONES"};
+        lineas = {"PLANETA 2",
+                  "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
+                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN"};
     if (lineas.empty())
-        lineas = {std::string(e.nombre()) + " / " + camaras_.nombre(),
-                  "WASD MOVER / 1-3 REGIONES"};
-    interfaz_.preparar(lineas, a, b, !actividad.ocupado);
+        lineas = {std::string(e.nombre()) + " / " + camaras_.nombre(), "WASD MOVER / 1-3 REGIONES"};
+    if (r == Region::Planeta1 && !actividad.ocupado && !observandoCohete_ &&
+        camaras_.modo() == ModoCamara::Exploracion)
+        for (auto &texto : lineas)
+            if (texto.rfind("WASD", 0) == 0)
+                texto = "WASD / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 VISTA / TAB CURSOR";
+    if (r == Region::Planeta2 && camaras_.modo() != ModoCamara::Exploracion && lineas.size() > 2) {
+        lineas[1] = "F1 EXPLORAR / F3 PLAZA / F4 WARFRAME";
+        lineas[2] = "P FOCO PLAZA / I FOCO OROKIN";
+    }
+    if (r == Region::Espacio) {
+        bool piloto = camaras_.modo() == ModoCamara::Viaje;
+        if (!piloto && lineas.size() > 1)
+            lineas[1] = "OBSERVACION / F3 VOLVER AL PILOTAJE";
+        lineas.push_back(piloto ? "V CABINA / F4 ORBITA / F5 ESTACION / F6 ASTEROIDES"
+                                : "F4 ORBITA / F5 ESTACION / F6 ASTEROIDES");
+    }
+    interfaz_.preparar(lineas, a, b, true);
     renderizador_.interfaz(interfaz_.malla(), a, b);
     if (!captura.empty())
         renderizador_.capturar(captura, a, b);
@@ -279,7 +323,9 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
                      "y GL sin errores\n";
         probarCarrera(evidencias);
         probarEspacio(evidencias);
+        probarEspacioMejora(evidencias);
         probarPlaneta2(evidencias);
+        probarIntegral(evidencias);
         escenarios_.liberar();
         Renderizador::comprobarErrores();
         return 0;
@@ -299,12 +345,21 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
 }
 int Aplicacion::ejecutar(int argc, char **argv) noexcept {
     try {
-        bool pruebas = false, capturas = true;
+        bool pruebas = false, capturas = true, medir = false, pruebasEspacio = false,
+             integral = false, medirTodo = false;
         Region inicial = Region::Planeta1;
         std::filesystem::path evidencias = "EvidenciasPrueba";
         for (int i = 1; i < argc; ++i) {
             std::string a = argv[i];
-            if (a == "--pruebas")
+            if (a == "--medir-integral")
+                medirTodo = true;
+            else if (a == "--pruebas-integrales")
+                integral = true;
+            else if (a == "--pruebas-espacio")
+                pruebasEspacio = true;
+            else if (a == "--medir-espacio")
+                medir = true;
+            else if (a == "--pruebas")
                 pruebas = true;
             else if (a == "--sin-capturas")
                 capturas = false;
@@ -322,12 +377,24 @@ int Aplicacion::ejecutar(int argc, char **argv) noexcept {
                     throw std::invalid_argument("Region desconocida");
             } else
                 throw std::invalid_argument(
-                    "Opciones: --region planeta1|planeta2|espacio --pruebas --sin-capturas --evidencias carpeta");
+                    "Opciones: --region planeta1|planeta2|espacio "
+                    "--pruebas --pruebas-integrales --pruebas-espacio --medir-espacio "
+                    "--medir-integral --sin-capturas --evidencias carpeta");
         }
         {
             Aplicacion app(recursosJuntoAlEjecutable(argv[0]));
             app.renderizador_.permitirCapturas(capturas);
-            int estado = app.ciclo(pruebas, evidencias, inicial);
+            int estado = 0;
+            if (medirTodo)
+                app.medirIntegral();
+            else if (integral)
+                app.probarIntegral(evidencias);
+            else if (medir)
+                app.medirEspacio(evidencias);
+            else if (pruebasEspacio)
+                app.probarEspacioMejora(evidencias);
+            else
+                estado = app.ciclo(pruebas, evidencias, inicial);
             if (estado)
                 return estado;
         }
@@ -523,15 +590,36 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
 }
 
 void Aplicacion::actualizarAudio() {
-    bool activo = escenarios_.actual().id() == Region::Planeta1;
+    auto region = escenarios_.actual().id();
+    audio_.oyente(camaras_.ojo(), camaras_.frente());
+    bool activo = region == Region::Planeta1;
     bool espacio = escenarios_.actual().id() == Region::Espacio;
     bool planeta2 = escenarios_.actual().id() == Region::Planeta2;
     audio_.bucle(Audio::Musica, activo ? .65f : 0);
     audio_.bucle(Audio::MusicaEspacio, espacio ? .80f : 0);
     audio_.bucle(Audio::MusicaPlaneta2, planeta2 ? .68f : 0);
     audio_.bucle(Audio::Ambiente, activo ? .7f : 0);
+    audio_.bucle(Audio::AmbienteEspacio, espacio ? .65f : 0);
+    audio_.bucle(Audio::AmbientePlaneta2, planeta2 ? .65f : 0);
+    float trafico = 0, boost = 0;
+    if (espacio) {
+        auto &e = dynamic_cast<Espacio &>(escenarios_.actual());
+        audio_.fuente(Audio::Trafico, mundo_.aGlobal(region, e.posicionTrafico(0, e.reloj())));
+        trafico = .6f;
+        boost = e.impulsando() ? .45f : 0;
+    } else if (planeta2) {
+        auto &e = dynamic_cast<Planeta2 &>(escenarios_.actual());
+        audio_.fuente(Audio::Trafico,
+                      mundo_.aGlobal(region, e.ratchet().railjackPosicion() + glm::vec3(18, 0, 0)));
+        float fase = std::fmod(e.ratchet().reloj(), 24.f);
+        trafico = fase >= 4 && fase < 20 ? .5f : 0;
+    }
+    audio_.bucle(Audio::Trafico, trafico);
+    audio_.bucle(Audio::Boost, boost);
     if (!activo) {
-        audio_.bucle(Audio::Motor, espacio ? .10f * dynamic_cast<Espacio &>(escenarios_.actual()).velocidad() / 40.f : 0);
+        audio_.bucle(
+            Audio::Motor,
+            espacio ? .10f * dynamic_cast<Espacio &>(escenarios_.actual()).velocidad() / 40.f : 0);
         audio_.bucle(Audio::Cohete, 0);
         audio_.bucle(Audio::Covenant, 0);
         return;

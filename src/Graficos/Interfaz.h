@@ -5,6 +5,9 @@
 class Interfaz {
     Malla malla_{std::vector<Vertice>{}};
     std::vector<Vertice> vertices_;
+    std::vector<std::string> ultimas_;
+    int ancho_ = 0, alto_ = 0;
+    bool pie_ = false;
     void rectangulo(float x, float y, float ancho, float alto, glm::vec3 color);
     void texto(const std::string &texto, float x, float y, float escala, glm::vec3 color);
 

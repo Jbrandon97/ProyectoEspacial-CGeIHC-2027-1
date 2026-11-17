@@ -7,10 +7,24 @@ class GestorCamaras {
     float angulo_ = 0, inclinacion_ = .28f;
     glm::vec3 ojo_{0}, objetivo_{0};
     bool preparada_ = false, cabina_ = false;
+    int observacionEspacial_ = 0;
 
   public:
-    void alternarCabina() { cabina_ = !cabina_; preparada_ = false; }
-    bool cabina() const { return cabina_; }
+    void observarEspacio(int vista) {
+        observacionEspacial_ = vista;
+        modo_ = ModoCamara::Observacion;
+        preparada_ = false;
+    }
+    int vistaEspacial() const {
+        return observacionEspacial_;
+    }
+    void alternarCabina() {
+        cabina_ = !cabina_;
+        preparada_ = false;
+    }
+    bool cabina() const {
+        return cabina_;
+    }
     static bool compatible(ModoCamara modo, Region region);
     bool solicitar(ModoCamara modo, Region region);
     void alCambiarRegion(Region region);
@@ -34,6 +48,10 @@ class GestorCamaras {
         return modo_;
     }
     const char *nombre() const;
+    glm::vec3 frente() const {
+        auto d = objetivo_ - ojo_;
+        return glm::length(d) > .001f ? glm::normalize(d) : glm::vec3(0, 0, -1);
+    }
     glm::vec3 ojo() const {
         return ojo_;
     }

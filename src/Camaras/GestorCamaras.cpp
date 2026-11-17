@@ -19,11 +19,13 @@ bool GestorCamaras::solicitar(ModoCamara m, Region r) {
     if (!compatible(m, r))
         return false;
     modo_ = m;
+    observacionEspacial_ = 0;
     return true;
 }
 void GestorCamaras::alCambiarRegion(Region r) {
     modo_ = r == Region::Espacio ? ModoCamara::Viaje : ModoCamara::Exploracion;
-    cabina_ = r == Region::Espacio;
+    cabina_ = false;
+    observacionEspacial_ = 0;
     angulo_ = 0;
     inclinacion_ = .28f;
     preparada_ = false;
@@ -105,8 +107,13 @@ void GestorCamaras::seguirEspacio(glm::vec3 nave, glm::vec3 frente, glm::vec3 ce
         return;
     }
     glm::vec3 ojo, objetivo;
-    if (modo_ == ModoCamara::Observacion) {
-        // Recorrido orbital libre alrededor de Gateway y vista de los cuerpos celestes.
+    if (modo_ == ModoCamara::Observacion && observacionEspacial_ != 0) {
+        ojo =
+            centro + (observacionEspacial_ == 1 ? glm::vec3(155, 85, 190) : glm::vec3(225, 65, -5));
+        objetivo =
+            centro + (observacionEspacial_ == 1 ? glm::vec3(0, -3, 0) : glm::vec3(145, 10, -125));
+    } else if (modo_ == ModoCamara::Observacion) {
+        // Recorrido orbital libre alrededor de la estacion y los cuerpos celestes.
         float elev = std::clamp(inclinacion_, .08f, 1.2f);
         ojo = centro + glm::vec3(std::sin(angulo_) * 285 * std::cos(elev), 285 * std::sin(elev),
                                  std::cos(angulo_) * 285 * std::cos(elev));

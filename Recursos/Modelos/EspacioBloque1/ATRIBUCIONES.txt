@@ -1,0 +1,28 @@
+author: Inditrion Dradnon (https://sketchfab.com/dradnon)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/freeport-space-station-2-709bb1fee20242d4aa56f40f017955d7
+title: Freeport Space Station 2
+
+author: Jungle Jim (https://sketchfab.com/jungle_jim)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/cool-alien-spaceship-by-jungle-jim-62918957e1fd4667b679259c95822c5e
+title: Cool Alien Spaceship by Jungle Jim
+
+author: Greggory_Fisher (https://sketchfab.com/Greggory_Fisher)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/jedi-holocron-1d5e04a564464ff9b0675a44309bce9f
+title: Jedi Holocron
+
+author: Jacobs Development (https://sketchfab.com/Jacobs_Development)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/asteroids-low-poly-791ccef91d3f46dd97997604fc7364a4
+title: Asteroids - Low Poly
+
+author: Jungle Jim (https://sketchfab.com/jungle_jim)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/alien-space-nebula-1-skybox-4a4e7aec37c04320a09ac4c7434b8810
+title: Alien Space Nebula 1 (Skybox)
+
+Adaptacion: transformaciones aplicadas, escala y centrado, agrupacion por material, soldadura exacta de vertices, indices, PNG externos, UV de ventanas corregidas y materiales aproximados al shader existente. Emision limitada para conservar detalle sin HDR. No atribuimos la creacion de estos modelos al equipo.
+
+Freeport: reduccion de geometria de 521726 a 146083 triangulos mediante decimacion, conservando materiales y silueta principal.

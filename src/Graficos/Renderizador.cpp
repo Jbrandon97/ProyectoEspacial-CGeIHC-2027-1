@@ -21,25 +21,36 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
     auto &l = ambiente.iluminacion;
     if (l.activa && !ambiente.cielo.empty()) {
         if (seleccionCielo_ != ambiente.cielo) {
-            cieloDia_ =
-                std::make_unique<Textura>(recursos_ / "Cielos" / ambiente.cielo / "skybox-day.png");
-            cieloNoche_ = ambiente.cielo == "Espacio"
-                              ? nullptr
-                              : std::make_unique<Textura>(recursos_ / "Cielos" / ambiente.cielo /
-                                                          "skybox-night.png");
+            auto &par = cielos_[ambiente.cielo];
+            if (!par.first) {
+                par.first = std::make_shared<Textura>(recursos_ / "Cielos" / ambiente.cielo /
+                                                      "skybox-day.png");
+                if (ambiente.cielo == "Planeta1")
+                    par.second = std::make_shared<Textura>(recursos_ / "Cielos" / ambiente.cielo /
+                                                           "skybox-night.png");
+                else
+                    par.second = par.first;
+            }
+            cieloDia_ = par.first;
+            cieloNoche_ = par.second;
             seleccionCielo_ = ambiente.cielo;
         }
         cielo_.usar();
         cielo_.matriz("inversaVP", glm::inverse(vp));
         cielo_.vector("ojo", ojo);
-        cielo_.vector("mezcla", {l.noche, 0, 0});
+        cielo_.vector("mezcla", {l.noche,
+                                 ambiente.cielo == "Espacio"
+                                     ? .35f
+                                     : (ambiente.cielo == "Planeta2" ? .65f - .32f * l.noche : 1.f),
+                                 ambiente.cielo == "Planeta2" ? 1.f : 0.f});
         glm::vec3 astro = glm::normalize(glm::vec3(-.54f, .78f, .31f));
-        cielo_.matriz("rotDia", ambiente.cielo == "Espacio"
-                                    ? glm::mat4(1)
-                                    : glm::mat4_cast(glm::rotation(glm::normalize(l.sol), astro)));
+        cielo_.matriz("rotDia",
+                      ambiente.cielo == "Espacio"
+                          ? glm::rotate(glm::mat4(1), glm::radians(-108.f), glm::vec3(0, 1, 0))
+                          : glm::mat4_cast(glm::rotation(glm::normalize(l.sol), astro)));
         cielo_.matriz("rotNoche",
                       ambiente.cielo == "Espacio"
-                          ? glm::mat4(1)
+                          ? glm::rotate(glm::mat4(1), glm::radians(-108.f), glm::vec3(0, 1, 0))
                           : glm::mat4_cast(glm::rotation(-glm::normalize(l.sol), astro)));
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, cieloDia_->id());
@@ -64,13 +75,26 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
     shader_.vector("solDir", l.sol);
     shader_.vector("solColor", l.colorSol);
     shader_.vector("ojo", ojo);
-    for (int i = 0; i < 16; ++i) {
-        auto &p = l.puntuales[i];
-        auto nombre = "pLuces[" + std::to_string(i) + "]";
+    int cantidad = 0;
+    for (const auto &p : l.puntuales) {
+        if(!p.encendida || p.intensidad<=0) continue;
+        auto nombre = "pLuces[" + std::to_string(cantidad++) + "]";
         shader_.vector((nombre + ".pos").c_str(), p.posicion);
         shader_.vector((nombre + ".color").c_str(), p.color * (p.encendida ? p.intensidad : 0));
         shader_.vector((nombre + ".atenuacion").c_str(), p.atenuacion);
     }
+    shader_.entero("cantidadPuntuales", cantidad);
+    for (int i = 0; i < 2; ++i) {
+        const auto &f = l.focales[i];
+        auto n = "focales[" + std::to_string(i) + "]";
+        shader_.vector((n + ".pos").c_str(), f.posicion);
+        shader_.vector((n + ".dir").c_str(), f.direccion);
+        shader_.vector((n + ".color").c_str(), f.color * (f.encendida ? f.intensidad : 0));
+        shader_.vector((n + ".atenuacion").c_str(), f.atenuacion);
+        shader_.vector((n + ".cono").c_str(),
+                       {std::cos(glm::radians(f.interno)), std::cos(glm::radians(f.externo)), 0});
+    }
+    shader_.entero("usaEmision", 0);
     recortarDebajo(-100000.f);
     shader_.vector("focoPos", l.focoPos);
     shader_.vector("focoDir", l.focoDir);
@@ -89,12 +113,14 @@ void Renderizador::dibujar(const Objeto &o, const glm::mat4 &base) {
     m = glm::rotate(m, o.giro, glm::vec3(0, 1, 0));
     m = glm::scale(m, o.escala);
     shader_.matriz("modelo", m);
+    shader_.matriz("matrizNormal", glm::transpose(glm::inverse(m)));
     shader_.vector("color", o.color);
     cubo_.dibujar();
     ++dibujos_;
 }
 void Renderizador::capturar(const std::filesystem::path &p, int a, int b) const {
-    if (!capturasHabilitadas_) return;
+    if (!capturasHabilitadas_)
+        return;
     // PPM sin dependencias extra. OpenGL entrega filas desde abajo: se invierten al escribir.
     std::vector<unsigned char> pix(size_t(a) * size_t(b) * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -119,6 +145,7 @@ void Renderizador::comprobarErrores() {
 
 void Renderizador::dibujar(const Malla &m, const glm::mat4 &modelo, glm::vec3 tinte) {
     shader_.matriz("modelo", modelo);
+    shader_.matriz("matrizNormal", glm::transpose(glm::inverse(modelo)));
     shader_.vector("color", tinte);
     m.dibujar();
     ++dibujos_;
@@ -134,7 +161,12 @@ void Renderizador::interfaz(const Malla &m, int a, int b) {
 }
 
 void Renderizador::texturada(const Malla &m, const glm::mat4 &modelo, GLuint textura,
-                             glm::vec3 color, glm::vec3 emision, float rugosidad, float metal) {
+                             glm::vec3 color, glm::vec3 emision, float rugosidad, float metal,
+                             GLuint emisionTextura) {
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, emisionTextura);
+    shader_.entero("mapaEmision", 2);
+    shader_.entero("usaEmision", emisionTextura ? 1 : 0);
     material(rugosidad, metal);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textura);
@@ -165,3 +197,8 @@ Renderizador::~Renderizador() {
 void Renderizador::material(float r, float m) {
     shader_.vector("propiedades", {r, m, 0});
 }
+void Renderizador::locomocionRobot(float fase, bool activa) {
+    shader_.vector("locomocionClank", {fase, activa ? 1.f : 0.f, 0});
+}
+
+void Renderizador::locomocionBlarg(float fase) { shader_.vector("locomocionClank",{fase,2,0}); }

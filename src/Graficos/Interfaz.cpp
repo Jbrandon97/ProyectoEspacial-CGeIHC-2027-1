@@ -42,12 +42,19 @@ void Interfaz::texto(const std::string &s, float x, float y, float escala, glm::
     }
 }
 void Interfaz::preparar(const std::vector<std::string> &lineas, int ancho, int alto, bool pie) {
+    if (lineas == ultimas_ && ancho == ancho_ && alto == alto_ && pie == pie_)
+        return;
+    ultimas_ = lineas;
+    ancho_ = ancho;
+    alto_ = alto;
+    pie_ = pie;
     vertices_.clear();
     float escala = ancho < 1000 ? 1.5f : 2.0f;
     float y = 20;
     size_t maximo = 0;
     for (const auto &l : lineas)
         maximo = std::max(maximo, l.size());
+    escala = std::min(escala, float(ancho - 50) / std::max(1.f, float(maximo) * 6));
     rectangulo(10, 10, std::min(float(ancho - 20), float(maximo) * 6 * escala + 24),
                float(lineas.size()) * 23 + 18, {.025f, .055f, .075f});
     rectangulo(10, 10, 4, float(lineas.size()) * 23 + 18, {.16f, .87f, .85f});

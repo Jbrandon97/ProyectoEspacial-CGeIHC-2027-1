@@ -1,0 +1,211 @@
+Comando: ProyectoEspacial.exe --pruebas --evidencias cierre_final_evidencias
+Resultado del proceso: codigo de salida 0; ultima linea: CIERRE CORRECTO
+GPU reportada: Intel(R) UHD Graphics 620
+
+OpenGL 3.3.0 - Build 31.0.101.2130 | GPU Intel(R) UHD Graphics 620
+MINIAUDIO_BACKEND WASAPI
+MINIAUDIO_OK 0.11.23 stereo44100 dispositivo activo
+BT_RIG_OK juntas=233 pieles=16 altura=8.5
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Covenant.gltf lotes=5 triangulos=4632
+GLTF_OK Operaciones.gltf lotes=9 triangulos=8548
+GLTF_OK Habitat.gltf lotes=9 triangulos=7096
+GLTF_OK Taller.gltf lotes=9 triangulos=7232
+GLTF_OK Hangar.gltf lotes=10 triangulos=7348
+GLTF_OK Plataforma_E.gltf lotes=7 triangulos=2196
+GLTF_OK Recinto.gltf lotes=6 triangulos=4588
+GLTF_OK Grunt.gltf lotes=3 triangulos=1708
+GLTF_OK Hunter.gltf lotes=5 triangulos=2002
+GLTF_OK Sentinel.gltf lotes=1 triangulos=1586
+GLTF_OK EnergySword.gltf lotes=2 triangulos=128
+GLTF_OK SaturnV_Keyframes.gltf lotes=27 triangulos=35040
+GLTF_OK Pino.gltf lotes=4 triangulos=132
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+REGION Planeta1 preparada; una region activa, estado conservado
+BLOQUE_A_OK terreno600x600 celdas200x200 arboles28 camara600pasos
+RESULTADO_TERCER_LUGAR_OK llegada posterior a ambos rivales
+PRUEBAS_CARRERA_OK geometria 5000 muestras, rampas, uniones, normales, antitrampa, reinicio, recuperacion, camara y dt
+BT_RIG_OK juntas=233 pieles=16 altura=8.5
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Covenant.gltf lotes=5 triangulos=4632
+GLTF_OK Operaciones.gltf lotes=9 triangulos=8548
+GLTF_OK Habitat.gltf lotes=9 triangulos=7096
+GLTF_OK Taller.gltf lotes=9 triangulos=7232
+GLTF_OK Hangar.gltf lotes=10 triangulos=7348
+GLTF_OK Plataforma_E.gltf lotes=7 triangulos=2196
+GLTF_OK Recinto.gltf lotes=6 triangulos=4588
+GLTF_OK Grunt.gltf lotes=3 triangulos=1708
+GLTF_OK Hunter.gltf lotes=5 triangulos=2002
+GLTF_OK Sentinel.gltf lotes=1 triangulos=1586
+GLTF_OK EnergySword.gltf lotes=2 triangulos=128
+GLTF_OK SaturnV_Keyframes.gltf lotes=27 triangulos=35040
+GLTF_OK Pino.gltf lotes=4 triangulos=132
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+REGION Planeta1 preparada; una region activa, estado conservado
+PLATAFORMA_RECORRIDO x=205 y=6.15 z=12
+DESCENSO x=205 y=5.0631 z=-35
+EDIFICIO x=40 y=3.6 z=-104
+COLISIONES_B1_OK ascenso permanencia descenso laterales edificios esquinas lagos montanas y exteriores pista
+PENALIZACION_B1_OK 2 segundos sin reinicio ni suma doble
+RIVAL_B1 maxima=37 tiempo=45.9526
+RIVAL_B1 maxima=38 tiempo=44.819
+EQUILIBRIO_B1 perfil=rapido tiempo=42.8269 puesto=1
+EQUILIBRIO_B1 perfil=conservador tiempo=48.8615 puesto=3
+MOVIMIENTO_OK caminar15 correr30 diagonal normalizada
+BT_RIG_OK juntas=233 pieles=16 altura=8.5
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Covenant.gltf lotes=5 triangulos=4632
+GLTF_OK Operaciones.gltf lotes=9 triangulos=8548
+GLTF_OK Habitat.gltf lotes=9 triangulos=7096
+GLTF_OK Taller.gltf lotes=9 triangulos=7232
+GLTF_OK Hangar.gltf lotes=10 triangulos=7348
+GLTF_OK Plataforma_E.gltf lotes=7 triangulos=2196
+GLTF_OK Recinto.gltf lotes=6 triangulos=4588
+GLTF_OK Grunt.gltf lotes=3 triangulos=1708
+GLTF_OK Hunter.gltf lotes=5 triangulos=2002
+GLTF_OK Sentinel.gltf lotes=1 triangulos=1586
+GLTF_OK EnergySword.gltf lotes=2 triangulos=128
+GLTF_OK SaturnV_Keyframes.gltf lotes=27 triangulos=35040
+GLTF_OK Pino.gltf lotes=4 triangulos=132
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+REGION Planeta1 preparada; una region activa, estado conservado
+CONTRATOS_OK coordenadas, dt, altura, 12 compatibilidades, duplicados, limpieza, destino invalido
+ENGINEER_OK piel 10 articulaciones 3 cadenas texturas originales
+GLTF_OK Terreno2.gltf lotes=1 triangulos=80000
+GLTF_OK Kerwan_Edificio1.gltf lotes=19 triangulos=12554
+GLTF_OK Kerwan_Edificio2.gltf lotes=33 triangulos=50202
+GLTF_OK Kerwan_Edificio3.gltf lotes=13 triangulos=5530
+GLTF_OK Railjack_Optimizado.gltf lotes=20 triangulos=117153
+GLTF_OK TorreOrokin1.gltf lotes=8 triangulos=3482
+GLTF_OK Warframe.gltf lotes=16 triangulos=64837
+GLTF_OK aphelion.gltf lotes=9 triangulos=13226
+GLTF_OK Clank.gltf lotes=1 triangulos=4502
+GLTF_OK Blarg.gltf lotes=2 triangulos=2632
+REGION Planeta2 preparada; una region activa, estado conservado
+GLTF_OK Freeport.gltf lotes=9 triangulos=146083
+GLTF_OK NaveAlien.gltf lotes=10 triangulos=49230
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Asteroide0.gltf lotes=1 triangulos=1082
+GLTF_OK Asteroide1.gltf lotes=1 triangulos=350
+GLTF_OK Asteroide2.gltf lotes=1 triangulos=208
+GLTF_OK Asteroide3.gltf lotes=1 triangulos=530
+GLTF_OK Asteroide4.gltf lotes=1 triangulos=1082
+GLTF_OK Asteroide5.gltf lotes=1 triangulos=208
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Planeta2 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Planeta2 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+INTEGRACION_OK 9 transiciones, 36 intentos camara, misma ventana, shaders y GL sin errores
+B2_RAMPA_OK ida vuelta sin salto
+PUERTA_CERRADA z=-76.75 y=3.6
+B2_HANGAR_OK abrir cerrar paso bloqueado sensor
+ENGINEER_OK piel 10 articulaciones 3 cadenas texturas originales
+B2_PIEL estado=0 cadena=1 max=3.07759e-08
+B2_PIEL estado=0 cadena=2 max=4.47035e-08
+B2_PIEL estado=0 cadena=3 max=4.47035e-08
+B2_RIG_OK estado=0 desplazamientoExtremo=0,0
+B2_PIEL estado=1 cadena=1 max=0.203626
+B2_PIEL estado=1 cadena=2 max=0.136809
+B2_PIEL estado=1 cadena=3 max=0.388016
+B2_RIG_OK estado=1 desplazamientoExtremo=0.0222856,0.203472
+B2_PIEL estado=2 cadena=1 max=0.303065
+B2_PIEL estado=2 cadena=2 max=0.203561
+B2_PIEL estado=2 cadena=3 max=0.574782
+B2_RIG_OK estado=2 desplazamientoExtremo=0.0333345,0.30284
+B2_COMPLETO_OK 3 Grunts 1 Hunter 2 Sentinels 2 espadas cargados
+C_CICLO_OK segundos=120 1201 muestras patrullas libres
+C_ACCESOS_OK exterior interior ambos sentidos regreso nave
+C_RENDIMIENTO_NOCHE mediana_ms=24.3474 min=18.5922 max=26.2549 muestras=12 sin lectura de captura
+P1_PATRULLA_POS Grunt1 inicio=(-77.00,153.00) fin=(-74.84,147.48) neto=5.93u recorrido=30.92u periodo=22.00s
+P1_PATRULLA_POS Grunt2 inicio=(-65.00,162.00) fin=(-68.99,163.87) neto=4.41u recorrido=24.09u periodo=25.00s
+P1_PATRULLA_POS Grunt3 inicio=(-53.00,153.00) fin=(-50.51,152.35) neto=2.58u recorrido=24.71u periodo=28.00s
+P1_PATRULLA_POS Hunter inicio=(-65.00,174.00) fin=(-65.05,173.17) neto=0.83u recorrido=20.46u periodo=30.00s
+P1_PATRULLA_OK 4 modelos trasladados en circuitos cerrados dentro del recinto; orientacion, suelo, colision; Hunter corto/lento
+C_ANIMACIONES_OK basicas(3): puerta/G1/K2; continuas(3): Engineer/Sentinel1/Sentinel2; keyframes(2): SaturnV/Holocron; patrullas NPC extra
+C_COHETE_OK preparacion ascenso final reinicio camara
+C_AUDIO disponible=1 bloques=648
+D_CICLO_OK dia=80 noche=40 total=120; 12000 muestras y 8 luces sincronizadas
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+D_MODELOS_OK Banshee y Ghost: ancho y apoyo, 1200 posiciones por modelo
+D_CAMARA_OK frente_y=0.413691 avatar_ndc_y=-0.703504 suelo respetado
+D_HUD_OK vuelta tiempo inicio fin; mecanismos carrera intactos
+BT_PASO desplazamiento_tobillo=1.47225
+REGION Planeta2 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+PERSISTENCIA_OK avatar camara reloj cohete; restos sin hundimiento
+GLTF_OK Sentinel.gltf lotes=1 triangulos=1586
+FINAL_OK Saturn sin orbita 3 ciclos automaticos; BT articulado repetible; Hunter H; Covenant atenuado; 16 luces
+E_AUDIO_OK cerca=0.68939 lejos=0.0300824 musica independiente; eventos sin duplicar
+E_AVATAR_OK reposo exacto, jerarquia conservada, escala 1.26, velocidad 15/30
+CARRERA_COMPLETA_OK vueltas=3 checkpoints=24 rampas=2 tiempo=45.5525 posicion=2
+VISTA_OK Plano_general dibujos=261 ms_muestra=14.3788
+VISTA_OK Covenant dibujos=81 ms_muestra=15.5804
+VISTA_OK Colonia_Titanfall dibujos=76 ms_muestra=18.7055
+VISTA_OK Hangar dibujos=90 ms_muestra=24.8603
+VISTA_OK Lago_y_bosque dibujos=146 ms_muestra=17.1483
+VISTA_OK Recinto_NPC dibujos=184 ms_muestra=17.9622
+VISTA_OK Plataforma dibujos=183 ms_muestra=20.4137
+VISTA_OK Pista_reducida dibujos=261 ms_muestra=22.8423
+VISTA_OK Montanas_desde_sendero dibujos=84 ms_muestra=14.355
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+VUELO_OK mouse coherente, matriz alineada, 30/120 FPS equivalentes, cabina anclada, cambio exterior
+MUSICA_ESPACIO_OK tres transiciones, sin reinicios, fundido y exclusividad regional
+REGION Planeta1 preparada; una region activa, estado conservado
+ESPACIO_OK navegacion avance giro altura, colision Freeport, trafico40s, persistencia, camaras, portal Planeta1
+REGION Espacio preparada; una region activa, estado conservado
+TRAFICO_PASO_MAX=0.564548 por 0.02s
+ESPACIO_B1_GEOMETRIA_OK seis aproximaciones, huecos libres, 8002 muestras trafico sin salto ni colision; 18 asteroides y holocron relativo
+ESPACIO_B1_FOCO_OK indice=0 canales_modificados=157898
+ESPACIO_B1_FOCO_OK indice=1 canales_modificados=157348
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+ESPACIO_B1_CAMARAS_OK F5 estacion, F6 asteroides, F3 retorno y persistencia; focos aislados por region
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Planeta2 preparada; una region activa, estado conservado
+P2_BASE_CONTACTO 0 hundimiento_min=0.12 max=0.342631
+P2_BASE_CONTACTO 1 hundimiento_min=0.12 max=1.18143
+P2_BASE_CONTACTO 2 hundimiento_min=0.12 max=0.386497
+P2_BASE_CONTACTO 3 hundimiento_min=0.12 max=0.841465
+P2_BASE_CONTACTO 4 hundimiento_min=0.12 max=1.92257
+P2_BASE_CONTACTO 5 hundimiento_min=0.12 max=0.753101
+REGION Espacio preparada; una region activa, estado conservado
+REGION Planeta2 preparada; una region activa, estado conservado
+PLANETA2_OK seis apoyos geometricos sin hueco, colisiones, seis luces de fachada, ciclo120s y persistencia
+REGION Planeta1 preparada; una region activa, estado conservado
+CIERRE_P1_OK holocron12s escala3.5 retorno; segundo foco pixeles=81315; F3 colonia
+REGION Espacio preparada; una region activa, estado conservado
+INTEGRAL_VUELO_OK orientacion por modelo, giros continuos, boost70 normal40 y colision
+REGION Planeta2 preparada; una region activa, estado conservado
+INTEGRAL_P2_OK 5400 muestras NPC, suelo y separacion; foco canales=141892
+REGION Planeta1 preparada; una region activa, estado conservado
+INTEGRAL_CIELO_OK P1 diferencia_media_union=0.100833
+REGION Planeta2 preparada; una region activa, estado conservado
+INTEGRAL_CIELO_OK P2 diferencia_media_union=0.295
+MINIAUDIO_OK 0.11.23 stereo44100 PCM sin dispositivo
+INTEGRAL_GRUPOS_AUDIO_OK musica_silenciada=0 ambiente_activo=0.00694414
+INTEGRAL_MINIAUDIO_OK RMS L/R izquierda=0.00587449/0.00137641 derecha=0.00137641/0.00587449 lejos=0.000603358 transicion1200ms
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+MINIAUDIO_CIERRE bloques=13
+MINIAUDIO_CIERRE bloques=2560
+CIERRE CORRECTO

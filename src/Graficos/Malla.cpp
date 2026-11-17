@@ -15,7 +15,19 @@ Malla::Malla() {
 Malla::Malla(const std::vector<Vertice> &v) {
     actualizar(v);
 }
+Malla::Malla(const std::vector<Vertice> &v, const std::vector<unsigned> &indices) {
+    actualizar(v);
+    indexada_ = true;
+    cantidad_ = GLsizei(indices.size());
+    glBindVertexArray(vao_);
+    glGenBuffers(1, &ebo_);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(),
+                 GL_STATIC_DRAW);
+    glBindVertexArray(0);
+}
 Malla::~Malla() {
+    glDeleteBuffers(1, &ebo_);
     glDeleteBuffers(1, &vbo_);
     glDeleteVertexArrays(1, &vao_);
 }
@@ -47,5 +59,8 @@ void Malla::actualizar(const std::vector<Vertice> &v, bool dinamica) {
 }
 void Malla::dibujar() const {
     glBindVertexArray(vao_);
-    glDrawArrays(GL_TRIANGLES, 0, cantidad_);
+    if (indexada_)
+        glDrawElements(GL_TRIANGLES, cantidad_, GL_UNSIGNED_INT, nullptr);
+    else
+        glDrawArrays(GL_TRIANGLES, 0, cantidad_);
 }

@@ -1,0 +1,5 @@
+author: Jungle Jim (https://sketchfab.com/jungle_jim)
+license: CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+source: https://sketchfab.com/3d-models/alien-space-nebula-2-skybox-a1c688c6e8164fd4ad5a7e56047e8b50
+title: Alien Space Nebula 2 (Skybox)
+Panorama original extraido sin reordenar caras. Modulado por ciclo solar en shader; sustituye conversiones anteriores con cortes internos.

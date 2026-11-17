@@ -4,6 +4,7 @@
 #include "Regiones/Planeta1/TerrenoPlaneta1.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
+#include <iomanip>
 #include <iostream>
 #include <numeric>
 #include <stdexcept>
@@ -126,41 +127,135 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         }
         dibujar(dir / (modo ? "C_Engineer_Correr.ppm" : "C_Engineer_Caminar.ppm"));
     }
-    for (int k = 0; k < 2; ++k) {
-        s.tiempo = k * 5.f;
-        vista(k ? "C_Patrulla_B" : "C_Patrulla_A", {-92, 22, -18}, {-110, 11, -45});
+    s.reaccion = s.inspeccion = s.hunter = -1;
+    s.reiniciarPatrullas();
+    const glm::vec2 inicios[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
+    for (int i = 0; i < 4; ++i) {
+        auto p0 = s.posicionPatrulla(i);
+        exigir(glm::length(glm::vec2(p0.x, p0.z) - inicios[i]) < .001f,
+               "NPC no inicia en su punto de referencia");
+        exigir(s.periodoPatrulla(i) >= 20 && s.periodoPatrulla(i) <= 30,
+               "Periodo de patrulla fuera de 20-30 s");
     }
-    for (int n : {1, 3}) {
-        s.tiempo = 0;
-        s.hunter = 0;
-        s.inspeccion = 0;
-        auto a = s.animacionNPC(n);
-        s.tiempo = 2;
-        s.hunter = 2;
-        s.inspeccion = 2;
-        auto b = s.animacionNPC(n);
-        float d = 0;
+    vista("C_P1_Patrulla_0s", {-46, 13, 188}, {-65, 3, 158});
+    std::array<float, 4> distanciaPatrullada{};
+    std::array<glm::vec3, 4> anteriorNPC{};
+    for (int i = 0; i < 4; ++i)
+        anteriorNPC[i] = s.posicionPatrulla(i);
+    for (int k = 0; k < 310; ++k) {
+        std::array<float, 4> angulos{};
+        for (int i = 0; i < 4; ++i)
+            angulos[i] = s.orientacionPatrulla(i);
+        s.actualizar(.1f);
+        std::array<glm::vec3, 4> actual{};
+        for (int i = 0; i < 4; ++i) {
+            actual[i] = s.posicionPatrulla(i);
+            float x = actual[i].x, z = actual[i].z;
+            exigir(std::pow((x + 65) / 52.f, 2.f) + std::pow((z - 160) / 28.f, 2.f) < 1,
+                   "Patrulla fuera del recinto");
+            exigir(std::abs(actual[i].y - TerrenoPlaneta1::altura(x, z)) < .001f,
+                   "Patrulla desligada del terreno");
+            auto paso = glm::vec2(actual[i].x - anteriorNPC[i].x,
+                                  actual[i].z - anteriorNPC[i].z);
+            exigir(glm::length(paso) > .02f, "NPC detenido durante la patrulla");
+            float rumbo = std::atan2(paso.x, paso.y);
+            exigir(std::abs(std::remainder(rumbo - angulos[i], 6.2831853f)) < .08f,
+                   "Orientacion no sigue el desplazamiento");
+            auto libre = p.ajustarMovimiento(anteriorNPC[i], actual[i]);
+            exigir(glm::length(glm::vec2(libre.x - actual[i].x, libre.z - actual[i].z)) < .08f,
+                   "Patrulla atraviesa un muro o colision");
+            distanciaPatrullada[i] += glm::length(paso);
+            anteriorNPC[i] = actual[i];
+            for (int j = 0; j < i; ++j)
+                exigir(glm::length(glm::vec2(actual[i].x - actual[j].x,
+                                            actual[i].z - actual[j].z)) > 2.5f,
+                       "Circuitos NPC demasiado cercanos");
+        }
+    }
+    exigir(distanciaPatrullada[3] / s.periodoPatrulla(3) <
+                   distanciaPatrullada[0] / s.periodoPatrulla(0) &&
+               distanciaPatrullada[3] < distanciaPatrullada[0],
+           "Hunter no tiene circuito mas corto y lento");
+    const char *nombresPatrulla[] = {"Grunt1", "Grunt2", "Grunt3", "Hunter"};
+    const auto flagsSalida = std::cout.flags();
+    const auto precisionSalida = std::cout.precision();
+    std::cout << std::fixed << std::setprecision(2);
+    for (int i = 0; i < 4; ++i) {
+        const auto fin = s.posicionPatrulla(i);
+        const float neto = glm::length(glm::vec2(fin.x - inicios[i].x, fin.z - inicios[i].y));
+        exigir(neto > .5f, "NPC no termina en una posicion distinta tras 31 s");
+        std::cout << "P1_PATRULLA_POS " << nombresPatrulla[i] << " inicio=(" << inicios[i].x << ','
+                  << inicios[i].y << ") fin=(" << fin.x << ',' << fin.z << ") neto=" << neto
+                  << "u recorrido=" << distanciaPatrullada[i] << "u periodo="
+                  << s.periodoPatrulla(i) << "s\n";
+    }
+    std::cout.flags(flagsSalida);
+    std::cout.precision(precisionSalida);
+    vista("C_P1_Patrulla_31s", {-46, 13, 188}, {-65, 3, 158});
+    std::cout << "P1_PATRULLA_OK 4 modelos trasladados en circuitos cerrados dentro del recinto; "
+                 "orientacion, suelo, colision; Hunter corto/lento\n";
+
+    auto probarReaccion = [&](int npc, float duracion, glm::vec3 sitio, bool grunt, bool inspeccion,
+                              const char *durante, const char *despues) {
+        s.reaccion = s.inspeccion = s.hunter = -1;
+        s.reiniciarPatrullas();
+        OrdenActividad o;
+        o.avatar = sitio;
+        o.reaccion = grunt;
+        o.inspeccion = inspeccion;
+        o.hunter = npc == 3;
+        p.controlar(o);
+        if (npc == 0)
+            exigir(s.reaccion == 0, "G no activa la reaccion del Grunt");
+        else if (npc == 1)
+            exigir(s.inspeccion == 0, "K no activa la inspeccion del Grunt 2");
+        else
+            exigir(s.hunter == 0, "H no activa la vigilancia del Hunter");
+        auto fijo = s.posicionPatrulla(npc);
+        float relojFijo = s.relojPatrulla(npc);
+        auto poseReposo = s.animacionNPC(npc);
+        p.actualizar(2.f);
+        auto poseReaccion = s.animacionNPC(npc);
+        float cambioPose = 0;
         for (int j = 0; j < 4; ++j)
-            d += glm::length(a[j] - b[j]);
-        exigir(d > .1f, "Keyframes sin movimiento");
-        s.tiempo = 8;
-        s.hunter = 8;
-        s.inspeccion = 8;
-        auto fin = s.animacionNPC(n);
-        exigir(glm::length(fin[0] - a[0]) < .001f, "Keyframes sin cierre");
-    }
-    OrdenActividad orden;
-    orden.avatar = {-77, 3, 145};
-    orden.reaccion = true;
-    p.controlar(orden);
-    exigir(s.reaccion == 0, "Grunt no reacciona");
-    p.actualizar(2);
-    exigir(glm::length(glm::vec3(s.animacionNPC(0)[3])) > 1, "Grunt no avanza");
-    s.reaccion = -1;
-    s.tiempo = 0;
+            cambioPose += glm::length(poseReposo[j] - poseReaccion[j]);
+        exigir(cambioPose > .1f, "Reaccion NPC sin movimiento perceptible");
+        vista(durante, {-46, 13, 188}, {-65, 3, 158});
+        exigir(glm::length(s.posicionPatrulla(npc) - fijo) < .001f &&
+                   s.relojPatrulla(npc) == relojFijo,
+               "La patrulla se mueve durante la reaccion");
+        p.actualizar(duracion - 1.5f);
+        exigir((npc == 0 ? s.reaccion : npc == 1 ? s.inspeccion : s.hunter) < 0,
+               "La reaccion no termina en su duracion establecida");
+        exigir(glm::length(s.posicionPatrulla(npc) - fijo) < .001f,
+               "La patrulla salta al terminar la reaccion");
+        vista(despues, {-46, 13, 188}, {-65, 3, 158});
+        p.actualizar(.1f);
+        float reanuda = glm::length(s.posicionPatrulla(npc) - fijo);
+        exigir(reanuda > .02f && reanuda < .2f, "Patrulla no reanuda suavemente");
+    };
+    probarReaccion(0, 5.f, {-77, 2, 153}, true, false, "C_P1_Grunt1_G_durante",
+                   "C_P1_Grunt1_G_despues");
+    probarReaccion(1, 8.f, {-65, 2, 162}, false, true, "C_P1_Grunt2_K_durante",
+                   "C_P1_Grunt2_K_despues");
+    probarReaccion(3, 8.f, {-65, 2, 174}, false, false, "C_P1_Hunter_H_durante",
+                   "C_P1_Hunter_H_despues");
+
+    s = original;
+    s.holocron = 0;
+    auto holocronInicio = glm::vec3(s.matrizHolocron()[3]);
+    s.actualizar(5.f);
+    auto holocronAlto = glm::vec3(s.matrizHolocron()[3]);
+    exigir(holocronAlto.y > holocronInicio.y + 7.f, "Keyframes del holocron no elevan el modelo");
+    s.actualizar(7.f);
+    exigir(s.holocron < 0 &&
+               glm::length(glm::vec3(s.matrizHolocron()[3]) - holocronInicio) < .001f,
+           "Keyframes del holocron no regresan a la base");
+    s = original;
     vista("C_NPC", {-46, 13, 188}, {-65, 3, 158});
-    std::cout << "C_ANIMACIONES_OK 3 basicas 3 continuas 2 keyframes objetos distintos\n";
-    orden = {};
+    std::cout << "C_ANIMACIONES_OK basicas(3): puerta/G1/K2; continuas(3): Engineer/Sentinel1/"
+                 "Sentinel2; keyframes(2): SaturnV/Holocron; patrullas NPC extra\n";
+    OrdenActividad orden;
     orden.avatar = {220, 6, 0};
     orden.lanzar = true;
     p.controlar(orden);

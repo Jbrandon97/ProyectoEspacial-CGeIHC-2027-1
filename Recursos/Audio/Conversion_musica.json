@@ -1,0 +1,38 @@
+[
+  {
+    "original": "Exploration Theme.ogg",
+    "salida": "Exploration_Theme.wav",
+    "sha256": "1546f1e6d7f42e380b9f608a41e640f98ed48a96f3df3bc704663f4c824f2e8d",
+    "frecuencia": 44100,
+    "canales": 2,
+    "segundos": 134.35,
+    "ganancia": 1.801880324848123,
+    "rms": 0.07943689078092575,
+    "pico": 0.7105129957199097,
+    "fundido_bucle_ms": 50
+  },
+  {
+    "original": "airy.ogg",
+    "salida": "Airy.wav",
+    "sha256": "ce86ac7d78b0b3257b5242fa7de4fb378616a7a85cb4ea4a17b5a74f76a7d003",
+    "frecuencia": 44100,
+    "canales": 2,
+    "segundos": 63.95,
+    "ganancia": 0.4906684851619569,
+    "rms": 0.07944764941930771,
+    "pico": 0.44306397438049316,
+    "fundido_bucle_ms": 50
+  },
+  {
+    "original": "our_expanse_2_-_chill_-_loop.ogg",
+    "salida": "Our_Expanse_Chill.wav",
+    "sha256": "fd4d0aeac2a7e3477ecd1c95252ea8cdd6b0b03a233c9b005728c8b641f3835c",
+    "frecuencia": 44100,
+    "canales": 2,
+    "segundos": 76.24138321995464,
+    "ganancia": 0.40845015251354994,
+    "rms": 0.07945097982883453,
+    "pico": 0.4193473160266876,
+    "fundido_bucle_ms": 50
+  }
+]

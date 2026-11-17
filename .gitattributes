@@ -10,3 +10,4 @@
 *.glb binary
 
 Recursos/Animaciones/keyframescohete.txt -text
+ProyectoEspacial.exe export-ignore

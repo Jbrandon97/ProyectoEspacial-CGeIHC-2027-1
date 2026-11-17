@@ -29,6 +29,11 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
     }
 }
 void SistemasPlaneta1::actualizar(float dt) {
+    const float avance = std::max(0.f, dt);
+    const bool pausados[] = {reaccion >= 0, inspeccion >= 0, false, hunter >= 0};
+    for (int i = 0; i < 4; ++i)
+        if (!pausados[i])
+            relojesPatrulla_[i] += avance;
     tiempo += dt;
     if (holocron >= 0 && (holocron += dt) >= 12) holocron = -1;
     if (inspeccion >= 0 && (inspeccion += dt) >= 8)
@@ -72,6 +77,45 @@ float SistemasPlaneta1::faseSolar() const {
     float pendiente = dia ? 4.f / 3.f : 2.f / 3.f;
     float avance = u + (pendiente - 1) * u * (1 - u) * (1 - 2 * u);
     return (dia ? 0.f : .5f) + .5f * avance;
+}
+namespace {
+constexpr float DosPi = 6.28318530718f;
+constexpr glm::vec2 InicioPatrulla[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
+constexpr glm::vec2 RadioPatrulla[] = {{4, 3}, {4, 2}, {4, 3}, {2.1f, 4}};
+constexpr float FasePatrulla[] = {0, 3.14159265359f, 0, 1.57079632679f};
+constexpr float PeriodoPatrulla[] = {22, 25, 28, 30};
+float faseNPC(int npc, float reloj) {
+    return FasePatrulla[npc] + DosPi * reloj / PeriodoPatrulla[npc];
+}
+}
+glm::vec3 SistemasPlaneta1::posicionPatrulla(int npc) const {
+    if (npc < 0 || npc >= 4)
+        return {};
+    const auto inicio = InicioPatrulla[npc];
+    const auto radio = RadioPatrulla[npc];
+    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float inicial = FasePatrulla[npc];
+    const float x = inicio.x + radio.x * (std::sin(fase) - std::sin(inicial));
+    const float z = inicio.y + radio.y * (std::cos(fase) - std::cos(inicial));
+    return {x, TerrenoPlaneta1::altura(x, z), z};
+}
+float SistemasPlaneta1::orientacionPatrulla(int npc) const {
+    if (npc < 0 || npc >= 4)
+        return 0;
+    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float velocidadAngular = DosPi / PeriodoPatrulla[npc];
+    const float dx = RadioPatrulla[npc].x * std::cos(fase) * velocidadAngular;
+    const float dz = -RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
+    return std::atan2(dx, dz);
+}
+float SistemasPlaneta1::relojPatrulla(int npc) const {
+    return npc < 0 || npc >= 4 ? 0.f : relojesPatrulla_[npc];
+}
+float SistemasPlaneta1::periodoPatrulla(int npc) const {
+    return npc < 0 || npc >= 4 ? 0.f : PeriodoPatrulla[npc];
+}
+void SistemasPlaneta1::reiniciarPatrullas() {
+    relojesPatrulla_.fill(0.f);
 }
 Iluminacion SistemasPlaneta1::luces() const {
     Iluminacion l;
@@ -235,8 +279,6 @@ glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
         m = glm::translate(m, {0, 0, 2.8f * caminar});
         return glm::rotate(m, .4f * std::sin(u * 6.2831853f), {0, 1, 0});
     }
-    if (i == 2)
-        return glm::rotate(m, .22f * std::sin(tiempo * .8f), glm::vec3(0, 1, 0));
     if (i == 1 || i == 3) {
         // Dos objetos distintos: Grunt 2 inspecciona; Hunter gira en vigilancia.
         const float t[] = {0, 2, 4, 6, 8};

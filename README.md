@@ -1,10 +1,10 @@
 # Proyecto Espacial — revisión integral
 
-Computación Gráfica e IHC, FI UNAM, 2027-1. C++17, OpenGL 3.3, GLFW y miniaudio. Conservamos Halo/Titanfall, Ratchet & Clank/Warframe y Freeport. Esta revisión es local: no está publicada en GitHub.
+Computación Gráfica e IHC, FI UNAM, 2027-1. C++17, OpenGL 3.3, GLFW y miniaudio. Conservamos Halo/Titanfall, Ratchet & Clank/Warframe y Freeport. Este cierre reúne las correcciones de código y sus evidencias de prueba.
 
 ## Ejecutar y compilar
 
-Extraer el ZIP completo y abrir **ProyectoEspacial.exe**. Mantener **Recursos** junto al EXE; no ejecutar dentro del ZIP. Incluimos el PDB correspondiente. Se necesita Windows x64 y un controlador OpenGL 3.3 con dispositivo de reproducción de audio disponible.
+El paquete de ejecución es **ProyectoEspacial_Cierre_Ejecutable.zip**: extraerlo y abrir **ProyectoEspacial.exe** con la carpeta **Recursos** a su lado. Incluye el PDB correspondiente; no se ejecuta dentro del ZIP. El paquete **ProyectoEspacial_Cierre_Teoria.zip** contiene el código fuente y la revisión técnica, pero no incluye el EXE. Se necesita Windows x64, controlador OpenGL 3.3 y dispositivo de audio.
 
 Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK. Seleccionar **Release | x64** y ProyectoEspacial como proyecto de inicio. Las dependencias están incluidas; no se requieren descargas ni DLL adicionales de terceros. La compilación copia Recursos a `bin/x64/Release`.
 
@@ -37,6 +37,6 @@ Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Re
 
 `src/Regiones` conserva los módulos de cada región; `src/Audio`, `src/Graficos`, `src/Camaras` y `src/Nucleo` contienen servicios compartidos. `Recursos` y `Dependencias` conservan sus licencias y procedencias. No atribuimos modelos de terceros ni cambios actuales a integrantes concretos.
 
-miniaudio 0.11.23 se compila una sola vez desde `src/Audio/Audio.cpp`; no queda un motor waveOut propio. Música y ambientes son síntesis original: no incorporamos música comercial. Para regenerar las revisiones de Espacio y Planeta 2, ejecutar `Herramientas/generar_audio_integral.py` al final de los scripts de audio previos. Python y NumPy sólo son necesarios para esa regeneración, no para jugar.
+miniaudio 0.11.23 se compila una sola vez desde `src/Audio/Audio.cpp`; no queda un motor waveOut propio. Las pistas musicales entregadas son CC0, sus originales y atribuciones se conservan en `Recursos/Audio/Originales` y `Recursos/Audio/Musica_licencias.md`; no incorporamos música comercial de Halo ni Titanfall. Para regenerar las conversiones y ambientes, ejecutar `Herramientas/convertir_musica.py` y `Herramientas/generar_audio_integral.py`. Python y NumPy sólo son necesarios para esa regeneración, no para jugar.
 
-Las posiciones, cámaras y relojes se conservan durante la sesión; no se guardan al cerrar. Antes de integrar estos cambios en las ramas del equipo, revisar el inventario y las pruebas de `Revision_Cierre`. Esta entrega no hace commits ni modifica `main`.
+Las posiciones, cámaras y relojes se conservan durante la sesión; no se guardan al cerrar. El inventario, las pruebas y los límites de verificación de este cierre están en `Revision_Cierre`.

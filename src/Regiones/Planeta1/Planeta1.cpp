@@ -143,7 +143,10 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         auto p = n.sitio;
         p.y += TerrenoPlaneta1::altura(p.x, p.z);
         float giro = n.giro;
-        if (numero == 4 || numero == 5) {
+        if (numero < 4) {
+            p = sistemas_.posicionPatrulla(numero);
+            giro = sistemas_.orientacionPatrulla(numero);
+        } else if (numero == 4 || numero == 5) {
             p = sistemas_.sentinel(numero - 4);
             giro = sistemas_.giroSentinel(numero - 4);
         }

@@ -257,17 +257,15 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
             if (texto.rfind("WASD", 0) == 0)
                 texto = observandoCohete_ ? "O VOLVER / OBSERVACION DEL LANZAMIENTO"
                                          : "F1 EXPLORAR / F3 COLONIA / F4 PANORAMICA";
-    lineas.erase(std::remove_if(lineas.begin(), lineas.end(), [](const std::string &texto) {
-                     return texto.rfind("M SILENCIO", 0) == 0;
-                 }), lineas.end());
     if (r == Region::Planeta1 && !actividad.ocupado)
         lineas.push_back(observandoCohete_ ? "O / VOLVER A EXPLORACION"
                                            : (camaras_.modo() == ModoCamara::Exploracion
                                                   ? "F ENERGIA CORPORAL / O OBSERVAR COHETE"
                                                   : "F1 VOLVER A EXPLORACION"));
     if (lineas.empty() && r == Region::Planeta2)
-        lineas = {"PLANETA 2 / KERWAN + WARFRAME / APHELION Y RAILJACK",
-                  "WASD MOVER / SHIFT CORRER / M SILENCIO / 1-3 REGIONES"};
+        lineas = {"PLANETA 2",
+                  "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
+                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN"};
     if (lineas.empty())
         lineas = {std::string(e.nombre()) + " / " + camaras_.nombre(), "WASD MOVER / 1-3 REGIONES"};
     if (r == Region::Planeta1 && !actividad.ocupado && !observandoCohete_ &&
@@ -286,7 +284,6 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
         lineas.push_back(piloto ? "V CABINA / F4 ORBITA / F5 ESTACION / F6 ASTEROIDES"
                                 : "F4 ORBITA / F5 ESTACION / F6 ASTEROIDES");
     }
-    lineas.push_back("M SILENCIO / N CANAL / - + VOLUMEN / " + audio_.controlVolumen());
     interfaz_.preparar(lineas, a, b, true);
     renderizador_.interfaz(interfaz_.malla(), a, b);
     if (!captura.empty())

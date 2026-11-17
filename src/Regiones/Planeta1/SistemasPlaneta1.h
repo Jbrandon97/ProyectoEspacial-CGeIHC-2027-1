@@ -8,6 +8,7 @@
 class SistemasPlaneta1 {
     KeyframesCohete animacionCohete_;
     std::array<float, 3> ajusteSuelo_{};
+    std::array<float, 4> relojesPatrulla_{};
 
   public:
     const KeyframesCohete &keyframes() const {
@@ -43,6 +44,11 @@ class SistemasPlaneta1 {
     float fase() const;
     float faseSolar() const;
     Iluminacion luces() const;
+    glm::vec3 posicionPatrulla(int npc) const;
+    float orientacionPatrulla(int npc) const;
+    float relojPatrulla(int npc) const;
+    float periodoPatrulla(int npc) const;
+    void reiniciarPatrullas();
     glm::vec3 cohete() const;
     glm::vec3 fuenteMotor() const;
     glm::vec3 sentinel(int i) const;

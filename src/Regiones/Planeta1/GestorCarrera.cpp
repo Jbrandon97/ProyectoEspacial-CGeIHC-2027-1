@@ -93,7 +93,7 @@ EstadoActividad GestorCarrera::estado() const {
     e.objetivo = nave_.posicion() + CircuitoCarreras::origen();
     e.direccion = nave_.direccion();
     if (!ocupado()) {
-        e.mensajes = {"PLANETA 1 / HALO + TITANFALL",
+        e.mensajes = {"PLANETA 1",
                       "WASD CAMINAR | SHIFT CORRER | MOUSE MIRAR | TAB LIBERAR",
                       cerca_ ? "PRESIONA X PARA ABORDAR LA NAVE"
                              : "ACERCATE A LA BANSHEE JUNTO AL ARCO DE META"};

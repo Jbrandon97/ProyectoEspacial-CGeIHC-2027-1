@@ -148,13 +148,18 @@ void SectorRatchet::cargar(ContextoEscena &c) {
             }
         apoyos_[i] = apoyo - .12f;
         huecosBase_[i] = -1e9f;
+        float hundimientoMinimo = 1e9f, hundimientoMaximo = -1e9f;
         for (auto v : vertices)
             if (v.y <= minimo.y + .05f) {
                 float suelo = alturaSuelo(e.posicion.x + v.x * EscalaEdificios,
                                           e.posicion.y + v.z * EscalaEdificios);
+                float hundimiento = suelo - (apoyos_[i] + v.y * EscalaEdificios);
+                hundimientoMinimo = std::min(hundimientoMinimo, hundimiento);
+                hundimientoMaximo = std::max(hundimientoMaximo, hundimiento);
                 huecosBase_[i] =
                     std::max(huecosBase_[i], apoyos_[i] + v.y * EscalaEdificios - suelo);
             }
+        contactoBase_[i] = {hundimientoMinimo, hundimientoMaximo};
         centrosEdificios_[i] = {e.posicion.x, apoyos_[i] + minimo.y * EscalaEdificios,
                                 e.posicion.y};
         // La luz queda fuera de la fachada, no dentro del volumen opaco del edificio.

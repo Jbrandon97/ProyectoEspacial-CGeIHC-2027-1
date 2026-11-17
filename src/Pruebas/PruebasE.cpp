@@ -465,10 +465,25 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     foto("P2_Noche", {125, 62, 155}, {15, 12, 0});
     p.actualizar(50);
     foto("P2_Dia", {125, 62, 155}, {15, 12, 0});
+    for (size_t i = 0; i < p.ratchet().contactoBase().size(); ++i) {
+        const auto hundimiento = p.ratchet().contactoBase()[i];
+        exigir(std::isfinite(hundimiento.x) && std::isfinite(hundimiento.y) &&
+                   hundimiento.x >= .10f && hundimiento.y >= hundimiento.x,
+               "Contacto de base P2 invalido");
+        std::cout << "P2_BASE_CONTACTO " << i << " hundimiento_min=" << hundimiento.x
+                  << " max=" << hundimiento.y << "\n";
+    }
     int i = 0;
     for (auto centro : p.ratchet().centrosEdificios()) {
         centro += glm::vec3(18, 0, 0);
-        foto("P2_Base_" + std::to_string(i++), centro + glm::vec3(14, 7, 17),
+        foto("P2_Base_Dia_" + std::to_string(i++), centro + glm::vec3(14, 7, 17),
+             centro + glm::vec3(0, 4, 0));
+    }
+    p.actualizar(70);
+    i = 0;
+    for (auto centro : p.ratchet().centrosEdificios()) {
+        centro += glm::vec3(18, 0, 0);
+        foto("P2_Base_Noche_" + std::to_string(i++), centro + glm::vec3(14, 7, 17),
              centro + glm::vec3(0, 4, 0));
     }
     auto reloj = p.reloj();

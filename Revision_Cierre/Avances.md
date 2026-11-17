@@ -2,7 +2,7 @@
 
 ## Base
 
-Rama `mejoras-teoria-final`, desde main `9eb34c8`. El commit `dce86e6` incorpora la revision local anterior ya probada; no representa trabajo historico inventado. Main y ramas individuales se conservan.
+La rama `mejoras-teoria-final` partió de `main` en `9eb34c8` y conserva los commits previos del proyecto junto con las correcciones finales de este cierre. Las fechas y pruebas se limitan a las registradas aquí; no se agregan commits históricos ficticios.
 
 ## Planeta 1 — 13 de noviembre de 2026
 
@@ -27,4 +27,14 @@ La pista musical de Planeta 2 es `Our_Expanse_Chill.wav`; el original OGG y su p
 ## Verificación final local
 
 Release y Debug x64 fueron reconstruidos con Visual Studio 2022. `full_final.log` termina en `CIERRE CORRECTO`; incluye cargadores GLTF, contratos de regiones, carrera, Freeport, Planeta 2 y miniaudio. `rendimiento_final.log` midió 120 muestras por región con VSync desactivado en Intel UHD Graphics 620: Planeta 1 59.7509 FPS, Planeta 2 44.1205 FPS y Espacio 85.7457 FPS. Son mediciones automatizadas de esta máquina, no una garantía para otro hardware.
+
+## Correcciones finales — 16 de noviembre de 2026
+
+El HUD ya no muestra el volumen/canal, el encabezado temático de cada planeta ni la línea técnica de patrullas/Railjack. Se conservan los controles de audio M/N/+/- en el teclado, la cabecera breve por región, F1/F3/F4, la energía corporal, observación del Saturn V y la navegación fija 1–3/ESC.
+
+En Planeta 1 agregamos cuatro circuitos elípticos independientes: Grunt 1 (22 s), Grunt 2 (25 s), Grunt 3 (28 s) y Hunter (30 s). Todos parten de las posiciones acordadas, se mantienen dentro de los límites del Recinto y calculan altura mediante `TerrenoPlaneta1::altura`. El rumbo sigue la tangente del recorrido y `Planeta1::dibujar` traslada el modelo completo, no solo su orientación. En la prueba de 31 s avanzaron 30.92, 24.09, 24.71 y 20.46 unidades respectivamente. G/K/H congelan el reloj del NPC que reacciona (5 s para G; 8 s para K/H), de modo que la patrulla reanuda desde el mismo punto. El Titán y ambos Sentinel conservan sus funciones y transformaciones.
+
+La revisión de las seis bases de Planeta 2 capturó cada edificio durante día y noche. El análisis de sus vértices inferiores no encontró huecos: hundimiento mínimo medido de 0.12 unidades en los seis apoyos; máximos por edificio 0.343, 1.181, 0.386, 0.841, 1.923 y 0.753. El modelo 4 queda más enterrado por la pendiente de su huella, pero en las vistas no aparece flotación ni hueco; se mantuvo el margen de apoyo de 0.12 y no cambiamos colisiones.
+
+Las hojas `Capturas/P1_Patrullas_Reacciones.jpg`, `Capturas/P2_Bases_Dia_Noche.jpg` y `Capturas/HUD_Limpio_3_Regiones.jpg` se generaron del ejecutable y muestran movimiento, respuestas, apoyo en ambos ciclos y HUD final. `--pruebas` termina en `CIERRE CORRECTO`; la salida contiene `P1_PATRULLA_OK`, `C_ANIMACIONES_OK` con SaturnV/Holocron como los dos objetos por keyframes, y `PLANETA2_OK`.
 

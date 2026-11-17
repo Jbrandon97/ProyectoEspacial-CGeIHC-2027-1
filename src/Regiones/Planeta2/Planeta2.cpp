@@ -131,9 +131,8 @@ Ambiente Planeta2::ambiente() const noexcept {
 }
 EstadoActividad Planeta2::actividad() const {
     EstadoActividad e;
-    e.mensajes = {"PLANETA 2 / KERWAN + WARFRAME",
+    e.mensajes = {"PLANETA 2",
                   "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
-                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN",
-                  "CLANK - BLARG - WARFRAME EN PATRULLA / RAILJACK CICLO 24 S"};
+                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN"};
     return e;
 }

@@ -4,6 +4,7 @@
 #include <array>
 #include <memory>
 #include <string>
+#include <vector>
 class Renderizador;
 class Textura {
     GLuint id_ = 0;
@@ -34,6 +35,8 @@ class ModeloGltf {
     std::vector<Parte> partes_;
     std::array<std::vector<glm::vec3>, 4> verticesEtapas_;
     std::vector<glm::vec3> triangulos_, puerta_;
+    std::vector<std::string> nombresNodos_;
+    std::vector<glm::vec3> origenesNodos_;
     float minimoY_ = 1e20f;
 
   public:
@@ -50,6 +53,11 @@ class ModeloGltf {
         return minimoY_;
     }
     explicit ModeloGltf(const std::filesystem::path &, bool indexada = false);
+    size_t cantidadNodos() const noexcept {
+        return nombresNodos_.size();
+    }
+    size_t indiceNodo(const std::string &nombre) const;
+    glm::vec3 origenNodo(size_t indice) const;
     void dibujar(Renderizador &, const glm::mat4 &, float elevacionPuerta = 0,
                  const std::array<glm::mat4, 4> *etapas = nullptr,
                  const std::vector<glm::mat4> *moverPartes = nullptr) const;

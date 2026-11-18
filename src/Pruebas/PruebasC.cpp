@@ -54,7 +54,8 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     int w, h;
     ventana_.dimensiones(w, h);
     ContextoEscena c{renderizador_, recursos_};
-    auto vista = [&](const char *nombre, glm::vec3 ojo, glm::vec3 objetivo, int opcion = 0) {
+    auto vista = [&](const char *nombre, glm::vec3 ojo, glm::vec3 objetivo, int opcion = 0,
+                     float fov = 55.f) {
         auto amb = p.ambiente();
         if (opcion == 1)
             for (auto &l : amb.iluminacion.puntuales)
@@ -64,7 +65,7 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
             amb.iluminacion.focoPos = ojo;
             amb.iluminacion.focoDir = glm::normalize(objetivo - ojo);
         }
-        auto vp = glm::perspective(glm::radians(55.f), float(w) / h, .15f, 900.f) *
+        auto vp = glm::perspective(glm::radians(fov), float(w) / h, .15f, 900.f) *
                   glm::lookAt(ojo, objetivo, {0, 1, 0});
         double ini = glfwGetTime();
         renderizador_.iniciar(w, h, vp, amb, ojo);
@@ -201,6 +202,42 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
                  "orientacion, suelo, colision, marcha de piernas; Hunter corto/lento\n";
 
     s.reiniciarPatrullas();
+    auto capturarPasoNPC = [&](int npc, int ciclos, const char *modelo) {
+        s.reaccion = s.inspeccion = s.hunter = -1;
+        s.reiniciarPatrullas();
+        s.tiempo = 0;
+        s.faseInicial = .25f;
+        const float alturaCentro = npc == 3 ? 2.2f : 1.1f;
+        const float distancia = npc == 3 ? 9.f : 6.5f;
+        auto vistaCercana = [&](const char *estado) {
+            const auto pos = s.posicionPatrulla(npc);
+            const float rumbo = s.orientacionPatrulla(npc);
+            const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
+            const glm::vec3 lateral(frente.z, 0, -frente.x);
+            const auto centro = pos + glm::vec3(0, alturaCentro, 0);
+            const std::string archivo = std::string("C_P1_") + modelo + "_" + estado;
+            const auto ojo = centro - frente * (distancia * .82f) -
+                             lateral * (distancia * .35f) + glm::vec3(0, alturaCentro * .3f, 0);
+            vista(archivo.c_str(), ojo, centro, 0, npc == 3 ? 40.f : 36.f);
+            const float fase = 6.28318530718f * ciclos * s.relojPatrulla(npc) /
+                               s.periodoPatrulla(npc);
+            const float angulo = .35f * std::sin(fase);
+            std::cout << "P1_PIERNA_CAPTURA modelo=" << modelo << " estado=" << estado
+                      << " reloj=" << s.relojPatrulla(npc) << " angulos=" << angulo << ','
+                      << -angulo << " rad\n";
+        };
+        vistaCercana("Reposo");
+        const float cuartoCiclo = s.periodoPatrulla(npc) / (4.f * ciclos);
+        s.actualizar(cuartoCiclo);
+        vistaCercana("Paso_A");
+        s.actualizar(2 * cuartoCiclo);
+        vistaCercana("Paso_B");
+    };
+    capturarPasoNPC(0, 24, "Grunt1");
+    capturarPasoNPC(3, 16, "Hunter");
+    std::cout << "P1_PIERNA_GLTF_OK nombres y origenes de nodo resueltos desde glTF; "
+                 "piernas rigidas, fase ligada a patrulla y reacciones en reposo\n";
+    s = original;
     auto vistaGrunt1 = [&](const char *nombre, bool reaccion) {
         const auto pos = s.posicionPatrulla(0);
         const float rumbo = s.orientacionPatrulla(0);

@@ -5,6 +5,7 @@
 #include "Graficos/Renderizador.h"
 #include "TerrenoPlaneta1.h"
 #include <algorithm>
+#include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 void Planeta1::cargar(ContextoEscena &c) {
     liberar();
@@ -42,6 +43,20 @@ void Planeta1::cargar(ContextoEscena &c) {
     for (auto nombre : {"Grunt", "Hunter", "Sentinel", "EnergySword"})
         modelos_[nombre] =
             std::make_unique<ModeloGltf>(c.recursos / "Modelos" / (std::string(nombre) + ".gltf"));
+    const char *modelosNPC[] = {"Grunt", "Hunter"};
+    const char *nombresPiernas[][2] = {{"Grunt_pierna_izquierda", "Grunt_pierna_derecha"},
+                                        {"Hunter_pierna_izquierda", "Hunter_pierna_derecha"}};
+    for (size_t modelo = 0; modelo < 2; ++modelo) {
+        const auto &gltf = *modelos_.at(modelosNPC[modelo]);
+        for (size_t pierna = 0; pierna < 2; ++pierna) {
+            nodosPiernas_[modelo][pierna] = gltf.indiceNodo(nombresPiernas[modelo][pierna]);
+            pivotesPiernas_[modelo][pierna] = gltf.origenNodo(nodosPiernas_[modelo][pierna]);
+        }
+    }
+    for (size_t instancia = 0; instancia < matricesPiernasNPC_.size(); ++instancia) {
+        const auto &gltf = *modelos_.at(instancia == 3 ? "Hunter" : "Grunt");
+        matricesPiernasNPC_[instancia].assign(gltf.cantidadNodos(), glm::mat4(1));
+    }
     modelos_["SaturnV"] =
         std::make_unique<ModeloGltf>(c.recursos / "Modelos/SaturnV_Keyframes.gltf");
     colisionCohete_.agregar(modelos_.at("SaturnV")->triangulos(), {205, 5.22f, 21});
@@ -144,6 +159,7 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         auto p = n.sitio;
         p.y += TerrenoPlaneta1::altura(p.x, p.z);
         float giro = n.giro;
+        std::vector<glm::mat4> *partesNPC = nullptr;
         if (indice < 4) {
             p = sistemas_.posicionPatrulla(indice);
             giro = sistemas_.orientacionPatrulla(indice);
@@ -151,24 +167,38 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
                                       : indice == 1 ? sistemas_.inspeccion >= 0
                                       : indice == 3 ? sistemas_.hunter >= 0
                                                     : false;
+            const size_t modeloNPC = indice == 3 ? 1 : 0;
+            auto &partes = matricesPiernasNPC_[indice];
+            std::fill(partes.begin(), partes.end(), glm::mat4(1));
             if (!reaccionando) {
                 const float ciclosPaso = indice == 3 ? 16.f : 24.f;
                 const float fase = 6.28318530718f * ciclosPaso *
                                    sistemas_.relojPatrulla(indice) /
                                    sistemas_.periodoPatrulla(indice);
-                r.locomocionPatrulla(fase, indice == 3);
+                const float paso = .35f * std::sin(fase);
+                for (size_t pierna = 0; pierna < 2; ++pierna) {
+                    const float angulo = pierna == 0 ? paso : -paso;
+                    const auto &origen = pivotesPiernas_[modeloNPC][pierna];
+                    partes[nodosPiernas_[modeloNPC][pierna]] =
+                        glm::translate(glm::mat4(1), origen) *
+                        glm::rotate(glm::mat4(1), angulo, glm::vec3(1, 0, 0)) *
+                        glm::translate(glm::mat4(1), -origen);
+                }
             }
+            r.locomocionRobot(0, false);
+            partesNPC = &partes;
         } else if (indice == 4 || indice == 5) {
             p = sistemas_.sentinel(indice - 4);
             giro = sistemas_.giroSentinel(indice - 4);
         }
         auto local = glm::rotate(glm::translate(m, p), giro, glm::vec3(0, 1, 0)) *
                      sistemas_.animacionNPC(indice);
-
-        if (r.visible(glm::vec3(local[3]), 8))
-            modelos_.at(n.modelo)->dibujar(r, local);
-        if (indice < 4)
-            r.locomocionRobot(0, false);
+        if (r.visible(glm::vec3(local[3]), 8)) {
+            if (partesNPC)
+                modelos_.at(n.modelo)->dibujar(r, local, 0, nullptr, partesNPC);
+            else
+                modelos_.at(n.modelo)->dibujar(r, local);
+        }
         ++numero;
     }
     r.dibujar(*marcoCompuerta_, glm::translate(m, {205, 0, 21}));
@@ -264,6 +294,8 @@ void Planeta1::liberar() noexcept {
     texturaAgua_.reset();
     banshee_.reset();
     ghost_.reset();
+    for (auto &partes : matricesPiernasNPC_)
+        partes.clear();
     detalles_.reset();
     pista_.reset();
     paisaje_.reset();

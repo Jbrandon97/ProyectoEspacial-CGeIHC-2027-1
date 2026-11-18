@@ -54,8 +54,14 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
     // Cache debil: comparte imagenes, sin retener texturas al descargar la region/contexto.
     static std::map<std::filesystem::path, std::weak_ptr<Textura>> cache;
     size_t vertices = 0;
+    nombresNodos_.resize(raw->nodes_count);
+    origenesNodos_.resize(raw->nodes_count, glm::vec3(0));
     for (size_t j = 0; j < raw->nodes_count; ++j) {
         auto &n = raw->nodes[j];
+        nombresNodos_[j] = n.name ? n.name : "";
+        glm::mat4 mundoNodo(1);
+        cgltf_node_transform_world(&n, glm::value_ptr(mundoNodo));
+        origenesNodos_[j] = glm::vec3(mundoNodo[3]);
         if (!n.mesh)
             continue;
         for (size_t k = 0; k < n.mesh->primitives_count; ++k) {
@@ -167,6 +173,17 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
     }
     std::cout << "GLTF_OK " << p.filename().string() << " lotes=" << partes_.size()
               << " triangulos=" << vertices / 3 << "\n";
+}
+size_t ModeloGltf::indiceNodo(const std::string &nombre) const {
+    for (size_t i = 0; i < nombresNodos_.size(); ++i)
+        if (nombresNodos_[i] == nombre)
+            return i;
+    throw std::runtime_error("Nodo glTF ausente: " + nombre);
+}
+glm::vec3 ModeloGltf::origenNodo(size_t indice) const {
+    if (indice >= origenesNodos_.size())
+        throw std::out_of_range("Indice de nodo glTF fuera de rango");
+    return origenesNodos_[indice];
 }
 void ModeloGltf::dibujar(Renderizador &r, const glm::mat4 &m, float elevacionPuerta,
                          const std::array<glm::mat4, 4> *etapas,

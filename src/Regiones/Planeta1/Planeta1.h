@@ -6,6 +6,7 @@
 #include "Mundo/Escenario.h"
 #include "SistemasPlaneta1.h"
 #include "Titan.h"
+#include <array>
 #include <map>
 #include <memory>
 // Composicion regional: terreno, paisaje, pista y competencia comparten servicios graficos.
@@ -26,6 +27,9 @@ class Planeta1 final : public Escenario {
     // Una geometria Banshee y una Ghost compartida por ambos rivales.
     std::unique_ptr<ModeloGltf> banshee_, ghost_;
     std::map<std::string, std::unique_ptr<ModeloGltf>> modelos_;
+    std::array<std::array<size_t, 2>, 2> nodosPiernas_{};
+    std::array<std::array<glm::vec3, 2>, 2> pivotesPiernas_{};
+    mutable std::array<std::vector<glm::mat4>, 4> matricesPiernasNPC_;
     std::unique_ptr<Textura> suelo_, texturaAgua_;
 
   public:

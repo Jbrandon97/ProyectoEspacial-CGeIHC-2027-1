@@ -8,25 +8,26 @@ Revisamos el código que está en `main`, las capturas OpenGL y los resultados r
 
 | Afirmación revisada | Lo que encontramos en el código y las pruebas |
 |---|---|
-| La patrulla de Planeta 1 solo rota al NPC. | Incorrecto para el código actual: `SistemasPlaneta1::posicionPatrulla` calcula posiciones elípticas; `Planeta1::dibujar` traslada el modelo completo, ajusta altura y orienta el cuerpo. Añadimos movimiento alternado de piernas en el shader. |
-| Los GLTF de Grunt y Hunter no contienen rig o animación. | Los archivos declaran skins y canales de animación, pero `ModeloGltf` no evalúa esas pistas de piel. La marcha implementada aquí es deformación de vértices durante el dibujo; no la presentamos como reproducción del clip GLTF. |
+| La patrulla de Planeta 1 solo rota al NPC. | Incorrecto: `SistemasPlaneta1::posicionPatrulla` calcula posiciones elípticas; `Planeta1::dibujar` traslada el cuerpo completo, ajusta altura y orienta el modelo. La fase de piernas ahora se aplica como rotación rígida de nodos glTF hijos del torso, no con deformación del shader. |
+| Los GLTF de Grunt y Hunter no contienen rig o animación. | Confirmado para los archivos originales: estaban planos, sin nodos hijos, skins ni animaciones. Los nuevos glTF incorporan dos nodos rígidos de pierna como hijos del torso, sin huesos ni clips. |
 | El HUD conserva renglones de silencio o nombres de reserva. | No aparecen en el código del HUD actual. `actividad()` del Planeta 2 produce tres renglones: título regional y controles; las pruebas muestran `HUD_Limpio_3_Regiones.jpg`. |
 | Las bases de Planeta 2 flotan. | La revisión de los seis edificios, de día y de noche, no encontró huecos. Cada modelo se hunde por lo menos 0.12 unidades en su punto inferior. Conservamos apoyos y colisiones. |
 | Railjack solo se carga, sin comprobar su trayectoria. | Encontramos un error real: el cargador no guardaba `triangulos_` para modelos indexados, pero el apoyo de Railjack buscaba allí su vértice mínimo y calculaba una altura inválida. Ahora `ModeloGltf::minimoY()` acumula límites con la transformación de nodos y `SectorRatchet` los usa para apoyar el modelo. Las pruebas verifican contacto y ascenso de la geometría, además de capturar ambos estados. |
 
 ## Planeta 1: desplazamiento y marcha de NPC
 
-La patrulla no es solo un giro sobre el eje. Cada reloj actualiza el punto del cuerpo sobre una elipse, con `deltaTime`; el modelo completo se dibuja trasladado a esa posición. La altura sale de `TerrenoPlaneta1::altura` y el rumbo sigue la tangente. G, K y H congelan el reloj del personaje durante su reacción.
+Cada reloj actualiza el centro del cuerpo sobre una elipse con `deltaTime`; `Planeta1::dibujar` traslada el modelo completo, calcula altura con `TerrenoPlaneta1::altura` y orienta el rumbo sobre la tangente. Grunt 1/2/3 recorren elipses de 6×5 unidades con periodos de 22/25/28 s; Hunter recorre 4.5×5 unidades en 30 s. En 31 s, las pruebas anteriores midieron 48.57, 42.97, 38.58 y 30.91 unidades. G/K/H detienen el reloj y la posición del NPC durante sus reacciones.
 
-En esta revisión ampliamos los radios de las cuatro rutas para que el desplazamiento se note desde el patio: Grunt 1, 2 y 3 recorren elipses de 6×5 unidades, con periodos de 22, 25 y 28 segundos; el Hunter recorre 4.5×5 unidades en 30 segundos y mantiene su circuito más lento y corto que el Grunt 3. La prueba de 31 segundos midió 48.57, 42.97, 38.58 y 30.91 unidades recorridas. El cuerpo del Grunt 1 pasó de `(-77,153)` a `(-72.4655,151.274)` en 3 segundos.
+La auditoría confirmó que los archivos anteriores de Grunt y Hunter tenían jerarquía plana, 0 skins y 0 animaciones. Las cotas y pivotes indicados por Muse no concordaban con las coordenadas que realmente usa el glTF. En Blender se detectaron las dos islas de pierna por conectividad de caras, se separaron y se emparentaron al torso sin cambiar la pose global. La comparación visual de reposo entre originales y reexportados no mostró diferencias ni costuras; UV y PNG permanecen iguales.
 
-Para dar lectura de marcha sin sustituir ni remodelar a los NPC, `Renderizador::locomocionPatrulla` entrega una fase calculada desde el reloj del circuito y `Recursos/Shaders/basico.vert` inclina vértices inferiores alrededor de su pivote. Las mitades izquierda y derecha reciben fases opuestas. Los Grunts usan 24 ciclos por vuelta y Hunter 16. La fase se desactiva mientras el personaje reacciona. Las capturas muestran al mismo Grunt 1 en dos puntos del patio y su reacción con G:
+`ModeloGltf` conserva nombres e inicios de nodo en coordenadas de modelo y permite encontrarlos por nombre. En `Planeta1::cargar` se resuelven los nodos `Grunt_pierna_izquierda/derecha` y `Hunter_pierna_izquierda/derecha` del archivo cargado, sin índices codificados. En cada cuadro, `Planeta1::dibujar` arma la matriz `T(pivote) * Rx(ángulo) * T(-pivote)`. Los ángulos son opuestos, tienen amplitud 0.35 rad y usan el mismo reloj que la ruta: 24 ciclos por vuelta para Grunt y 16 para Hunter. Las reacciones dejan la matriz identidad y el reloj pausado.
 
-- `Capturas/P1_Grunt1_t0.bmp` — inicio `(-77,153)`.
-- `Capturas/P1_Grunt1_t3.bmp` — después de 3 s `(-72.4655,151.274)`.
-- `Capturas/P1_Grunt1_Reaccion_G.bmp` — reacción cercana y pausa de la patrulla.
+Los pivotes medidos en el glTF final son Grunt derecha `(-0.0280,0.9000,-0.1602)`/izquierda `(-0.2049,0.9000,0.3375)` y Hunter derecha `(-0.2745,1.8000,-0.4413)`/izquierda `(-0.1783,1.8000,0.4417)`. La separación lateral corresponde al eje Z glTF, no a los offsets ±X indicados en la auditoría de Muse; por eso usamos los orígenes reales de los nodos y no esos valores sugeridos.
 
-No alteramos las funciones de Titan ni de los dos Sentinel. `--pruebas` informa sus estados existentes y mantiene la comprobación de que la pausa de reacción no teletransporta al NPC al reanudar.
+Retiramos el modo `locomocionPatrulla` del shader; las ramas de locomoción de Clank y Blarg siguen intactas. Titan y los dos Sentinel no se modificaron. Las capturas OpenGL producidas automáticamente y revisadas están en `Capturas/NPC_Locomocion/`: reposo, paso A y paso B de Grunt 1 y Hunter. La salida de prueba registra `0`, `+0.35/-0.35` y `-0.35/+0.35` radianes para las seis capturas. No afirmamos una partida manual.
+
+- Grunt 1: [reposo](Capturas/NPC_Locomocion/Grunt1_Reposo.png), [paso A](Capturas/NPC_Locomocion/Grunt1_Paso_A.png), [paso B](Capturas/NPC_Locomocion/Grunt1_Paso_B.png).
+- Hunter: [reposo](Capturas/NPC_Locomocion/Hunter_Reposo.png), [paso A](Capturas/NPC_Locomocion/Hunter_Paso_A.png), [paso B](Capturas/NPC_Locomocion/Hunter_Paso_B.png).
 
 ## Planeta 2: apoyos y Railjack
 
@@ -54,9 +55,10 @@ El Railjack permanece asociado a `PatioRailjack` y el apoyo se calcula con el m�
 - Compilación de `ProyectoEspacial.sln`, Visual Studio 2022, `Release | x64`: correcta; cero errores. Las advertencias corresponden a GLFW, miniaudio y la definición de `APIENTRY`.
 - `ProyectoEspacial.exe --pruebas --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye contratos de regiones, carrera, P1, P2, Freeport, audio, cargadores GLTF, apoyos, rutas y capturas.
 - `ProyectoEspacial.exe --pruebas-integrales --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye 5400 muestras de NPC/suelo/separación de P2, costuras del cielo, mezcla de audio y la verificación del Railjack.
+- La misma ejecución de `--pruebas` resuelve los nodos de pierna por nombre al cargar ambos glTF y captura tres poses por personaje. No se volvió a medir rendimiento en esta corrección; las cifras existentes son mediciones anteriores.
 - La salida del Railjack registra base en terreno `baseY=3.5444`, base en vuelo `aireBaseY=22.5444`, centros `12.4244/31.4244`; entre las capturas con iluminación diurna controlada cambian 234843 canales RGB en `--pruebas-integrales` y 234526 en `--pruebas`.
 - Las capturas de P1, P2 y Railjack se inspeccionaron visualmente. Son capturas automatizadas renderizadas por el ejecutable, no una grabación de partida manual.
-- El reporte de rendimiento existente corresponde a mediciones previas en Intel UHD Graphics 620; no se repitió para esta corrección de piernas. No afirmamos una cifra de rendimiento nueva.
+- `--medir-integral` se ejecutó después de la corrección, en Intel UHD Graphics 620, con 120 muestras por región: P1 68.5005 FPS medios / p95 17.5629 ms; P2 45.3036 FPS / p95 24.4486 ms; Espacio 82.1008 FPS / p95 19.3006 ms. Es el escenario completo y no aísla el costo de las piernas.
 
 ## Integración y límites
 

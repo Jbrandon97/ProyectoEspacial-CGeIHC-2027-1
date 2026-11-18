@@ -10,21 +10,7 @@ out vec3 normalMundo,material,posMundo;
 out vec2 coordenada;
 void main(){
  vec3 local=posicion,n=normal;
- if(locomocionClank.y>2.5){
-  float hunter=locomocionClank.z;
-  float pivoteY=hunter>.5?1.8:.9;
-  float lado=posicion.x<0.0?-1.0:1.0;
-  if(posicion.y<pivoteY){
-   float desfase=locomocionClank.x+(lado<0.0?3.14159265:0.0);
-   float amplitud=hunter>.5?.38:.52;
-   float a=amplitud*sin(desfase);
-   mat3 giro=mat3(1,0,0,0,cos(a),sin(a),0,-sin(a),cos(a));
-   float peso=1-smoothstep(pivoteY*.65,pivoteY,posicion.y);
-   vec3 pivote=vec3(lado*(hunter>.5?.34:.24),pivoteY,0);
-   local=mix(local,pivote+giro*(local-pivote),peso);
-   n=normalize(mix(n,giro*n,peso));
-  }
- }else if(locomocionClank.y>1.5){
+ if(locomocionClank.y>1.5){
   float lado=sign(posicion.z);
   if(posicion.y<4.2){
    float a=lado*.22*sin(locomocionClank.x);

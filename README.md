@@ -16,7 +16,7 @@ Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrol
 | Audio | M silencio; N selecciona general/música/ambiente/efectos; −/+ ajustan el canal seleccionado |
 | Planetas | WASD movimiento; Shift correr; mouse cámara; F1 exploración; F3 vista existente |
 | Planeta 1 | X abordar/descender; R reiniciar carrera; C recuperar con penalización; E hangar; P reflector; I reflector Covenant; F energía corporal |
-| Interacciones de P1 | Mantén G: Grunt 1; K: Grunt 2; H: Hunter caminan con la fase de su patrulla. B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar. G/K/H requieren proximidad y al soltar vuelven gradualmente a la marcha normal |
+| Interacciones de P1 | Pulsa una vez G: Grunt 1; K: Grunt 2; H: Hunter. Cada uno camina hacia adelante, gira, vuelve por la misma ruta y queda en su base dentro de un ciclo de 14 s; requiere estar a menos de 18 unidades. Grunt 3 permanece quieto. B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar |
 | Planeta 2 | F energía corporal; P foco de plaza; I spotlight Orokin; F3 plaza; F4 Warframe; NPC, Railjack y Aphelion tienen ciclos propios |
 | Espacio, F3 pilotaje | W/S acelerar/frenar; A/D girar; mouse orientación; Q/Z subir/bajar; Shift boost; C recuperar; V alterna exterior/cabina; Enter portal cercano |
 | Observación espacial | F4 órbita; F5 estación; F6 asteroides; F3 volver a pilotaje; U/I focos independientes |
@@ -33,7 +33,7 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 
 Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Revision_Cierre/Revision_Integral.md**. La presentación **Revision_Cierre/Revision_visual.html** reúne capturas y enlaces. **Revision_Cierre/Audio_Tecnico.md** contiene la evidencia de audio; no es el reporte académico final.
 
-Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. La marcha de Grunt y Hunter gira las piernas sobre Z para que avancen y retrocedan; G/K/H mantienen una marcha más marcada sin pausar sus patrullas. Las capturas nuevas del mismo NPC en dos fases están en **Revision_Cierre/Capturas/NPC_Locomocion**; son renderizados OpenGL automatizados, no una sesión manual. Los registros están en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt` y `Revision_Cierre/Pruebas_Integrales_Salida_2026-11-17.txt`.
+Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. G/K/H son pulsaciones únicas que inician un ciclo independiente de 14 s con preparación, ida, giro, regreso a base y reposo; las piernas quedan inmóviles fuera de los tramos caminados. Las capturas del mismo Grunt 1 en dos fases de marcha y de regreso a su base están en **Revision_Cierre/Capturas/NPC_Locomocion**. Son renderizados OpenGL automatizados, no una sesión manual. Los registros están en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt` y `Revision_Cierre/Pruebas_Integrales_Salida_2026-11-17.txt`.
 
 ## Organización y recursos
 

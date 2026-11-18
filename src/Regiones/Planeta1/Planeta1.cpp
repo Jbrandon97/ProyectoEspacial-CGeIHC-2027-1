@@ -12,8 +12,6 @@ void Planeta1::cargar(ContextoEscena &c) {
     titan_ = std::make_unique<Titan>(c.recursos / "Modelos/BT7274/BT7274.gltf");
     carrera_ = GestorCarrera();
     sistemas_ = SistemasPlaneta1();
-    marchaManualSolicitada_.fill(false);
-    intensidadMarchaManual_.fill(0.f);
     sistemas_.configurar(c.recursos / "Configuracion_C.txt");
     eventoPuerta_ = 0;
     modelos_["Holocron"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/EspacioBloque1/Holocron.gltf", true);
@@ -120,11 +118,6 @@ void Planeta1::cargar(ContextoEscena &c) {
 void Planeta1::actualizar(float dt) {
     carrera_.actualizar(dt);
     sistemas_.actualizar(dt);
-    const float mezcla = 1.f - std::exp(-8.f * std::max(0.f, dt));
-    for (size_t i = 0; i < intensidadMarchaManual_.size(); ++i) {
-        const float objetivo = marchaManualSolicitada_[i] ? 1.f : 0.f;
-        intensidadMarchaManual_[i] += (objetivo - intensidadMarchaManual_[i]) * mezcla;
-    }
     titan_->animar(sistemas_.titan, sistemas_.saludo);
     // Sensor impide cerrar sobre el avatar; no teletransporta ni aplasta.
     if (puertaDestino_ < puertaAltura_ && std::abs(visitante_.x - 165) < 21 &&
@@ -175,12 +168,9 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
             std::fill(partes.begin(), partes.end(), glm::mat4(1));
             const float ciclosPaso = indice == 3 ? 16.f : 24.f;
             const float fase = 6.28318530718f * ciclosPaso *
-                               sistemas_.relojPatrulla(indice) /
+                               sistemas_.tiempoPasoPatrulla(indice) /
                                sistemas_.periodoPatrulla(indice);
-            const int ranuraMarcha = indice == 0 ? 0 : indice == 1 ? 1 : indice == 3 ? 2 : -1;
-            const float amplitud = .35f + (ranuraMarcha >= 0
-                                                ? .15f * intensidadMarchaManual_[ranuraMarcha]
-                                                : 0.f);
+            const float amplitud = .35f * sistemas_.factorMarchaNPC(indice);
             const float paso = amplitud * std::sin(fase);
             for (size_t pierna = 0; pierna < 2; ++pierna) {
                 const float angulo = pierna == 0 ? paso : -paso;
@@ -343,7 +333,6 @@ void Planeta1::actualizarPuerta() {
 void Planeta1::controlar(const OrdenActividad &o) {
     visitante_ = o.avatar;
     carrera_.controlar(o);
-    marchaManualSolicitada_.fill(false);
     if (o.puerta && !carrera_.estado().ocupado &&
         glm::length(glm::vec2(o.avatar.x - 165, o.avatar.z + 70)) < 30) {
         puertaDestino_ = puertaDestino_ > 0 ? 0.0f : 7.0f;
@@ -364,11 +353,12 @@ void Planeta1::controlar(const OrdenActividad &o) {
         const auto posicionGrunt1 = sistemas_.posicionPatrulla(0);
         const auto posicionGrunt2 = sistemas_.posicionPatrulla(1);
         const auto posicionHunter = sistemas_.posicionPatrulla(3);
-        marchaManualSolicitada_[0] = o.caminarGrunt1 &&
-                                     glm::length(glm::vec2(o.avatar.x - posicionGrunt1.x,
-                                                           o.avatar.z - posicionGrunt1.z)) < 10.f;
-        marchaManualSolicitada_[1] = o.caminarGrunt2 && glm::length(o.avatar - posicionGrunt2) < 12.f;
-        marchaManualSolicitada_[2] = o.caminarHunter && glm::length(o.avatar - posicionHunter) < 15.f;
+        if (o.caminarGrunt1 && glm::length(o.avatar - posicionGrunt1) < 18.f)
+            sistemas_.iniciarMarcha(0);
+        if (o.caminarGrunt2 && glm::length(o.avatar - posicionGrunt2) < 18.f)
+            sistemas_.iniciarMarcha(1);
+        if (o.caminarHunter && glm::length(o.avatar - posicionHunter) < 18.f)
+            sistemas_.iniciarMarcha(3);
         float d = glm::length(glm::vec2(o.avatar.x - 205, o.avatar.z - 21));
         if (o.lanzar && d < 65 && d > 8)
             sistemas_.lanzar();
@@ -383,17 +373,19 @@ EstadoActividad Planeta1::actividad() const {
     if (!e.ocupado) {
         if(glm::length(glm::vec2(visitante_.x+125,visitante_.z+48))<24)
             e.mensajes.push_back("Y HOLOCRON / I REFLECTOR COVENANT");
-        if (glm::length(visitante_ - sistemas_.posicionPatrulla(1)) < 12)
-            e.mensajes.push_back("MANTEN K PARA CAMINAR / GRUNT 2");
+        if (!sistemas_.marchaActiva(1) &&
+            glm::length(visitante_ - sistemas_.posicionPatrulla(1)) < 18)
+            e.mensajes.push_back("K CAMINATA / GRUNT 2");
         if (glm::length(visitante_ - Titan::posicion(-1)) < 18)
             e.mensajes.push_back("B CAMINATA / J SALUDO BT-7274");
-        if (glm::length(visitante_ - sistemas_.posicionPatrulla(3)) < 15)
-            e.mensajes.push_back("MANTEN H PARA CAMINAR / HUNTER");
+        if (!sistemas_.marchaActiva(3) &&
+            glm::length(visitante_ - sistemas_.posicionPatrulla(3)) < 18)
+            e.mensajes.push_back("H CAMINATA / HUNTER");
         if (glm::length(glm::vec2(visitante_.x - 205, visitante_.z - 21)) < 65)
             e.mensajes.push_back("L LANZAR / T REPONER / O OBSERVAR COHETE");
-        if (glm::length(glm::vec2(visitante_.x - sistemas_.posicionPatrulla(0).x,
-                                  visitante_.z - sistemas_.posicionPatrulla(0).z)) < 10)
-            e.mensajes.push_back("MANTEN G PARA CAMINAR / GRUNT 1");
+        if (!sistemas_.marchaActiva(0) &&
+            glm::length(visitante_ - sistemas_.posicionPatrulla(0)) < 18)
+            e.mensajes.push_back("G CAMINATA / GRUNT 1");
     }
     return e;
 }

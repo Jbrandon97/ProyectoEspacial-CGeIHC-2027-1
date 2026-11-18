@@ -153,12 +153,12 @@ void Aplicacion::procesarEntradas(float dt) {
     o.puerta = entradas_.pulsada(GLFW_KEY_E);
     o.lanzar = entradas_.pulsada(GLFW_KEY_L);
     o.reiniciarCohete = entradas_.pulsada(GLFW_KEY_T);
-    o.caminarGrunt1 = entradas_.mantenida(GLFW_KEY_G);
+    o.caminarGrunt1 = entradas_.pulsada(GLFW_KEY_G);
     o.titan = entradas_.pulsada(GLFW_KEY_B);
-    o.caminarHunter = entradas_.mantenida(GLFW_KEY_H);
+    o.caminarHunter = entradas_.pulsada(GLFW_KEY_H);
     o.saludo = entradas_.pulsada(GLFW_KEY_J);
     o.reflector = entradas_.pulsada(GLFW_KEY_P);
-    o.caminarGrunt2 = entradas_.mantenida(GLFW_KEY_K);
+    o.caminarGrunt2 = entradas_.pulsada(GLFW_KEY_K);
     o.holocron = entradas_.pulsada(GLFW_KEY_Y);
     bool explorar = (escenarios_.actual().id() == Region::Planeta1 ||
                      escenarios_.actual().id() == Region::Planeta2) &&

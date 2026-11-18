@@ -33,7 +33,8 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     }
     exigir(s.ciclo <= 120 && dia > .9f && noche > .99f, "Ciclo incompleto");
     s = original;
-    std::cout << "C_CICLO_OK segundos=" << s.ciclo << " 1201 muestras patrullas libres\n";
+    std::cout << "C_CICLO_OK segundos=" << s.ciclo
+              << " 1201 muestras de iluminacion y patrulla de Sentinel\n";
     Avatar peat;
     peat.colocar({210, 0, 148}, p);
     for (int k = 0; k < 288; ++k)
@@ -132,164 +133,214 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     s.reiniciarPatrullas();
     const glm::vec2 inicios[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
     for (int i = 0; i < 4; ++i) {
-        auto p0 = s.posicionPatrulla(i);
-        exigir(glm::length(glm::vec2(p0.x, p0.z) - inicios[i]) < .001f,
-               "NPC no inicia en su punto de referencia");
+        const auto base = s.posicionPatrulla(i);
+        exigir(glm::length(glm::vec2(base.x, base.z) - inicios[i]) < .001f,
+               "NPC no inicia en su base");
+        exigir(!s.marchaActiva(i) && s.relojPatrulla(i) == 0.f &&
+                   s.factorMarchaNPC(i) == 0.f,
+               "NPC inicia caminando en reposo");
         exigir(s.periodoPatrulla(i) >= 20 && s.periodoPatrulla(i) <= 30,
-               "Periodo de patrulla fuera de 20-30 s");
+               "Periodo de fase de piernas fuera de rango");
     }
-    vista("C_P1_Patrulla_0s", {-46, 13, 188}, {-65, 3, 158});
-    std::array<float, 4> distanciaPatrullada{};
-    std::array<glm::vec3, 4> anteriorNPC{};
+    vista("C_P1_NPC_Bases", {-46, 13, 188}, {-65, 3, 158});
+    p.actualizar(3.f);
     for (int i = 0; i < 4; ++i)
-        anteriorNPC[i] = s.posicionPatrulla(i);
-    for (int k = 0; k < 310; ++k) {
-        std::array<float, 4> angulos{};
-        for (int i = 0; i < 4; ++i)
-            angulos[i] = s.orientacionPatrulla(i);
-        s.actualizar(.1f);
-        std::array<glm::vec3, 4> actual{};
-        for (int i = 0; i < 4; ++i) {
-            actual[i] = s.posicionPatrulla(i);
-            float x = actual[i].x, z = actual[i].z;
-            exigir(std::pow((x + 65) / 52.f, 2.f) + std::pow((z - 160) / 28.f, 2.f) < 1,
-                   "Patrulla fuera del recinto");
-            exigir(std::abs(actual[i].y - TerrenoPlaneta1::altura(x, z)) < .001f,
-                   "Patrulla desligada del terreno");
-            auto paso = glm::vec2(actual[i].x - anteriorNPC[i].x,
-                                  actual[i].z - anteriorNPC[i].z);
-            exigir(glm::length(paso) > .02f, "NPC detenido durante la patrulla");
-            float rumbo = std::atan2(paso.x, paso.y);
-            exigir(std::abs(std::remainder(rumbo - angulos[i], 6.2831853f)) < .08f,
-                   "Orientacion no sigue el desplazamiento");
-            auto libre = p.ajustarMovimiento(anteriorNPC[i], actual[i]);
-            exigir(glm::length(glm::vec2(libre.x - actual[i].x, libre.z - actual[i].z)) < .08f,
-                   "Patrulla atraviesa un muro o colision");
-            distanciaPatrullada[i] += glm::length(paso);
-            anteriorNPC[i] = actual[i];
-            for (int j = 0; j < i; ++j)
-                exigir(glm::length(glm::vec2(actual[i].x - actual[j].x,
-                                            actual[i].z - actual[j].z)) > 2.5f,
-                       "Circuitos NPC demasiado cercanos");
-        }
-    }
-    const float velocidades[] = {distanciaPatrullada[0] / 31.f,
-                                 distanciaPatrullada[1] / 31.f,
-                                 distanciaPatrullada[2] / 31.f,
-                                 distanciaPatrullada[3] / 31.f};
-    exigir(velocidades[0] > 1.4f && velocidades[1] > 1.2f && velocidades[2] > 1.1f &&
-               velocidades[3] > .85f && velocidades[3] < velocidades[2] &&
-               distanciaPatrullada[3] < distanciaPatrullada[2],
-           "Hunter no tiene circuito mas corto y lento");
-    const char *nombresPatrulla[] = {"Grunt1", "Grunt2", "Grunt3", "Hunter"};
-    const auto flagsSalida = std::cout.flags();
-    const auto precisionSalida = std::cout.precision();
-    std::cout << std::fixed << std::setprecision(2);
-    for (int i = 0; i < 4; ++i) {
-        const auto fin = s.posicionPatrulla(i);
-        const float neto = glm::length(glm::vec2(fin.x - inicios[i].x, fin.z - inicios[i].y));
-        exigir(neto > .5f, "NPC no termina en una posicion distinta tras 31 s");
-        std::cout << "P1_PATRULLA_POS " << nombresPatrulla[i] << " inicio=(" << inicios[i].x << ','
-                  << inicios[i].y << ") fin=(" << fin.x << ',' << fin.z << ") neto=" << neto
-                  << "u recorrido=" << distanciaPatrullada[i] << "u velocidad_media="
-                  << velocidades[i] << "u/s periodo="
-                  << s.periodoPatrulla(i) << "s\n";
-    }
-    std::cout.flags(flagsSalida);
-    std::cout.precision(precisionSalida);
-    vista("C_P1_Patrulla_31s", {-46, 13, 188}, {-65, 3, 158});
-    std::cout << "P1_PATRULLA_OK 4 modelos trasladados en circuitos cerrados dentro del recinto; "
-                 "orientacion, suelo, colision, marcha de piernas; Hunter corto/lento\n";
+        exigir(glm::length(s.posicionPatrulla(i) - glm::vec3(inicios[i].x,
+                          TerrenoPlaneta1::altura(inicios[i].x, inicios[i].y), inicios[i].y)) <
+                   .001f && s.relojPatrulla(i) == 0.f,
+               "El NPC se mueve o su reloj avanza sin activacion");
+    OrdenActividad hudGrunt;
+    hudGrunt.avatar = s.posicionPatrulla(0);
+    p.controlar(hudGrunt);
+    auto mensajesGrunt = p.actividad().mensajes;
+    exigir(std::find(mensajesGrunt.begin(), mensajesGrunt.end(), "G CAMINATA / GRUNT 1") !=
+               mensajesGrunt.end(),
+           "HUD no muestra la pulsacion unica para Grunt 1");
 
-    auto probarTeclaMarcha = [&](int ranura, glm::vec3 sitio, bool g, bool k, bool h) {
-        OrdenActividad o;
-        o.avatar = sitio;
-        o.caminarGrunt1 = g;
-        o.caminarGrunt2 = k;
-        o.caminarHunter = h;
-        p.controlar(o);
-        exigir(p.marchaManualSolicitada(ranura), "G/K/H no activa la marcha cercana asignada");
-        for (int i = 0; i < 3; ++i)
-            if (i != ranura)
-                exigir(!p.marchaManualSolicitada(i), "Una tecla activa otro NPC");
-        p.controlar({});
-        exigir(!p.marchaManualSolicitada(ranura), "La marcha no termina al soltar la tecla");
+    auto activar = [](OrdenActividad &o, int npc) {
+        if (npc == 0) o.caminarGrunt1 = true;
+        if (npc == 1) o.caminarGrunt2 = true;
+        if (npc == 3) o.caminarHunter = true;
     };
-    p.controlar({});
-    p.actualizar(1.f);
-    probarTeclaMarcha(0, s.posicionPatrulla(0), true, false, false);
-    probarTeclaMarcha(1, s.posicionPatrulla(1), false, true, false);
-    probarTeclaMarcha(2, s.posicionPatrulla(3), false, false, true);
+    exigir(!s.iniciarMarcha(2), "Grunt 3 no debe tener una tecla de marcha");
+    for (int npc : {0, 1, 3}) {
+        s.reiniciarPatrullas();
+        OrdenActividad o;
+        o.avatar = s.posicionPatrulla(npc);
+        p.controlar(o);
+        const auto mensajesAntes = p.actividad().mensajes;
+        const char *mensajeEsperado = npc == 0 ? "G CAMINATA / GRUNT 1"
+                                     : npc == 1 ? "K CAMINATA / GRUNT 2"
+                                                : "H CAMINATA / HUNTER";
+        exigir(std::find(mensajesAntes.begin(), mensajesAntes.end(), mensajeEsperado) !=
+                   mensajesAntes.end(),
+               "HUD no ofrece la tecla correcta al NPC quieto cercano");
+        activar(o, npc);
+        p.controlar(o);
+        exigir(s.marchaActiva(npc), "La tecla asignada no inicia la caminata cercana");
+        if (npc == 0) {
+            const auto mensajes = p.actividad().mensajes;
+            exigir(std::find(mensajes.begin(), mensajes.end(), "G CAMINATA / GRUNT 1") ==
+                       mensajes.end(),
+                   "HUD ofrece reactivar un NPC que ya camina");
+        }
+        for (int otro = 0; otro < 4; ++otro)
+            if (otro != npc)
+                exigir(!s.marchaActiva(otro), "La tecla activa otro NPC");
+        p.actualizar(2.f);
+        const float relojAntesDeRepetir = s.relojPatrulla(npc);
+        o.avatar = s.posicionPatrulla(npc);
+        p.controlar(o);
+        exigir(std::abs(s.relojPatrulla(npc) - relojAntesDeRepetir) < .001f,
+               "Una pulsacion durante la caminata reinicia el ciclo");
+        const auto posicionAntesDeAvanzar = s.posicionPatrulla(npc);
+        p.actualizar(.1f);
+        exigir(s.relojPatrulla(npc) > relojAntesDeRepetir && s.caminandoNPC(npc) &&
+                   glm::length(glm::vec2(s.posicionPatrulla(npc).x - posicionAntesDeAvanzar.x,
+                                         s.posicionPatrulla(npc).z - posicionAntesDeAvanzar.z)) >
+                       .02f,
+               "El temporizador no avanza solo durante la marcha activa");
+    }
+    s.reiniciarPatrullas();
+    OrdenActividad marchaG;
+    marchaG.avatar = s.posicionPatrulla(0);
+    marchaG.caminarGrunt1 = true;
+    p.controlar(marchaG);
+    p.actualizar(1.25f);
+    OrdenActividad marchaK;
+    marchaK.avatar = s.posicionPatrulla(1);
+    marchaK.caminarGrunt2 = true;
+    p.controlar(marchaK);
+    exigir(std::abs(s.relojPatrulla(0) - 1.25f) < .001f &&
+               s.relojPatrulla(1) == 0.f,
+           "Los temporizadores de Grunt 1 y Grunt 2 no son independientes");
+    p.actualizar(.5f);
+    exigir(std::abs(s.relojPatrulla(0) - 1.75f) < .001f &&
+               std::abs(s.relojPatrulla(1) - .5f) < .001f,
+           "Los relojes activos no avanzan independientemente por deltaTime");
     OrdenActividad fueraDeRango;
     fueraDeRango.avatar = s.posicionPatrulla(0) + glm::vec3(0, 0, 20);
     fueraDeRango.caminarGrunt1 = true;
+    s.reiniciarPatrullas();
     p.controlar(fueraDeRango);
-    exigir(!p.marchaManualSolicitada(0), "G activa al Grunt 1 fuera de proximidad");
+    exigir(!s.marchaActiva(0), "G activa al Grunt 1 a 20 unidades");
 
-    auto capturarPasoNPC = [&](int npc, int ciclos, int ranura, const char *modelo,
-                               void (*activar)(OrdenActividad &)) {
-        p.controlar({});
-        p.actualizar(1.f);
+    auto verificarCiclo = [&](int npc) {
         s.reiniciarPatrullas();
-        s.tiempo = 0;
-        s.faseInicial = .25f;
-        const float alturaCentro = npc == 3 ? 2.2f : 1.1f;
-        const float distancia = npc == 3 ? 9.f : 6.5f;
-        auto orden = [&]() {
-            OrdenActividad o;
-            o.avatar = s.posicionPatrulla(npc);
-            activar(o);
-            p.controlar(o);
-        };
-        auto vistaCercana = [&](const char *estado) {
-            const auto pos = s.posicionPatrulla(npc);
-            const float rumbo = s.orientacionPatrulla(npc);
-            const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
-            const glm::vec3 lateral(frente.z, 0, -frente.x);
-            const auto centro = pos + glm::vec3(0, alturaCentro, 0);
-            const std::string archivo = std::string("C_P1_") + modelo + "_" + estado;
-            const auto ojo = centro - frente * (distancia * .82f) -
-                             lateral * (distancia * .35f) + glm::vec3(0, alturaCentro * .3f, 0);
-            vista(archivo.c_str(), ojo, centro, 0, npc == 3 ? 40.f : 36.f);
-            const float fase = 6.28318530718f * ciclos * s.relojPatrulla(npc) /
-                               s.periodoPatrulla(npc);
-            const float amplitud = .35f + .15f * p.intensidadMarchaManual(ranura);
-            const float angulo = amplitud * std::sin(fase);
-            std::cout << "P1_PIERNA_CAPTURA modelo=" << modelo << " estado=" << estado
-                      << " posicion=" << pos.x << ',' << pos.y << ',' << pos.z
-                      << " reloj=" << s.relojPatrulla(npc) << " angulos=" << angulo << ','
-                      << -angulo << " rad eje=Z marcha=" << p.intensidadMarchaManual(ranura) << '\n';
-        };
-        orden();
-        exigir(p.marchaManualSolicitada(ranura), "La tecla mantenida no activa el NPC de captura");
-        const auto posicionInicial = s.posicionPatrulla(npc);
-        vistaCercana("Patrulla_Normal");
-        const float cuartoCiclo = s.periodoPatrulla(npc) / (4.f * ciclos);
-        p.actualizar(cuartoCiclo);
-        exigir(s.relojPatrulla(npc) > 0 &&
-                   glm::length(s.posicionPatrulla(npc) - posicionInicial) > .02f,
-               "El NPC deja de avanzar en su patrulla durante G/K/H");
-        vistaCercana("Paso_A");
-        p.actualizar(2 * cuartoCiclo);
-        vistaCercana("Paso_B");
-        const float mezclaActiva = p.intensidadMarchaManual(ranura);
-        const float relojAntesDeSoltar = s.relojPatrulla(npc);
-        p.controlar({});
-        p.actualizar(.25f);
-        exigir(p.intensidadMarchaManual(ranura) < mezclaActiva &&
-                   p.intensidadMarchaManual(ranura) > 0.f,
-               "La transicion a marcha normal no es gradual al soltar");
-        exigir(s.relojPatrulla(npc) > relojAntesDeSoltar,
-               "El reloj de patrulla se pausa al soltar G/K/H");
-        const auto fin = s.posicionPatrulla(npc);
-        std::cout << "P1_PATRULLA_CAPTURA modelo=" << modelo << " t0=(" << posicionInicial.x
-                  << ',' << posicionInicial.z << ") tFinal=(" << fin.x << ',' << fin.z
-                  << ") retorno_a_patrulla=gradual\n";
+        OrdenActividad orden;
+        orden.avatar = s.posicionPatrulla(npc);
+        activar(orden, npc);
+        p.controlar(orden);
+        const auto base = s.posicionPatrulla(npc);
+        const float rumboBase = s.orientacionPatrulla(npc);
+        p.actualizar(.6f);
+        exigir(glm::length(s.posicionPatrulla(npc) - base) < .001f &&
+                   s.factorMarchaNPC(npc) == 0.f,
+               "La preparación de marcha desplaza o anima las piernas");
+        p.actualizar(1.1f);
+        auto anterior = s.posicionPatrulla(npc);
+        exigir(glm::length(anterior - base) > .3f && s.caminandoNPC(npc),
+               "El cuerpo completo no avanza por la ruta de ida");
+        p.actualizar(.1f);
+        auto actual = s.posicionPatrulla(npc);
+        auto desplazamiento = glm::vec2(actual.x - anterior.x, actual.z - anterior.z);
+        float rumboPaso = std::atan2(desplazamiento.x, desplazamiento.y);
+        exigir(glm::abs(std::remainder(rumboPaso - s.orientacionPatrulla(npc), 6.2831853f)) < .15f,
+               "El frente del NPC no apunta hacia la marcha de ida");
+        const auto puntoIda = actual;
+        p.actualizar(3.8f);
+        const auto extremo = s.posicionPatrulla(npc);
+        const float rumboExtremo = s.orientacionPatrulla(npc);
+        exigir(!s.caminandoNPC(npc) && s.factorMarchaNPC(npc) == 0.f,
+               "Las piernas no quedan en reposo durante la vuelta");
+        p.actualizar(.7f);
+        exigir(glm::length(s.posicionPatrulla(npc) - extremo) < .001f,
+               "El NPC se desplaza mientras gira en el extremo");
+        const float diferenciaGiro = std::abs(std::remainder(
+            s.orientacionPatrulla(npc) - rumboExtremo, 6.2831853f));
+        exigir(diferenciaGiro > 1.2f && diferenciaGiro < 1.95f,
+               "La orientacion no gira gradualmente 180 grados");
+        p.actualizar(.7f);
+        anterior = s.posicionPatrulla(npc);
+        p.actualizar(.1f);
+        actual = s.posicionPatrulla(npc);
+        desplazamiento = glm::vec2(actual.x - anterior.x, actual.z - anterior.z);
+        rumboPaso = std::atan2(desplazamiento.x, desplazamiento.y);
+        exigir(glm::length(desplazamiento) > .02f &&
+                   glm::abs(std::remainder(rumboPaso - s.orientacionPatrulla(npc),
+                                           6.2831853f)) < .15f,
+               "El NPC no recorre la ruta de vuelta mirando al frente");
+        p.actualizar(3.7f);
+        exigir(glm::length(s.posicionPatrulla(npc) - puntoIda) < .001f,
+               "El regreso no recorre el mismo arco de la ida en sentido inverso");
+        p.actualizar(1.25f);
+        exigir(glm::length(s.posicionPatrulla(npc) - base) < .001f &&
+                   !s.caminandoNPC(npc) && s.factorMarchaNPC(npc) == 0.f,
+               "El NPC no regresa a su base antes de detenerse");
+        p.actualizar(14.f - s.relojPatrulla(npc) - .05f);
+        exigir(s.marchaActiva(npc) && s.relojPatrulla(npc) > 13.9f &&
+                   s.relojPatrulla(npc) < 14.f,
+               "El NPC termina antes de completar su temporizador de 14 s");
+        p.actualizar(.1f);
+        exigir(!s.marchaActiva(npc) && s.relojPatrulla(npc) == 0.f &&
+                   glm::length(s.posicionPatrulla(npc) - base) < .001f &&
+                   std::abs(std::remainder(s.orientacionPatrulla(npc) - rumboBase,
+                                           6.2831853f)) < .001f,
+               "El NPC no finaliza en su base, quieto y mirando al frente");
     };
-    capturarPasoNPC(0, 24, 0, "Grunt1", [](OrdenActividad &o) { o.caminarGrunt1 = true; });
-    capturarPasoNPC(3, 16, 2, "Hunter", [](OrdenActividad &o) { o.caminarHunter = true; });
-    std::cout << "P1_PIERNA_GLTF_OK nodos y pivotes originales; rotacion Rz; fase patrulla intacta; "
-                 "G/K/H mantenidas, locomocion y retorno gradual\n";
+    for (int npc : {0, 1, 3})
+        verificarCiclo(npc);
+
+    // Capturas del mismo Grunt 1 en dos fases opuestas y de vuelta en reposo.
+    s.reiniciarPatrullas();
+    s.faseInicial = .25f;
+    s.tiempo = 0.f;
+    OrdenActividad comenzar;
+    comenzar.avatar = s.posicionPatrulla(0);
+    comenzar.caminarGrunt1 = true;
+    p.controlar(comenzar);
+    constexpr float ciclosGrunt = 24.f;
+    const float periodoGrunt = s.periodoPatrulla(0);
+    auto capturarGrunt = [&](float tiempoMarcha, const char *nombre, int signoEsperado) {
+        s.reiniciarPatrullas();
+        p.controlar(comenzar);
+        const float t = .6f + tiempoMarcha;
+        p.actualizar(t);
+        const auto pos = s.posicionPatrulla(0);
+        const float fase = 6.28318530718f * ciclosGrunt * s.tiempoPasoPatrulla(0) /
+                           periodoGrunt;
+        const float angulo = .35f * s.factorMarchaNPC(0) * std::sin(fase);
+        exigir(s.caminandoNPC(0) && std::abs(angulo) > .1f &&
+                   (signoEsperado > 0 ? angulo > 0 : angulo < 0),
+               "La pose de marcha no alcanza la fase de piernas solicitada");
+        const float rumbo = s.orientacionPatrulla(0);
+        const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
+        const glm::vec3 lateral(frente.z, 0, -frente.x);
+        const auto centro = pos + glm::vec3(0, 1.15f, 0);
+        const auto ojo = centro - frente * 4.5f - lateral * 1.5f + glm::vec3(0, .6f, 0);
+        vista(nombre, ojo, centro, 0, 48.f);
+        std::cout << "P1_GRUNT1_CAPTURA " << nombre << " pos=" << pos.x << ',' << pos.y << ','
+                  << pos.z << " timer=" << s.relojPatrulla(0) << " piernas=" << angulo << ','
+                  << -angulo << " rad\n";
+    };
+    capturarGrunt(periodoGrunt / (4.f * ciclosGrunt), "C_P1_Grunt1_Caminando_A", 1);
+    capturarGrunt(3.f * periodoGrunt / (4.f * ciclosGrunt), "C_P1_Grunt1_Caminando_B", -1);
+    s.reiniciarPatrullas();
+    p.controlar(comenzar);
+    p.actualizar(14.f);
+    exigir(!s.marchaActiva(0) && s.factorMarchaNPC(0) == 0.f &&
+               glm::length(s.posicionPatrulla(0) - glm::vec3(-77,
+                   TerrenoPlaneta1::altura(-77, 153), 153)) < .001f,
+           "La captura final no muestra al mismo Grunt 1 quieto en la base");
+    const auto baseGrunt = s.posicionPatrulla(0);
+    const float rumboBaseGrunt = s.orientacionPatrulla(0);
+    const glm::vec3 frenteBase(std::sin(rumboBaseGrunt), 0, std::cos(rumboBaseGrunt));
+    const glm::vec3 lateralBase(frenteBase.z, 0, -frenteBase.x);
+    const auto centroBase = baseGrunt + glm::vec3(0, 1.15f, 0);
+    const auto ojoBase = centroBase - frenteBase * 4.5f - lateralBase * 1.5f + glm::vec3(0, .6f, 0);
+    vista("C_P1_Grunt1_Base", ojoBase, centroBase, 0, 48.f);
+    std::cout << "P1_MARCHA_OK G/K/H pulsacion_unica; Grunt3 quieto; temporizadores independientes; "
+                 "ida, giro, regreso a base y reposo 14s\n";
 
     s = original;
     s.holocron = 0;
@@ -304,7 +355,7 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     s = original;
     vista("C_NPC", {-46, 13, 188}, {-65, 3, 158});
     std::cout << "C_ANIMACIONES_OK basicas(3): puerta/G1/G2; continuas(3): Engineer/Sentinel1/"
-                 "Sentinel2; keyframes(2): SaturnV/Holocron; G/K/H locomocion mantenida\n";
+                 "Sentinel2; keyframes(2): SaturnV/Holocron; G/K/H ciclos de marcha activados\n";
     OrdenActividad orden;
     orden.avatar = {220, 6, 0};
     orden.lanzar = true;

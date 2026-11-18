@@ -7,6 +7,7 @@ struct OrdenActividad {
     float acelerador = 0, freno = 0, giro = 0;
     bool interactuar = false, reiniciar = false, recuperar = false;
     glm::vec3 avatar{0};
+    // Pulsos de una sola tecla para iniciar la caminata de cada NPC.
     bool titan = false, caminarHunter = false, saludo = false, reflector = false,
          caminarGrunt2 = false;
     bool holocron = false;

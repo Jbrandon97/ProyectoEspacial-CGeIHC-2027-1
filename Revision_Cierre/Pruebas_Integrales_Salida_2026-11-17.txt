@@ -56,5 +56,5 @@ INTEGRAL_MINIAUDIO_OK RMS L/R izquierda=0.00587449/0.00137641 derecha=0.00137641
 REGION Planeta1 preparada; una region activa, estado conservado
 REGION Espacio preparada; una region activa, estado conservado
 MINIAUDIO_CIERRE bloques=13
-MINIAUDIO_CIERRE bloques=1227
+MINIAUDIO_CIERRE bloques=461
 CIERRE CORRECTO

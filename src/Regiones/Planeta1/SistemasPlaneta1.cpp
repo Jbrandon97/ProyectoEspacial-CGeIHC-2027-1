@@ -30,8 +30,15 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
 }
 void SistemasPlaneta1::actualizar(float dt) {
     const float avance = std::max(0.f, dt);
-    for (auto &reloj : relojesPatrulla_)
-        reloj += avance;
+    for (int i = 0; i < int(relojesPatrulla_.size()); ++i) {
+        if (!marchasActivas_[i])
+            continue;
+        relojesPatrulla_[i] += avance;
+        if (relojesPatrulla_[i] >= 14.f) {
+            relojesPatrulla_[i] = 0.f;
+            marchasActivas_[i] = false;
+        }
+    }
     tiempo += dt;
     if (holocron >= 0 && (holocron += dt) >= 12) holocron = -1;
     if (saludo >= 0 && (saludo += dt) >= 6)
@@ -69,6 +76,13 @@ float SistemasPlaneta1::faseSolar() const {
 }
 namespace {
 constexpr float DosPi = 6.28318530718f;
+// Perfil de ciclo: preparacion .6 s, ida 5 s, giro 1.4 s, regreso 5 s, orientacion final 2 s.
+constexpr float InicioMarcha = .6f;
+constexpr float FinIda = 5.6f;
+constexpr float FinGiro = 7.f;
+constexpr float FinVuelta = 12.f;
+constexpr float FinCicloMarcha = 14.f;
+constexpr float DuracionTramoMarcha = 5.f;
 constexpr glm::vec2 InicioPatrulla[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
 constexpr glm::vec2 RadioPatrulla[] = {{6, 5}, {6, 5}, {6, 5}, {4.5f, 5}};
 constexpr float FasePatrulla[] = {0, 3.14159265359f, 0, 1.57079632679f};
@@ -77,12 +91,26 @@ float faseNPC(int npc, float reloj) {
     return FasePatrulla[npc] + DosPi * reloj / PeriodoPatrulla[npc];
 }
 }
+float SistemasPlaneta1::relojRutaPatrulla(int npc) const {
+    if (npc < 0 || npc >= 4 || !marchasActivas_[npc])
+        return 0.f;
+    const float t = relojesPatrulla_[npc];
+    if (t < InicioMarcha)
+        return 0.f;
+    if (t < FinIda)
+        return t - InicioMarcha;
+    if (t < FinGiro)
+        return DuracionTramoMarcha;
+    if (t < FinVuelta)
+        return FinVuelta - t;
+    return 0.f;
+}
 glm::vec3 SistemasPlaneta1::posicionPatrulla(int npc) const {
     if (npc < 0 || npc >= 4)
         return {};
     const auto inicio = InicioPatrulla[npc];
     const auto radio = RadioPatrulla[npc];
-    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float fase = faseNPC(npc, relojRutaPatrulla(npc));
     const float inicial = FasePatrulla[npc];
     const float x = inicio.x + radio.x * (std::sin(fase) - std::sin(inicial));
     // Hunter recorre el arco superior del patio; mantiene su volumen separado del Grunt 2.
@@ -93,12 +121,27 @@ glm::vec3 SistemasPlaneta1::posicionPatrulla(int npc) const {
 float SistemasPlaneta1::orientacionPatrulla(int npc) const {
     if (npc < 0 || npc >= 4)
         return 0;
-    const float fase = faseNPC(npc, relojesPatrulla_[npc]);
+    const float fase = faseNPC(npc, relojRutaPatrulla(npc));
     const float velocidadAngular = DosPi / PeriodoPatrulla[npc];
     const float dx = RadioPatrulla[npc].x * std::cos(fase) * velocidadAngular;
     const float sentidoZ = npc == 3 ? 1.f : -1.f;
     const float dz = sentidoZ * RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
-    return std::atan2(dx, dz);
+    const float rumboBase = std::atan2(dx, dz);
+    if (!marchasActivas_[npc])
+        return rumboBase;
+    const float t = relojesPatrulla_[npc];
+    if (t >= FinIda && t < FinGiro) {
+        const float giro = glm::smoothstep(0.f, 1.f, (t - FinIda) / (FinGiro - FinIda));
+        return std::remainder(rumboBase + 3.14159265359f * giro, DosPi);
+    }
+    if (t >= FinGiro && t < FinVuelta)
+        return std::remainder(rumboBase + 3.14159265359f, DosPi);
+    if (t >= FinVuelta) {
+        const float regreso = glm::smoothstep(0.f, 1.f, (t - FinVuelta) /
+                                                           (FinCicloMarcha - FinVuelta));
+        return std::remainder(rumboBase + 3.14159265359f * (1.f - regreso), DosPi);
+    }
+    return rumboBase;
 }
 float SistemasPlaneta1::relojPatrulla(int npc) const {
     return npc < 0 || npc >= 4 ? 0.f : relojesPatrulla_[npc];
@@ -106,8 +149,38 @@ float SistemasPlaneta1::relojPatrulla(int npc) const {
 float SistemasPlaneta1::periodoPatrulla(int npc) const {
     return npc < 0 || npc >= 4 ? 0.f : PeriodoPatrulla[npc];
 }
+bool SistemasPlaneta1::iniciarMarcha(int npc) {
+    if (npc < 0 || npc >= 4 || npc == 2 || marchasActivas_[npc])
+        return false;
+    relojesPatrulla_[npc] = 0.f;
+    marchasActivas_[npc] = true;
+    return true;
+}
+bool SistemasPlaneta1::marchaActiva(int npc) const {
+    return npc >= 0 && npc < 4 && marchasActivas_[npc];
+}
+bool SistemasPlaneta1::caminandoNPC(int npc) const {
+    if (!marchaActiva(npc))
+        return false;
+    const float t = relojesPatrulla_[npc];
+    return (t >= InicioMarcha && t < FinIda) || (t >= FinGiro && t < FinVuelta);
+}
+float SistemasPlaneta1::tiempoPasoPatrulla(int npc) const {
+    if (!caminandoNPC(npc))
+        return 0.f;
+    const float t = relojesPatrulla_[npc];
+    return t < FinIda ? t - InicioMarcha : DuracionTramoMarcha + t - FinGiro;
+}
+float SistemasPlaneta1::factorMarchaNPC(int npc) const {
+    if (!caminandoNPC(npc))
+        return 0.f;
+    const float t = tiempoPasoPatrulla(npc);
+    return glm::smoothstep(0.f, .35f, t) *
+           (1.f - glm::smoothstep(9.65f, 10.f, t));
+}
 void SistemasPlaneta1::reiniciarPatrullas() {
     relojesPatrulla_.fill(0.f);
+    marchasActivas_.fill(false);
 }
 Iluminacion SistemasPlaneta1::luces() const {
     Iluminacion l;

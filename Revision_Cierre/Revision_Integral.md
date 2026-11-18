@@ -16,18 +16,17 @@ Revisamos el código que está en `main`, las capturas OpenGL y los resultados r
 
 ## Planeta 1: desplazamiento y marcha de NPC
 
-Cada reloj actualiza el centro del cuerpo sobre una elipse con `deltaTime`; `Planeta1::dibujar` traslada el modelo completo, calcula altura con `TerrenoPlaneta1::altura` y orienta el rumbo sobre la tangente. Grunt 1/2/3 recorren elipses de 6×5 unidades con periodos de 22/25/28 s; Hunter recorre 4.5×5 unidades en 30 s. En 31 s, `--pruebas` midió recorridos de 48.57, 42.97, 38.58 y 30.91 unidades. G/K/H ya no ejecutan reacciones ni pausan relojes: sostienen una marcha algo más amplia cerca del NPC y la patrulla sigue avanzando.
+Grunt 1, Grunt 2 y Hunter quedan en sus bases hasta una pulsación cercana (menos de 18 unidades): G activa Grunt 1, K Grunt 2 y H Hunter. Cada NPC tiene reloj independiente; solo avanza durante su ciclo de 14 s. Tras 0.6 s de preparación, el cuerpo completo avanza 5 s por el arco del circuito, se detiene para girar y vuelve por el mismo arco hasta su base; al final gira al frente y se detiene. No repite círculos. Grunt 3 (índice 2) no se puede activar y queda quieto. El cuerpo mantiene altura con `TerrenoPlaneta1::altura` y su orientación sigue la dirección de desplazamiento.
 
 La auditoría confirmó que los archivos anteriores de Grunt y Hunter tenían jerarquía plana, 0 skins y 0 animaciones. Las cotas y pivotes indicados por Muse no concordaban con las coordenadas que realmente usa el glTF. En Blender se detectaron las dos islas de pierna por conectividad de caras, se separaron y se emparentaron al torso sin cambiar la pose global. La comparación visual de reposo entre originales y reexportados no mostró diferencias ni costuras; UV y PNG permanecen iguales.
 
-`ModeloGltf` conserva nombres e inicios de nodo en coordenadas de modelo y permite encontrarlos por nombre. En `Planeta1::cargar` se resuelven los nodos `Grunt_pierna_izquierda/derecha` y `Hunter_pierna_izquierda/derecha` del archivo cargado, sin índices codificados. En cada cuadro, `Planeta1::dibujar` arma `T(pivote) * Rz(ángulo) * T(-pivote)`. Este giro mueve las piernas en el plano X-Y, hacia delante y atrás. Conservamos pivotes, nodos, desfases y fase de patrulla: Grunts usan 24 ciclos por vuelta y Hunter 16. La marcha habitual conserva ±0.35 rad; mientras se mantiene la tecla cercana, la amplitud sube suavemente hasta ±0.50 rad y vuelve al soltarla.
+`ModeloGltf` conserva los nombres y orígenes de los nodos. En `Planeta1::cargar` se resuelven `Grunt_pierna_izquierda/derecha` y `Hunter_pierna_izquierda/derecha`. `Planeta1::dibujar` arma `T(pivote) * Rz(ángulo) * T(-pivote)`, sin cambiar pivotes ni nodos. Rz mueve las piernas hacia delante y atrás en el plano X-Y; Grunts usan 24 ciclos de paso por la vuelta de fase y Hunter 16. La amplitud es cero en reposo y durante los giros; se desvanece al inicio y final de los tramos caminados.
 
 Los pivotes medidos en el glTF final son Grunt derecha `(-0.0280,0.9000,-0.1602)`/izquierda `(-0.2049,0.9000,0.3375)` y Hunter derecha `(-0.2745,1.8000,-0.4413)`/izquierda `(-0.1783,1.8000,0.4417)`. La separación lateral corresponde al eje Z glTF, no a los offsets ±X indicados en la auditoría de Muse; por eso usamos los orígenes reales de los nodos y no esos valores sugeridos.
 
-Retiramos el modo `locomocionPatrulla` del shader; las ramas de locomoción de Clank y Blarg siguen intactas. Titan y los dos Sentinel no se modificaron. G/K/H se leen como teclas mantenidas y solo tienen efecto en proximidad: G asigna Grunt 1, K Grunt 2 y H Hunter. Al soltar o alejarse, una interpolación temporal devuelve la amplitud de piernas a la patrulla normal. Las capturas OpenGL de dos fases por NPC están en `Capturas/NPC_Locomocion/`. La prueba registra para Grunt 1 `+0.476/-0.476` y `-0.499/+0.499` rad; el Hunter alcanza `+0.496/-0.496` y `-0.500/+0.500` rad. El reloj y la posición continúan avanzando mientras se sostiene la tecla.
+Retiramos el modo `locomocionPatrulla` del shader; las ramas de Clank y Blarg siguen intactas. Titán (B/J) y ambos Sentinel no se modificaron. `Aplicacion.cpp` entrega G/K/H como pulsaciones únicas; `Planeta1::controlar` inicia solo al personaje asignado, quieto y a menos de 18 unidades. La prueba registró al mismo Grunt 1 en `(-76.6076,152.989)` y `(-75.8295,152.904)`, con los pares de ángulos `+0.253655/-0.253655` y `-0.35/+0.35` rad. Al completar 14 s regresa a `(-77,153)` con amplitud cero.
 
-- Grunt 1: [paso A](Capturas/NPC_Locomocion/Grunt1_EjeZ_Paso_A.bmp), [paso B](Capturas/NPC_Locomocion/Grunt1_EjeZ_Paso_B.bmp).
-- Hunter: [paso A](Capturas/NPC_Locomocion/Hunter_EjeZ_Paso_A.bmp), [paso B](Capturas/NPC_Locomocion/Hunter_EjeZ_Paso_B.bmp).
+- Grunt 1: [paso A](Capturas/NPC_Locomocion/Grunt1_Caminata_A.bmp), [paso B](Capturas/NPC_Locomocion/Grunt1_Caminata_B.bmp) y [misma base en reposo](Capturas/NPC_Locomocion/Grunt1_Base_Reposo.bmp).
 
 ## Planeta 2: apoyos y Railjack
 
@@ -48,17 +47,17 @@ El Railjack permanece asociado a `PatioRailjack` y el apoyo se calcula con el m�
 
 ## Requisitos de animación registrados
 
-`C_ANIMACIONES_OK` separa el registro: puerta y caminata de Grunt 1/2 activada con G/K son las tres acciones básicas; Engineer y Sentinel 1/2 forman el grupo de movimiento continuo; Saturn V y holocrón usan keyframes. El test describe también la patrulla y la modulación con G/K/H, sin volver a contar esos NPC como objetos continuos.
+`C_ANIMACIONES_OK` separa el registro: puerta y caminata de Grunt 1/2 activada con una pulsación de G/K son las tres acciones básicas; Engineer y Sentinel 1/2 forman el grupo de movimiento continuo; Saturn V y holocrón usan keyframes. El regreso de los NPC es adicional y no se cuenta dos veces.
 
 ## Resultado de las pruebas
 
 - Compilación de `ProyectoEspacial.sln`, Visual Studio 2022, `Release | x64`: correcta; cero errores. Las advertencias corresponden a GLFW, miniaudio y la definición de `APIENTRY`.
 - `ProyectoEspacial.exe --pruebas --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye contratos de regiones, carrera, P1, P2, Freeport, audio, cargadores GLTF, apoyos, rutas y capturas.
 - `ProyectoEspacial.exe --pruebas-integrales --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye 5400 muestras de NPC/suelo/separación de P2, costuras del cielo, mezcla de audio y la verificación del Railjack.
-- `--pruebas` resuelve los nodos por nombre y captura al Grunt 1 y al Hunter en dos fases de marcha; además verifica la asignación de G/K/H, proximidad, continuidad del reloj y retorno gradual al soltar. No se volvió a medir rendimiento en esta corrección; las cifras existentes son mediciones anteriores.
+- `--pruebas` resuelve los nodos por nombre y captura al mismo Grunt 1 en dos fases opuestas de marcha y quieto en su base. Comprueba reposo sin entrada, teclas G/K/H asignadas y proximidad, no reinicio por pulsación durante el ciclo, relojes independientes, rumbo y desplazamiento de ida y vuelta, giros en los extremos y retorno al tiempo 14 s. Son pruebas automatizadas con renderizado OpenGL; no equivalen a una partida manual con teclado. No se volvió a medir rendimiento para esta corrección.
 - La salida del Railjack registra base en terreno `baseY=3.5444`, base en vuelo `aireBaseY=22.5444`, centros `12.4244/31.4244`; entre las capturas con iluminación diurna controlada cambian 234843 canales RGB en `--pruebas-integrales` y 234526 en `--pruebas`.
 - Las capturas de P1, P2 y Railjack se inspeccionaron visualmente. Son capturas automatizadas renderizadas por el ejecutable, no una grabación de partida manual.
-- `--medir-integral` se ejecutó después de la corrección, en Intel UHD Graphics 620, con 120 muestras por región: P1 68.5005 FPS medios / p95 17.5629 ms; P2 45.3036 FPS / p95 24.4486 ms; Espacio 82.1008 FPS / p95 19.3006 ms. Es el escenario completo y no aísla el costo de las piernas.
+- La última medición de `--medir-integral` disponible corresponde al cierre previo, en Intel UHD Graphics 620, con 120 muestras por región: P1 68.5005 FPS medios / p95 17.5629 ms; P2 45.3036 FPS / p95 24.4486 ms; Espacio 82.1008 FPS / p95 19.3006 ms. No volvimos a medir rendimiento después del ciclo de caminata actual; las cifras no representan un benchmark de esta corrección ni aíslan el costo de las piernas.
 
 ## Integración y límites
 

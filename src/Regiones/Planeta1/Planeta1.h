@@ -30,8 +30,6 @@ class Planeta1 final : public Escenario {
     std::array<std::array<size_t, 2>, 2> nodosPiernas_{};
     std::array<std::array<glm::vec3, 2>, 2> pivotesPiernas_{};
     mutable std::array<std::vector<glm::mat4>, 4> matricesPiernasNPC_;
-    std::array<bool, 3> marchaManualSolicitada_{};
-    std::array<float, 3> intensidadMarchaManual_{};
     std::unique_ptr<Textura> suelo_, texturaAgua_;
 
   public:
@@ -69,13 +67,6 @@ class Planeta1 final : public Escenario {
     }
     const SistemasPlaneta1 &sistemas() const {
         return sistemas_;
-    }
-    bool marchaManualSolicitada(int npc) const {
-        return npc >= 0 && npc < int(marchaManualSolicitada_.size()) && marchaManualSolicitada_[npc];
-    }
-    float intensidadMarchaManual(int npc) const {
-        return npc >= 0 && npc < int(intensidadMarchaManual_.size()) ? intensidadMarchaManual_[npc]
-                                                                     : 0.f;
     }
     unsigned eventoPuerta() const {
         return eventoPuerta_;

@@ -197,20 +197,23 @@ void Aplicacion::probarFinalPlaneta1(const std::filesystem::path &dir) {
     o.avatar = s.posicionPatrulla(3);
     o.caminarHunter = true;
     p.controlar(o);
-    exigir(p.marchaManualSolicitada(2), "H no activa caminata del Hunter en proximidad");
+    exigir(s.marchaActiva(3), "H no activa caminata del Hunter en proximidad");
+    p.actualizar(.9f);
     foto("Final_Hunter_Marcha", {-48, 9, 184}, {-65, 5, 174});
-    p.actualizar(.25f);
-    exigir(p.intensidadMarchaManual(2) > 0, "H no modula la marcha del Hunter");
-    p.controlar({});
-    exigir(!p.marchaManualSolicitada(2), "Hunter no vuelve a su patrulla al soltar H");
+    exigir(s.factorMarchaNPC(3) > 0 && s.caminandoNPC(3), "H no mueve las piernas del Hunter");
+    p.actualizar(13.1f);
+    exigir(!s.marchaActiva(3) && s.relojPatrulla(3) == 0,
+           "Hunter no vuelve a su base al terminar el ciclo");
     o = {};
     o.avatar = s.posicionPatrulla(1);
     o.caminarGrunt2 = true;
     p.controlar(o);
-    exigir(p.marchaManualSolicitada(1), "K no activa caminata del Grunt 2 en proximidad");
+    exigir(s.marchaActiva(1), "K no activa caminata del Grunt 2 en proximidad");
+    p.actualizar(.9f);
     foto("Final_Grunt2_Marcha", {-48, 8, 178}, {-65, 3, 162});
-    p.controlar({});
-    exigir(!p.marchaManualSolicitada(1), "Grunt 2 no vuelve a su patrulla al soltar K");
+    p.actualizar(13.1f);
+    exigir(!s.marchaActiva(1) && s.relojPatrulla(1) == 0,
+           "Grunt 2 no vuelve a su base al terminar el ciclo");
     s.faseInicial = 5.f / 6;
     s.tiempo = 0;
     o = {};

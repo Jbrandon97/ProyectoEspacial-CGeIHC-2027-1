@@ -1,0 +1,60 @@
+OpenGL 3.3.0 - Build 31.0.101.2130 | GPU Intel(R) UHD Graphics 620
+MINIAUDIO_BACKEND WASAPI
+MINIAUDIO_OK 0.11.23 stereo44100 dispositivo activo
+BT_RIG_OK juntas=233 pieles=16 altura=8.5
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Covenant.gltf lotes=5 triangulos=4632
+GLTF_OK Operaciones.gltf lotes=9 triangulos=8548
+GLTF_OK Habitat.gltf lotes=9 triangulos=7096
+GLTF_OK Taller.gltf lotes=9 triangulos=7232
+GLTF_OK Hangar.gltf lotes=10 triangulos=7348
+GLTF_OK Plataforma_E.gltf lotes=7 triangulos=2196
+GLTF_OK Recinto.gltf lotes=6 triangulos=4588
+GLTF_OK Grunt.gltf lotes=5 triangulos=1708
+GLTF_OK Hunter.gltf lotes=7 triangulos=2002
+GLTF_OK Sentinel.gltf lotes=1 triangulos=1586
+GLTF_OK EnergySword.gltf lotes=2 triangulos=128
+GLTF_OK SaturnV_Keyframes.gltf lotes=27 triangulos=35040
+GLTF_OK Pino.gltf lotes=4 triangulos=132
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+GLTF_OK Ghost.gltf lotes=2 triangulos=1034
+REGION Planeta1 preparada; una region activa, estado conservado
+ENGINEER_OK piel 10 articulaciones 3 cadenas texturas originales
+CIERRE_P1_OK holocron12s escala3.5 retorno; segundo foco pixeles=81315; F3 colonia
+GLTF_OK Freeport.gltf lotes=9 triangulos=146083
+GLTF_OK NaveAlien.gltf lotes=10 triangulos=49230
+GLTF_OK Holocron.gltf lotes=2 triangulos=499
+GLTF_OK Asteroide0.gltf lotes=1 triangulos=1082
+GLTF_OK Asteroide1.gltf lotes=1 triangulos=350
+GLTF_OK Asteroide2.gltf lotes=1 triangulos=208
+GLTF_OK Asteroide3.gltf lotes=1 triangulos=530
+GLTF_OK Asteroide4.gltf lotes=1 triangulos=1082
+GLTF_OK Asteroide5.gltf lotes=1 triangulos=208
+GLTF_OK Banshee.gltf lotes=1 triangulos=1326
+REGION Espacio preparada; una region activa, estado conservado
+INTEGRAL_VUELO_OK orientacion por modelo, giros continuos, boost70 normal40 y colision
+GLTF_OK Terreno2.gltf lotes=1 triangulos=80000
+GLTF_OK Kerwan_Edificio1.gltf lotes=19 triangulos=12554
+GLTF_OK Kerwan_Edificio2.gltf lotes=33 triangulos=50202
+GLTF_OK Kerwan_Edificio3.gltf lotes=13 triangulos=5530
+GLTF_OK Railjack_Optimizado.gltf lotes=20 triangulos=117153
+GLTF_OK TorreOrokin1.gltf lotes=8 triangulos=3482
+GLTF_OK Warframe.gltf lotes=16 triangulos=64837
+GLTF_OK aphelion.gltf lotes=9 triangulos=13226
+GLTF_OK Clank.gltf lotes=1 triangulos=4502
+GLTF_OK Blarg.gltf lotes=2 triangulos=2632
+REGION Planeta2 preparada; una region activa, estado conservado
+P2_RAILJACK_OK sueloY=12.4244 aireY=31.4244 baseY=3.5444 aireBaseY=22.5444 canales_diferentes=234843
+INTEGRAL_P2_OK 5400 muestras NPC, suelo y separacion; foco canales=137963
+REGION Planeta1 preparada; una region activa, estado conservado
+INTEGRAL_CIELO_OK P1 diferencia_media_union=0.100833
+REGION Planeta2 preparada; una region activa, estado conservado
+INTEGRAL_CIELO_OK P2 diferencia_media_union=0.295
+MINIAUDIO_OK 0.11.23 stereo44100 PCM sin dispositivo
+INTEGRAL_GRUPOS_AUDIO_OK musica_silenciada=0 ambiente_activo=0.00694414
+INTEGRAL_MINIAUDIO_OK RMS L/R izquierda=0.00587449/0.00137641 derecha=0.00137641/0.00587449 lejos=0.000603358 transicion1200ms
+REGION Planeta1 preparada; una region activa, estado conservado
+REGION Espacio preparada; una region activa, estado conservado
+MINIAUDIO_CIERRE bloques=13
+MINIAUDIO_CIERRE bloques=1227
+CIERRE CORRECTO

@@ -12,6 +12,8 @@ void Planeta1::cargar(ContextoEscena &c) {
     titan_ = std::make_unique<Titan>(c.recursos / "Modelos/BT7274/BT7274.gltf");
     carrera_ = GestorCarrera();
     sistemas_ = SistemasPlaneta1();
+    marchaManualSolicitada_.fill(false);
+    intensidadMarchaManual_.fill(0.f);
     sistemas_.configurar(c.recursos / "Configuracion_C.txt");
     eventoPuerta_ = 0;
     modelos_["Holocron"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/EspacioBloque1/Holocron.gltf", true);
@@ -118,6 +120,11 @@ void Planeta1::cargar(ContextoEscena &c) {
 void Planeta1::actualizar(float dt) {
     carrera_.actualizar(dt);
     sistemas_.actualizar(dt);
+    const float mezcla = 1.f - std::exp(-8.f * std::max(0.f, dt));
+    for (size_t i = 0; i < intensidadMarchaManual_.size(); ++i) {
+        const float objetivo = marchaManualSolicitada_[i] ? 1.f : 0.f;
+        intensidadMarchaManual_[i] += (objetivo - intensidadMarchaManual_[i]) * mezcla;
+    }
     titan_->animar(sistemas_.titan, sistemas_.saludo);
     // Sensor impide cerrar sobre el avatar; no teletransporta ni aplasta.
     if (puertaDestino_ < puertaAltura_ && std::abs(visitante_.x - 165) < 21 &&
@@ -163,27 +170,25 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         if (indice < 4) {
             p = sistemas_.posicionPatrulla(indice);
             giro = sistemas_.orientacionPatrulla(indice);
-            const bool reaccionando = indice == 0 ? sistemas_.reaccion >= 0
-                                      : indice == 1 ? sistemas_.inspeccion >= 0
-                                      : indice == 3 ? sistemas_.hunter >= 0
-                                                    : false;
             const size_t modeloNPC = indice == 3 ? 1 : 0;
             auto &partes = matricesPiernasNPC_[indice];
             std::fill(partes.begin(), partes.end(), glm::mat4(1));
-            if (!reaccionando) {
-                const float ciclosPaso = indice == 3 ? 16.f : 24.f;
-                const float fase = 6.28318530718f * ciclosPaso *
-                                   sistemas_.relojPatrulla(indice) /
-                                   sistemas_.periodoPatrulla(indice);
-                const float paso = .35f * std::sin(fase);
-                for (size_t pierna = 0; pierna < 2; ++pierna) {
-                    const float angulo = pierna == 0 ? paso : -paso;
-                    const auto &origen = pivotesPiernas_[modeloNPC][pierna];
-                    partes[nodosPiernas_[modeloNPC][pierna]] =
-                        glm::translate(glm::mat4(1), origen) *
-                        glm::rotate(glm::mat4(1), angulo, glm::vec3(1, 0, 0)) *
-                        glm::translate(glm::mat4(1), -origen);
-                }
+            const float ciclosPaso = indice == 3 ? 16.f : 24.f;
+            const float fase = 6.28318530718f * ciclosPaso *
+                               sistemas_.relojPatrulla(indice) /
+                               sistemas_.periodoPatrulla(indice);
+            const int ranuraMarcha = indice == 0 ? 0 : indice == 1 ? 1 : indice == 3 ? 2 : -1;
+            const float amplitud = .35f + (ranuraMarcha >= 0
+                                                ? .15f * intensidadMarchaManual_[ranuraMarcha]
+                                                : 0.f);
+            const float paso = amplitud * std::sin(fase);
+            for (size_t pierna = 0; pierna < 2; ++pierna) {
+                const float angulo = pierna == 0 ? paso : -paso;
+                const auto &origen = pivotesPiernas_[modeloNPC][pierna];
+                partes[nodosPiernas_[modeloNPC][pierna]] =
+                    glm::translate(glm::mat4(1), origen) *
+                    glm::rotate(glm::mat4(1), angulo, glm::vec3(0, 0, 1)) *
+                    glm::translate(glm::mat4(1), -origen);
             }
             r.locomocionRobot(0, false);
             partesNPC = &partes;
@@ -191,8 +196,7 @@ void Planeta1::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
             p = sistemas_.sentinel(indice - 4);
             giro = sistemas_.giroSentinel(indice - 4);
         }
-        auto local = glm::rotate(glm::translate(m, p), giro, glm::vec3(0, 1, 0)) *
-                     sistemas_.animacionNPC(indice);
+        auto local = glm::rotate(glm::translate(m, p), giro, glm::vec3(0, 1, 0));
         if (r.visible(glm::vec3(local[3]), 8)) {
             if (partesNPC)
                 modelos_.at(n.modelo)->dibujar(r, local, 0, nullptr, partesNPC);
@@ -339,6 +343,7 @@ void Planeta1::actualizarPuerta() {
 void Planeta1::controlar(const OrdenActividad &o) {
     visitante_ = o.avatar;
     carrera_.controlar(o);
+    marchaManualSolicitada_.fill(false);
     if (o.puerta && !carrera_.estado().ocupado &&
         glm::length(glm::vec2(o.avatar.x - 165, o.avatar.z + 70)) < 30) {
         puertaDestino_ = puertaDestino_ > 0 ? 0.0f : 7.0f;
@@ -356,21 +361,19 @@ void Planeta1::controlar(const OrdenActividad &o) {
             sistemas_.saludo = 0;
         if (o.reflector && glm::length(o.avatar - glm::vec3(165, 3, -70)) < 35)
             sistemas_.reflector = !sistemas_.reflector;
-        if (o.inspeccion && sistemas_.inspeccion < 0 &&
-            glm::length(o.avatar - glm::vec3(-65, 2, 162)) < 12)
-            sistemas_.inspeccion = 0;
-        if (o.hunter && sistemas_.hunter < 0 && glm::length(o.avatar - glm::vec3(-65, 2, 174)) < 15)
-            sistemas_.hunter = 0;
+        const auto posicionGrunt1 = sistemas_.posicionPatrulla(0);
+        const auto posicionGrunt2 = sistemas_.posicionPatrulla(1);
+        const auto posicionHunter = sistemas_.posicionPatrulla(3);
+        marchaManualSolicitada_[0] = o.caminarGrunt1 &&
+                                     glm::length(glm::vec2(o.avatar.x - posicionGrunt1.x,
+                                                           o.avatar.z - posicionGrunt1.z)) < 10.f;
+        marchaManualSolicitada_[1] = o.caminarGrunt2 && glm::length(o.avatar - posicionGrunt2) < 12.f;
+        marchaManualSolicitada_[2] = o.caminarHunter && glm::length(o.avatar - posicionHunter) < 15.f;
         float d = glm::length(glm::vec2(o.avatar.x - 205, o.avatar.z - 21));
         if (o.lanzar && d < 65 && d > 8)
             sistemas_.lanzar();
         if (o.reiniciarCohete && d < 90 && d > 9)
             sistemas_.reiniciar();
-        if (o.reaccion && glm::length(glm::vec2(o.avatar.x + 77, o.avatar.z - 153)) < 10 &&
-            sistemas_.reaccion < 0) {
-            sistemas_.reaccion = 0;
-            ++sistemas_.eventoGrunt;
-        }
     }
 }
 EstadoActividad Planeta1::actividad() const {
@@ -380,16 +383,17 @@ EstadoActividad Planeta1::actividad() const {
     if (!e.ocupado) {
         if(glm::length(glm::vec2(visitante_.x+125,visitante_.z+48))<24)
             e.mensajes.push_back("Y HOLOCRON / I REFLECTOR COVENANT");
-        if (glm::length(visitante_ - glm::vec3(-65, 2, 162)) < 12)
-            e.mensajes.push_back("K / INSPECCION GRUNT 2");
+        if (glm::length(visitante_ - sistemas_.posicionPatrulla(1)) < 12)
+            e.mensajes.push_back("MANTEN K PARA CAMINAR / GRUNT 2");
         if (glm::length(visitante_ - Titan::posicion(-1)) < 18)
             e.mensajes.push_back("B CAMINATA / J SALUDO BT-7274");
-        if (glm::length(visitante_ - glm::vec3(-65, 2, 174)) < 15)
-            e.mensajes.push_back("H / VIGILANCIA HUNTER");
+        if (glm::length(visitante_ - sistemas_.posicionPatrulla(3)) < 15)
+            e.mensajes.push_back("MANTEN H PARA CAMINAR / HUNTER");
         if (glm::length(glm::vec2(visitante_.x - 205, visitante_.z - 21)) < 65)
             e.mensajes.push_back("L LANZAR / T REPONER / O OBSERVAR COHETE");
-        if (glm::length(glm::vec2(visitante_.x + 77, visitante_.z - 153)) < 10)
-            e.mensajes.push_back("G / SALUDAR AL GRUNT");
+        if (glm::length(glm::vec2(visitante_.x - sistemas_.posicionPatrulla(0).x,
+                                  visitante_.z - sistemas_.posicionPatrulla(0).z)) < 10)
+            e.mensajes.push_back("MANTEN G PARA CAMINAR / GRUNT 1");
     }
     return e;
 }

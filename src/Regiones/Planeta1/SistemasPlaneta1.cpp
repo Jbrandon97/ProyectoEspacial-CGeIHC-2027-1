@@ -30,20 +30,14 @@ void SistemasPlaneta1::configurar(const std::filesystem::path &p) {
 }
 void SistemasPlaneta1::actualizar(float dt) {
     const float avance = std::max(0.f, dt);
-    const bool pausados[] = {reaccion >= 0, inspeccion >= 0, false, hunter >= 0};
-    for (int i = 0; i < 4; ++i)
-        if (!pausados[i])
-            relojesPatrulla_[i] += avance;
+    for (auto &reloj : relojesPatrulla_)
+        reloj += avance;
     tiempo += dt;
     if (holocron >= 0 && (holocron += dt) >= 12) holocron = -1;
-    if (inspeccion >= 0 && (inspeccion += dt) >= 8)
-        inspeccion = -1;
     if (saludo >= 0 && (saludo += dt) >= 6)
         saludo = -1;
     if (titan >= 0 && (titan += dt) >= 14)
         titan = -1;
-    if (hunter >= 0 && (hunter += dt) >= 8)
-        hunter = -1;
     float avanceReposicion = dt;
     if (lanzamiento >= 0) {
         float previo = lanzamiento;
@@ -58,11 +52,6 @@ void SistemasPlaneta1::actualizar(float dt) {
         reposicion += avanceReposicion;
         if (reposicion >= 8.5f)
             reposicion = -1;
-    }
-    if (reaccion >= 0) {
-        reaccion += dt;
-        if (reaccion >= 5)
-            reaccion = -1;
     }
 }
 float SistemasPlaneta1::fase() const {
@@ -274,31 +263,6 @@ float SistemasPlaneta1::giroSentinel(int i) const {
     // El frente de la malla original es +X, comprobado desde vistas ortogonales.
     return std::atan2(-12 * std::sin(a) * v, 8 * std::cos(a) * v) - 1.570796327f;
 }
-glm::mat4 SistemasPlaneta1::animacionNPC(int i) const {
-    glm::mat4 m(1);
-    if (i == 0 && reaccion >= 0) {
-        float u = reaccion / 5;
-        float caminar = std::sin(u * 3.14159265f);
-        m = glm::translate(m, {0, 0, 2.8f * caminar});
-        return glm::rotate(m, .4f * std::sin(u * 6.2831853f), {0, 1, 0});
-    }
-    if (i == 1 || i == 3) {
-        // Dos objetos distintos: Grunt 2 inspecciona; Hunter gira en vigilancia.
-        const float t[] = {0, 2, 4, 6, 8};
-        const float giro[] = {0, .5f, -.35f, .25f, 0};
-        const float incl[] = {0, .12f, .05f, -.07f, 0};
-        float u = i == 3 ? std::max(0.f, hunter) : std::max(0.f, inspeccion);
-        int k = 0;
-        while (k < 3 && u > t[k + 1])
-            ++k;
-        float s = glm::smoothstep(0.f, 1.f, (u - t[k]) / (t[k + 1] - t[k]));
-        m = glm::rotate(m, glm::mix(giro[k], giro[k + 1], s) * (i == 3 ? .65f : 1.f), {0, 1, 0});
-        if (i == 1)
-            m = glm::rotate(m, glm::mix(incl[k], incl[k + 1], s), {1, 0, 0});
-    }
-    return m;
-}
-
 glm::mat4 SistemasPlaneta1::matrizHolocron() const {
     struct Clave { float t, altura, escala, giro; };
     const Clave claves[]={{0,0,1,0},{2,4,1.8f,.8f},{5,8,3.5f,3.14f},

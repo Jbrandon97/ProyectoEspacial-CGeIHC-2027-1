@@ -7,9 +7,10 @@ struct OrdenActividad {
     float acelerador = 0, freno = 0, giro = 0;
     bool interactuar = false, reiniciar = false, recuperar = false;
     glm::vec3 avatar{0};
-    bool titan = false, hunter = false, saludo = false, reflector = false, inspeccion = false;
+    bool titan = false, caminarHunter = false, saludo = false, reflector = false,
+         caminarGrunt2 = false;
     bool holocron = false;
-    bool puerta = false, lanzar = false, reiniciarCohete = false, reaccion = false;
+    bool puerta = false, lanzar = false, reiniciarCohete = false, caminarGrunt1 = false;
     float vertical = 0;
     bool confirmar = false, boost = false;
     bool luzAcople = false, luzServicio = false;

@@ -16,7 +16,7 @@ Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrol
 | Audio | M silencio; N selecciona general/música/ambiente/efectos; −/+ ajustan el canal seleccionado |
 | Planetas | WASD movimiento; Shift correr; mouse cámara; F1 exploración; F3 vista existente |
 | Planeta 1 | X abordar/descender; R reiniciar carrera; C recuperar con penalización; E hangar; P reflector; I reflector Covenant; F energía corporal |
-| Interacciones de P1 | G Grunt; K inspección; H Hunter; B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar. Las acciones de personajes, hangar y cohete requieren proximidad |
+| Interacciones de P1 | Mantén G: Grunt 1; K: Grunt 2; H: Hunter caminan con la fase de su patrulla. B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar. G/K/H requieren proximidad y al soltar vuelven gradualmente a la marcha normal |
 | Planeta 2 | F energía corporal; P foco de plaza; I spotlight Orokin; F3 plaza; F4 Warframe; NPC, Railjack y Aphelion tienen ciclos propios |
 | Espacio, F3 pilotaje | W/S acelerar/frenar; A/D girar; mouse orientación; Q/Z subir/bajar; Shift boost; C recuperar; V alterna exterior/cabina; Enter portal cercano |
 | Observación espacial | F4 órbita; F5 estación; F6 asteroides; F3 volver a pilotaje; U/I focos independientes |
@@ -33,7 +33,7 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 
 Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Revision_Cierre/Revision_Integral.md**. La presentación **Revision_Cierre/Revision_visual.html** reúne capturas y enlaces. **Revision_Cierre/Audio_Tecnico.md** contiene la evidencia de audio; no es el reporte académico final.
 
-La última compilación Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. También corrige el apoyo del Railjack indexado mediante el límite real de la malla. Las capturas comparativas de marcha del Grunt 1, las seis bases de P2 y el Railjack están en **Revision_Cierre/Capturas**; son imágenes producidas por las pruebas automatizadas, no una sesión manual. El registro de consola más reciente está en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt`.
+Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. La marcha de Grunt y Hunter gira las piernas sobre Z para que avancen y retrocedan; G/K/H mantienen una marcha más marcada sin pausar sus patrullas. Las capturas nuevas del mismo NPC en dos fases están en **Revision_Cierre/Capturas/NPC_Locomocion**; son renderizados OpenGL automatizados, no una sesión manual. Los registros están en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt` y `Revision_Cierre/Pruebas_Integrales_Salida_2026-11-17.txt`.
 
 ## Organización y recursos
 

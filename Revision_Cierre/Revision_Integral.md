@@ -16,18 +16,18 @@ Revisamos el código que está en `main`, las capturas OpenGL y los resultados r
 
 ## Planeta 1: desplazamiento y marcha de NPC
 
-Cada reloj actualiza el centro del cuerpo sobre una elipse con `deltaTime`; `Planeta1::dibujar` traslada el modelo completo, calcula altura con `TerrenoPlaneta1::altura` y orienta el rumbo sobre la tangente. Grunt 1/2/3 recorren elipses de 6×5 unidades con periodos de 22/25/28 s; Hunter recorre 4.5×5 unidades en 30 s. En 31 s, las pruebas anteriores midieron 48.57, 42.97, 38.58 y 30.91 unidades. G/K/H detienen el reloj y la posición del NPC durante sus reacciones.
+Cada reloj actualiza el centro del cuerpo sobre una elipse con `deltaTime`; `Planeta1::dibujar` traslada el modelo completo, calcula altura con `TerrenoPlaneta1::altura` y orienta el rumbo sobre la tangente. Grunt 1/2/3 recorren elipses de 6×5 unidades con periodos de 22/25/28 s; Hunter recorre 4.5×5 unidades en 30 s. En 31 s, `--pruebas` midió recorridos de 48.57, 42.97, 38.58 y 30.91 unidades. G/K/H ya no ejecutan reacciones ni pausan relojes: sostienen una marcha algo más amplia cerca del NPC y la patrulla sigue avanzando.
 
 La auditoría confirmó que los archivos anteriores de Grunt y Hunter tenían jerarquía plana, 0 skins y 0 animaciones. Las cotas y pivotes indicados por Muse no concordaban con las coordenadas que realmente usa el glTF. En Blender se detectaron las dos islas de pierna por conectividad de caras, se separaron y se emparentaron al torso sin cambiar la pose global. La comparación visual de reposo entre originales y reexportados no mostró diferencias ni costuras; UV y PNG permanecen iguales.
 
-`ModeloGltf` conserva nombres e inicios de nodo en coordenadas de modelo y permite encontrarlos por nombre. En `Planeta1::cargar` se resuelven los nodos `Grunt_pierna_izquierda/derecha` y `Hunter_pierna_izquierda/derecha` del archivo cargado, sin índices codificados. En cada cuadro, `Planeta1::dibujar` arma la matriz `T(pivote) * Rx(ángulo) * T(-pivote)`. Los ángulos son opuestos, tienen amplitud 0.35 rad y usan el mismo reloj que la ruta: 24 ciclos por vuelta para Grunt y 16 para Hunter. Las reacciones dejan la matriz identidad y el reloj pausado.
+`ModeloGltf` conserva nombres e inicios de nodo en coordenadas de modelo y permite encontrarlos por nombre. En `Planeta1::cargar` se resuelven los nodos `Grunt_pierna_izquierda/derecha` y `Hunter_pierna_izquierda/derecha` del archivo cargado, sin índices codificados. En cada cuadro, `Planeta1::dibujar` arma `T(pivote) * Rz(ángulo) * T(-pivote)`. Este giro mueve las piernas en el plano X-Y, hacia delante y atrás. Conservamos pivotes, nodos, desfases y fase de patrulla: Grunts usan 24 ciclos por vuelta y Hunter 16. La marcha habitual conserva ±0.35 rad; mientras se mantiene la tecla cercana, la amplitud sube suavemente hasta ±0.50 rad y vuelve al soltarla.
 
 Los pivotes medidos en el glTF final son Grunt derecha `(-0.0280,0.9000,-0.1602)`/izquierda `(-0.2049,0.9000,0.3375)` y Hunter derecha `(-0.2745,1.8000,-0.4413)`/izquierda `(-0.1783,1.8000,0.4417)`. La separación lateral corresponde al eje Z glTF, no a los offsets ±X indicados en la auditoría de Muse; por eso usamos los orígenes reales de los nodos y no esos valores sugeridos.
 
-Retiramos el modo `locomocionPatrulla` del shader; las ramas de locomoción de Clank y Blarg siguen intactas. Titan y los dos Sentinel no se modificaron. Las capturas OpenGL producidas automáticamente y revisadas están en `Capturas/NPC_Locomocion/`: reposo, paso A y paso B de Grunt 1 y Hunter. La salida de prueba registra `0`, `+0.35/-0.35` y `-0.35/+0.35` radianes para las seis capturas. No afirmamos una partida manual.
+Retiramos el modo `locomocionPatrulla` del shader; las ramas de locomoción de Clank y Blarg siguen intactas. Titan y los dos Sentinel no se modificaron. G/K/H se leen como teclas mantenidas y solo tienen efecto en proximidad: G asigna Grunt 1, K Grunt 2 y H Hunter. Al soltar o alejarse, una interpolación temporal devuelve la amplitud de piernas a la patrulla normal. Las capturas OpenGL de dos fases por NPC están en `Capturas/NPC_Locomocion/`. La prueba registra para Grunt 1 `+0.476/-0.476` y `-0.499/+0.499` rad; el Hunter alcanza `+0.496/-0.496` y `-0.500/+0.500` rad. El reloj y la posición continúan avanzando mientras se sostiene la tecla.
 
-- Grunt 1: [reposo](Capturas/NPC_Locomocion/Grunt1_Reposo.png), [paso A](Capturas/NPC_Locomocion/Grunt1_Paso_A.png), [paso B](Capturas/NPC_Locomocion/Grunt1_Paso_B.png).
-- Hunter: [reposo](Capturas/NPC_Locomocion/Hunter_Reposo.png), [paso A](Capturas/NPC_Locomocion/Hunter_Paso_A.png), [paso B](Capturas/NPC_Locomocion/Hunter_Paso_B.png).
+- Grunt 1: [paso A](Capturas/NPC_Locomocion/Grunt1_EjeZ_Paso_A.bmp), [paso B](Capturas/NPC_Locomocion/Grunt1_EjeZ_Paso_B.bmp).
+- Hunter: [paso A](Capturas/NPC_Locomocion/Hunter_EjeZ_Paso_A.bmp), [paso B](Capturas/NPC_Locomocion/Hunter_EjeZ_Paso_B.bmp).
 
 ## Planeta 2: apoyos y Railjack
 
@@ -48,14 +48,14 @@ El Railjack permanece asociado a `PatioRailjack` y el apoyo se calcula con el m�
 
 ## Requisitos de animación registrados
 
-`C_ANIMACIONES_OK` identifica tres objetos distintos con animación básica (puerta, Grunt 1 y Grunt 2), tres con movimiento continuo (Engineer, Sentinel 1 y Sentinel 2) y dos mediante keyframes (Saturn V y holocrón). Las patrullas adicionales de NPC no se cuentan por segunda vez para completar estas categorías.
+`C_ANIMACIONES_OK` separa el registro: puerta y caminata de Grunt 1/2 activada con G/K son las tres acciones básicas; Engineer y Sentinel 1/2 forman el grupo de movimiento continuo; Saturn V y holocrón usan keyframes. El test describe también la patrulla y la modulación con G/K/H, sin volver a contar esos NPC como objetos continuos.
 
 ## Resultado de las pruebas
 
 - Compilación de `ProyectoEspacial.sln`, Visual Studio 2022, `Release | x64`: correcta; cero errores. Las advertencias corresponden a GLFW, miniaudio y la definición de `APIENTRY`.
 - `ProyectoEspacial.exe --pruebas --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye contratos de regiones, carrera, P1, P2, Freeport, audio, cargadores GLTF, apoyos, rutas y capturas.
 - `ProyectoEspacial.exe --pruebas-integrales --evidencias <carpeta>`: salida 0 y `CIERRE CORRECTO`. Incluye 5400 muestras de NPC/suelo/separación de P2, costuras del cielo, mezcla de audio y la verificación del Railjack.
-- La misma ejecución de `--pruebas` resuelve los nodos de pierna por nombre al cargar ambos glTF y captura tres poses por personaje. No se volvió a medir rendimiento en esta corrección; las cifras existentes son mediciones anteriores.
+- `--pruebas` resuelve los nodos por nombre y captura al Grunt 1 y al Hunter en dos fases de marcha; además verifica la asignación de G/K/H, proximidad, continuidad del reloj y retorno gradual al soltar. No se volvió a medir rendimiento en esta corrección; las cifras existentes son mediciones anteriores.
 - La salida del Railjack registra base en terreno `baseY=3.5444`, base en vuelo `aireBaseY=22.5444`, centros `12.4244/31.4244`; entre las capturas con iluminación diurna controlada cambian 234843 canales RGB en `--pruebas-integrales` y 234526 en `--pruebas`.
 - Las capturas de P1, P2 y Railjack se inspeccionaron visualmente. Son capturas automatizadas renderizadas por el ejecutable, no una grabación de partida manual.
 - `--medir-integral` se ejecutó después de la corrección, en Intel UHD Graphics 620, con 120 muestras por región: P1 68.5005 FPS medios / p95 17.5629 ms; P2 45.3036 FPS / p95 24.4486 ms; Espacio 82.1008 FPS / p95 19.3006 ms. Es el escenario completo y no aísla el costo de las piernas.

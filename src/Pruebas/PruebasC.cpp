@@ -128,7 +128,7 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         }
         dibujar(dir / (modo ? "C_Engineer_Correr.ppm" : "C_Engineer_Caminar.ppm"));
     }
-    s.reaccion = s.inspeccion = s.hunter = -1;
+    p.controlar({});
     s.reiniciarPatrullas();
     const glm::vec2 inicios[] = {{-77, 153}, {-65, 162}, {-53, 153}, {-65, 174}};
     for (int i = 0; i < 4; ++i) {
@@ -201,14 +201,46 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
     std::cout << "P1_PATRULLA_OK 4 modelos trasladados en circuitos cerrados dentro del recinto; "
                  "orientacion, suelo, colision, marcha de piernas; Hunter corto/lento\n";
 
-    s.reiniciarPatrullas();
-    auto capturarPasoNPC = [&](int npc, int ciclos, const char *modelo) {
-        s.reaccion = s.inspeccion = s.hunter = -1;
+    auto probarTeclaMarcha = [&](int ranura, glm::vec3 sitio, bool g, bool k, bool h) {
+        OrdenActividad o;
+        o.avatar = sitio;
+        o.caminarGrunt1 = g;
+        o.caminarGrunt2 = k;
+        o.caminarHunter = h;
+        p.controlar(o);
+        exigir(p.marchaManualSolicitada(ranura), "G/K/H no activa la marcha cercana asignada");
+        for (int i = 0; i < 3; ++i)
+            if (i != ranura)
+                exigir(!p.marchaManualSolicitada(i), "Una tecla activa otro NPC");
+        p.controlar({});
+        exigir(!p.marchaManualSolicitada(ranura), "La marcha no termina al soltar la tecla");
+    };
+    p.controlar({});
+    p.actualizar(1.f);
+    probarTeclaMarcha(0, s.posicionPatrulla(0), true, false, false);
+    probarTeclaMarcha(1, s.posicionPatrulla(1), false, true, false);
+    probarTeclaMarcha(2, s.posicionPatrulla(3), false, false, true);
+    OrdenActividad fueraDeRango;
+    fueraDeRango.avatar = s.posicionPatrulla(0) + glm::vec3(0, 0, 20);
+    fueraDeRango.caminarGrunt1 = true;
+    p.controlar(fueraDeRango);
+    exigir(!p.marchaManualSolicitada(0), "G activa al Grunt 1 fuera de proximidad");
+
+    auto capturarPasoNPC = [&](int npc, int ciclos, int ranura, const char *modelo,
+                               void (*activar)(OrdenActividad &)) {
+        p.controlar({});
+        p.actualizar(1.f);
         s.reiniciarPatrullas();
         s.tiempo = 0;
         s.faseInicial = .25f;
         const float alturaCentro = npc == 3 ? 2.2f : 1.1f;
         const float distancia = npc == 3 ? 9.f : 6.5f;
+        auto orden = [&]() {
+            OrdenActividad o;
+            o.avatar = s.posicionPatrulla(npc);
+            activar(o);
+            p.controlar(o);
+        };
         auto vistaCercana = [&](const char *estado) {
             const auto pos = s.posicionPatrulla(npc);
             const float rumbo = s.orientacionPatrulla(npc);
@@ -221,96 +253,43 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
             vista(archivo.c_str(), ojo, centro, 0, npc == 3 ? 40.f : 36.f);
             const float fase = 6.28318530718f * ciclos * s.relojPatrulla(npc) /
                                s.periodoPatrulla(npc);
-            const float angulo = .35f * std::sin(fase);
+            const float amplitud = .35f + .15f * p.intensidadMarchaManual(ranura);
+            const float angulo = amplitud * std::sin(fase);
             std::cout << "P1_PIERNA_CAPTURA modelo=" << modelo << " estado=" << estado
+                      << " posicion=" << pos.x << ',' << pos.y << ',' << pos.z
                       << " reloj=" << s.relojPatrulla(npc) << " angulos=" << angulo << ','
-                      << -angulo << " rad\n";
+                      << -angulo << " rad eje=Z marcha=" << p.intensidadMarchaManual(ranura) << '\n';
         };
-        vistaCercana("Reposo");
+        orden();
+        exigir(p.marchaManualSolicitada(ranura), "La tecla mantenida no activa el NPC de captura");
+        const auto posicionInicial = s.posicionPatrulla(npc);
+        vistaCercana("Patrulla_Normal");
         const float cuartoCiclo = s.periodoPatrulla(npc) / (4.f * ciclos);
-        s.actualizar(cuartoCiclo);
+        p.actualizar(cuartoCiclo);
+        exigir(s.relojPatrulla(npc) > 0 &&
+                   glm::length(s.posicionPatrulla(npc) - posicionInicial) > .02f,
+               "El NPC deja de avanzar en su patrulla durante G/K/H");
         vistaCercana("Paso_A");
-        s.actualizar(2 * cuartoCiclo);
+        p.actualizar(2 * cuartoCiclo);
         vistaCercana("Paso_B");
+        const float mezclaActiva = p.intensidadMarchaManual(ranura);
+        const float relojAntesDeSoltar = s.relojPatrulla(npc);
+        p.controlar({});
+        p.actualizar(.25f);
+        exigir(p.intensidadMarchaManual(ranura) < mezclaActiva &&
+                   p.intensidadMarchaManual(ranura) > 0.f,
+               "La transicion a marcha normal no es gradual al soltar");
+        exigir(s.relojPatrulla(npc) > relojAntesDeSoltar,
+               "El reloj de patrulla se pausa al soltar G/K/H");
+        const auto fin = s.posicionPatrulla(npc);
+        std::cout << "P1_PATRULLA_CAPTURA modelo=" << modelo << " t0=(" << posicionInicial.x
+                  << ',' << posicionInicial.z << ") tFinal=(" << fin.x << ',' << fin.z
+                  << ") retorno_a_patrulla=gradual\n";
     };
-    capturarPasoNPC(0, 24, "Grunt1");
-    capturarPasoNPC(3, 16, "Hunter");
-    std::cout << "P1_PIERNA_GLTF_OK nombres y origenes de nodo resueltos desde glTF; "
-                 "piernas rigidas, fase ligada a patrulla y reacciones en reposo\n";
-    s = original;
-    auto vistaGrunt1 = [&](const char *nombre, bool reaccion) {
-        const auto pos = s.posicionPatrulla(0);
-        const float rumbo = s.orientacionPatrulla(0);
-        const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
-        glm::vec3 centro = pos + glm::vec3(0, 1.05f, 0);
-        if (reaccion)
-            centro += frente * 1.3f;
-        vista(nombre, centro + frente * 6.f + glm::vec3(0, 1.1f, 0), centro);
-    };
-    const auto gruntInicio = s.posicionPatrulla(0);
-    vistaGrunt1("C_P1_Grunt1_SinReaccion_0s", false);
-    s.actualizar(3.f);
-    const auto gruntPaso = s.posicionPatrulla(0);
-    exigir(glm::length(glm::vec2(gruntPaso.x - gruntInicio.x, gruntPaso.z - gruntInicio.z)) > 4.f,
-           "Grunt 1 no cambia de posicion en 3 s");
-    vistaGrunt1("C_P1_Grunt1_Paso_3s", false);
-    std::cout << "P1_GRUNT1_CAPTURAS t=0 (" << gruntInicio.x << ',' << gruntInicio.z
-              << ") t=3 (" << gruntPaso.x << ',' << gruntPaso.z << ") piernas alternadas\n";
-    OrdenActividad saludoGrunt;
-    saludoGrunt.avatar = gruntPaso + glm::vec3(0, 1, 0);
-    saludoGrunt.reaccion = true;
-    p.controlar(saludoGrunt);
-    exigir(s.reaccion == 0, "G no activa reaccion durante la captura cercana");
-    p.actualizar(2.f);
-    exigir(glm::length(s.posicionPatrulla(0) - gruntPaso) < .001f,
-           "El reloj de patrulla avanza durante la reaccion G");
-    vistaGrunt1("C_P1_Grunt1_Reaccion_G", true);
-
-    auto probarReaccion = [&](int npc, float duracion, glm::vec3 sitio, bool grunt, bool inspeccion,
-                              const char *durante, const char *despues) {
-        s.reaccion = s.inspeccion = s.hunter = -1;
-        s.reiniciarPatrullas();
-        OrdenActividad o;
-        o.avatar = sitio;
-        o.reaccion = grunt;
-        o.inspeccion = inspeccion;
-        o.hunter = npc == 3;
-        p.controlar(o);
-        if (npc == 0)
-            exigir(s.reaccion == 0, "G no activa la reaccion del Grunt");
-        else if (npc == 1)
-            exigir(s.inspeccion == 0, "K no activa la inspeccion del Grunt 2");
-        else
-            exigir(s.hunter == 0, "H no activa la vigilancia del Hunter");
-        auto fijo = s.posicionPatrulla(npc);
-        float relojFijo = s.relojPatrulla(npc);
-        auto poseReposo = s.animacionNPC(npc);
-        p.actualizar(2.f);
-        auto poseReaccion = s.animacionNPC(npc);
-        float cambioPose = 0;
-        for (int j = 0; j < 4; ++j)
-            cambioPose += glm::length(poseReposo[j] - poseReaccion[j]);
-        exigir(cambioPose > .1f, "Reaccion NPC sin movimiento perceptible");
-        vista(durante, {-46, 13, 188}, {-65, 3, 158});
-        exigir(glm::length(s.posicionPatrulla(npc) - fijo) < .001f &&
-                   s.relojPatrulla(npc) == relojFijo,
-               "La patrulla se mueve durante la reaccion");
-        p.actualizar(duracion - 1.5f);
-        exigir((npc == 0 ? s.reaccion : npc == 1 ? s.inspeccion : s.hunter) < 0,
-               "La reaccion no termina en su duracion establecida");
-        exigir(glm::length(s.posicionPatrulla(npc) - fijo) < .001f,
-               "La patrulla salta al terminar la reaccion");
-        vista(despues, {-46, 13, 188}, {-65, 3, 158});
-        p.actualizar(.1f);
-        float reanuda = glm::length(s.posicionPatrulla(npc) - fijo);
-        exigir(reanuda > .02f && reanuda < .2f, "Patrulla no reanuda suavemente");
-    };
-    probarReaccion(0, 5.f, {-77, 2, 153}, true, false, "C_P1_Grunt1_G_durante",
-                   "C_P1_Grunt1_G_despues");
-    probarReaccion(1, 8.f, {-65, 2, 162}, false, true, "C_P1_Grunt2_K_durante",
-                   "C_P1_Grunt2_K_despues");
-    probarReaccion(3, 8.f, {-65, 2, 174}, false, false, "C_P1_Hunter_H_durante",
-                   "C_P1_Hunter_H_despues");
+    capturarPasoNPC(0, 24, 0, "Grunt1", [](OrdenActividad &o) { o.caminarGrunt1 = true; });
+    capturarPasoNPC(3, 16, 2, "Hunter", [](OrdenActividad &o) { o.caminarHunter = true; });
+    std::cout << "P1_PIERNA_GLTF_OK nodos y pivotes originales; rotacion Rz; fase patrulla intacta; "
+                 "G/K/H mantenidas, locomocion y retorno gradual\n";
 
     s = original;
     s.holocron = 0;
@@ -324,8 +303,8 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
            "Keyframes del holocron no regresan a la base");
     s = original;
     vista("C_NPC", {-46, 13, 188}, {-65, 3, 158});
-    std::cout << "C_ANIMACIONES_OK basicas(3): puerta/G1/K2; continuas(3): Engineer/Sentinel1/"
-                 "Sentinel2; keyframes(2): SaturnV/Holocron; patrullas NPC extra\n";
+    std::cout << "C_ANIMACIONES_OK basicas(3): puerta/G1/G2; continuas(3): Engineer/Sentinel1/"
+                 "Sentinel2; keyframes(2): SaturnV/Holocron; G/K/H locomocion mantenida\n";
     OrdenActividad orden;
     orden.avatar = {220, 6, 0};
     orden.lanzar = true;

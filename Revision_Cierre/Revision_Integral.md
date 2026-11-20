@@ -24,6 +24,8 @@ La auditoría confirmó que los archivos anteriores de Grunt y Hunter tenían je
 
 Los pivotes medidos en el glTF final son Grunt derecha `(-0.0280,0.9000,-0.1602)`/izquierda `(-0.2049,0.9000,0.3375)` y Hunter derecha `(-0.2745,1.8000,-0.4413)`/izquierda `(-0.1783,1.8000,0.4417)`. La separación lateral corresponde al eje Z glTF, no a los offsets ±X indicados en la auditoría de Muse; por eso usamos los orígenes reales de los nodos y no esos valores sugeridos.
 
+La revisión visual final detectó que la orientación del cuerpo todavía estaba invertida: el frente real de estos modelos está en `-X` local, con `Z` lateral. Antes alineábamos `+X` con la tangente de la ruta, por lo que el personaje avanzaba mirando hacia atrás y la zancada parecía lateral. `SistemasPlaneta1::orientacionPatrulla` ahora usa `atan2(dz, -dx)`, de modo que la rotación alrededor de Y transforma el frente `-X` hacia el desplazamiento. Se conserva `Rz` para las piernas y no se modifican pivotes, nodos, amplitudes, fase ni temporizadores.
+
 Retiramos el modo `locomocionPatrulla` del shader; las ramas de Clank y Blarg siguen intactas. Titán (B/J) y ambos Sentinel no se modificaron. `Aplicacion.cpp` entrega G/K/H como pulsaciones únicas; `Planeta1::controlar` inicia solo al personaje asignado, quieto y a menos de 18 unidades. La prueba registró al mismo Grunt 1 en `(-76.6076,152.989)` y `(-75.8295,152.904)`, con los pares de ángulos `+0.253655/-0.253655` y `-0.35/+0.35` rad. Al completar 14 s regresa a `(-77,153)` con amplitud cero.
 
 - Grunt 1: [paso A](Capturas/NPC_Locomocion/Grunt1_Caminata_A.bmp), [paso B](Capturas/NPC_Locomocion/Grunt1_Caminata_B.bmp) y [misma base en reposo](Capturas/NPC_Locomocion/Grunt1_Base_Reposo.bmp).
@@ -58,6 +60,14 @@ El Railjack permanece asociado a `PatioRailjack` y el apoyo se calcula con el m�
 - La salida del Railjack registra base en terreno `baseY=3.5444`, base en vuelo `aireBaseY=22.5444`, centros `12.4244/31.4244`; entre las capturas con iluminación diurna controlada cambian 234843 canales RGB en `--pruebas-integrales` y 234526 en `--pruebas`.
 - Las capturas de P1, P2 y Railjack se inspeccionaron visualmente. Son capturas automatizadas renderizadas por el ejecutable, no una grabación de partida manual.
 - La última medición de `--medir-integral` disponible corresponde al cierre previo, en Intel UHD Graphics 620, con 120 muestras por región: P1 68.5005 FPS medios / p95 17.5629 ms; P2 45.3036 FPS / p95 24.4486 ms; Espacio 82.1008 FPS / p95 19.3006 ms. No volvimos a medir rendimiento después del ciclo de caminata actual; las cifras no representan un benchmark de esta corrección ni aíslan el costo de las piernas.
+
+### Revalidación del rumbo glTF — 2026-11-20
+
+- Release x64 compilado con MSBuild 17.13 / Visual Studio 2022; 0 errores.
+- `ProyectoEspacial.exe --pruebas --evidencias <carpeta>`: código 0, `CIERRE CORRECTO`. La regresión verifica que el frente local `-X` siga el desplazamiento tanto al salir como al regresar; las demás comprobaciones de carrera, transiciones de región, P1, P2, Espacio y audio también concluyeron.
+- `ProyectoEspacial.exe --pruebas-integrales --evidencias <carpeta>`: código 0, `CIERRE CORRECTO`.
+- Capturas OpenGL generadas y revisadas: [marcha A](Capturas/NPC_Locomocion/Grunt1_Caminata_A.bmp), [marcha B](Capturas/NPC_Locomocion/Grunt1_Caminata_B.bmp) y [reposo en base](Capturas/NPC_Locomocion/Grunt1_Base_Reposo.bmp). Son pruebas automatizadas; no afirmamos haber probado manualmente el juego con teclado y mouse.
+- No se midió rendimiento de nuevo en esta corrección. La medición histórica indicada arriba no representa este cambio.
 
 ## Integración y límites
 

@@ -126,7 +126,10 @@ float SistemasPlaneta1::orientacionPatrulla(int npc) const {
     const float dx = RadioPatrulla[npc].x * std::cos(fase) * velocidadAngular;
     const float sentidoZ = npc == 3 ? 1.f : -1.f;
     const float dz = sentidoZ * RadioPatrulla[npc].y * std::sin(fase) * velocidadAngular;
-    const float rumboBase = std::atan2(dx, dz);
+    // Los modelos glTF de Halo tienen Y arriba, Z lateral y -X al frente.
+    // La rotacion sobre Y transforma -X en (-cos(rumbo), 0, sin(rumbo));
+    // alineamos ese eje con la tangente para evitar la marcha lateral.
+    const float rumboBase = std::atan2(dz, -dx);
     if (!marchasActivas_[npc])
         return rumboBase;
     const float t = relojesPatrulla_[npc];

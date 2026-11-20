@@ -446,6 +446,19 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     }
     int w, h;
     ventana_.dimensiones(w, h);
+    // Una ventana minimizada puede reportar framebuffer 0x0 durante una bateria larga.
+    // Restauramos el contexto antes de construir la proyeccion y evitamos pasar NaN a GLM.
+    if (w <= 0 || h <= 0) {
+        auto nativa = ventana_.nativa();
+        if (glfwGetWindowAttrib(nativa, GLFW_ICONIFIED))
+            glfwRestoreWindow(nativa);
+        for (int intento = 0; intento < 20 && (w <= 0 || h <= 0); ++intento) {
+            glfwWaitEventsTimeout(.025);
+            ventana_.dimensiones(w, h);
+        }
+    }
+    exigir(w > 0 && h > 0, "Framebuffer sin dimensiones al capturar Planeta 2");
+    std::cout << "PRUEBA_FRAMEBUFFER_P2 " << w << "x" << h << "\n";
     ContextoEscena c{renderizador_, recursos_};
     auto foto = [&](std::string nombre, glm::vec3 ojo, glm::vec3 objetivo) {
         ojo = mundo_.aGlobal(Region::Planeta2, ojo);

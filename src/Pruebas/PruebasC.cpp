@@ -244,8 +244,11 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         p.actualizar(.1f);
         auto actual = s.posicionPatrulla(npc);
         auto desplazamiento = glm::vec2(actual.x - anterior.x, actual.z - anterior.z);
-        float rumboPaso = std::atan2(desplazamiento.x, desplazamiento.y);
-        exigir(glm::abs(std::remainder(rumboPaso - s.orientacionPatrulla(npc), 6.2831853f)) < .15f,
+        float rumboPaso = std::atan2(desplazamiento.y, -desplazamiento.x);
+        const auto frenteModelo = glm::vec2(-std::cos(s.orientacionPatrulla(npc)),
+                                             std::sin(s.orientacionPatrulla(npc)));
+        exigir(glm::abs(std::remainder(rumboPaso - s.orientacionPatrulla(npc), 6.2831853f)) < .15f &&
+                   glm::dot(glm::normalize(desplazamiento), frenteModelo) > .98f,
                "El frente del NPC no apunta hacia la marcha de ida");
         const auto puntoIda = actual;
         p.actualizar(3.8f);
@@ -265,10 +268,13 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
         p.actualizar(.1f);
         actual = s.posicionPatrulla(npc);
         desplazamiento = glm::vec2(actual.x - anterior.x, actual.z - anterior.z);
-        rumboPaso = std::atan2(desplazamiento.x, desplazamiento.y);
+        rumboPaso = std::atan2(desplazamiento.y, -desplazamiento.x);
+        const auto frenteRegreso = glm::vec2(-std::cos(s.orientacionPatrulla(npc)),
+                                              std::sin(s.orientacionPatrulla(npc)));
         exigir(glm::length(desplazamiento) > .02f &&
                    glm::abs(std::remainder(rumboPaso - s.orientacionPatrulla(npc),
-                                           6.2831853f)) < .15f,
+                                           6.2831853f)) < .15f &&
+                   glm::dot(glm::normalize(desplazamiento), frenteRegreso) > .98f,
                "El NPC no recorre la ruta de vuelta mirando al frente");
         p.actualizar(3.7f);
         exigir(glm::length(s.posicionPatrulla(npc) - puntoIda) < .001f,
@@ -314,10 +320,10 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
                    (signoEsperado > 0 ? angulo > 0 : angulo < 0),
                "La pose de marcha no alcanza la fase de piernas solicitada");
         const float rumbo = s.orientacionPatrulla(0);
-        const glm::vec3 frente(std::sin(rumbo), 0, std::cos(rumbo));
-        const glm::vec3 lateral(frente.z, 0, -frente.x);
+        const glm::vec3 frente(-std::cos(rumbo), 0, std::sin(rumbo));
+        const glm::vec3 lateral(std::sin(rumbo), 0, std::cos(rumbo));
         const auto centro = pos + glm::vec3(0, 1.15f, 0);
-        const auto ojo = centro - frente * 4.5f - lateral * 1.5f + glm::vec3(0, .6f, 0);
+        const auto ojo = centro + frente * 1.4f + lateral * 4.3f + glm::vec3(0, .6f, 0);
         vista(nombre, ojo, centro, 0, 48.f);
         std::cout << "P1_GRUNT1_CAPTURA " << nombre << " pos=" << pos.x << ',' << pos.y << ','
                   << pos.z << " timer=" << s.relojPatrulla(0) << " piernas=" << angulo << ','
@@ -334,10 +340,10 @@ void Aplicacion::probarC(const std::filesystem::path &dir) {
            "La captura final no muestra al mismo Grunt 1 quieto en la base");
     const auto baseGrunt = s.posicionPatrulla(0);
     const float rumboBaseGrunt = s.orientacionPatrulla(0);
-    const glm::vec3 frenteBase(std::sin(rumboBaseGrunt), 0, std::cos(rumboBaseGrunt));
-    const glm::vec3 lateralBase(frenteBase.z, 0, -frenteBase.x);
+    const glm::vec3 frenteBase(-std::cos(rumboBaseGrunt), 0, std::sin(rumboBaseGrunt));
+    const glm::vec3 lateralBase(std::sin(rumboBaseGrunt), 0, std::cos(rumboBaseGrunt));
     const auto centroBase = baseGrunt + glm::vec3(0, 1.15f, 0);
-    const auto ojoBase = centroBase - frenteBase * 4.5f - lateralBase * 1.5f + glm::vec3(0, .6f, 0);
+    const auto ojoBase = centroBase + frenteBase * 1.4f + lateralBase * 4.3f + glm::vec3(0, .6f, 0);
     vista("C_P1_Grunt1_Base", ojoBase, centroBase, 0, 48.f);
     std::cout << "P1_MARCHA_OK G/K/H pulsacion_unica; Grunt3 quieto; temporizadores independientes; "
                  "ida, giro, regreso a base y reposo 14s\n";

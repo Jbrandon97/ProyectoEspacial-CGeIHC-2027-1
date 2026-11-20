@@ -4,7 +4,7 @@ Computación Gráfica e IHC, FI UNAM, 2027-1. C++17, OpenGL 3.3, GLFW y miniaudi
 
 ## Ejecutar y compilar
 
-El paquete de ejecución es **ProyectoEspacial_Cierre_Ejecutable.zip**: extraerlo y abrir **ProyectoEspacial.exe** con la carpeta **Recursos** a su lado. Incluye el PDB correspondiente; no se ejecuta dentro del ZIP. El paquete **ProyectoEspacial_Cierre_Teoria.zip** contiene el código fuente y la revisión técnica, pero no incluye el EXE. Se necesita Windows x64, controlador OpenGL 3.3 y dispositivo de audio.
+El paquete de ejecución es **ProyectoEspacial_Release_Final.zip**: extraerlo y abrir **ProyectoEspacial.exe** con la carpeta **Recursos** a su lado. Incluye el PDB de esa compilación; no se ejecuta dentro del ZIP. **ProyectoEspacial_CodigoFuente_Final.zip** contiene el código, la solución, dependencias y revisión técnica, pero no incluye el EXE. Se necesita Windows x64, controlador OpenGL 3.3 y dispositivo de audio.
 
 Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK. Seleccionar **Release | x64** y ProyectoEspacial como proyecto de inicio. Las dependencias están incluidas; no se requieren descargas ni DLL adicionales de terceros. La compilación copia Recursos a `bin/x64/Release`.
 
@@ -33,7 +33,7 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 
 Diagnóstico, matriz de rúbrica, cambios, límites y demostración manual: **Revision_Cierre/Revision_Integral.md**. La presentación **Revision_Cierre/Revision_visual.html** reúne capturas y enlaces. **Revision_Cierre/Audio_Tecnico.md** contiene la evidencia de audio; no es el reporte académico final.
 
-Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. G/K/H son pulsaciones únicas que inician un ciclo independiente de 14 s con preparación, ida, giro, regreso a base y reposo; las piernas quedan inmóviles fuera de los tramos caminados. Las capturas del mismo Grunt 1 en dos fases de marcha y de regreso a su base están en **Revision_Cierre/Capturas/NPC_Locomocion**. Son renderizados OpenGL automatizados, no una sesión manual. Los registros están en `Revision_Cierre/Pruebas_Salida_2026-11-17.txt` y `Revision_Cierre/Pruebas_Integrales_Salida_2026-11-17.txt`.
+Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. G/K/H son pulsaciones únicas que inician un ciclo independiente de 14 s con preparación, ida, giro, regreso a base y reposo; las piernas quedan inmóviles fuera de los tramos caminados. La rotación ahora alinea el frente local `-X` del modelo con la ruta; las capturas del mismo Grunt 1 en dos fases de marcha y de regreso a su base están en **Revision_Cierre/Capturas/NPC_Locomocion**. Son renderizados OpenGL automatizados, no una sesión manual. Los registros actuales están en `Revision_Cierre/Pruebas_Salida_2026-11-20.txt` y `Revision_Cierre/Pruebas_Integrales_Salida_2026-11-20.txt`.
 
 ## Organización y recursos
 

@@ -4,7 +4,7 @@ Computación Gráfica e IHC, FI UNAM, 2027-1. C++17, OpenGL 3.3, GLFW y miniaudi
 
 ## Ejecutar y compilar
 
-El paquete de ejecución es **ProyectoEspacial_Release_Final.zip**: extraerlo y abrir **ProyectoEspacial.exe** con la carpeta **Recursos** a su lado. Incluye el PDB de esa compilación; no se ejecuta dentro del ZIP. **ProyectoEspacial_CodigoFuente_Final.zip** contiene el código, la solución, dependencias y revisión técnica, pero no incluye el EXE. Se necesita Windows x64, controlador OpenGL 3.3 y dispositivo de audio.
+Para jugar, extrae **ProyectoEspacial_Release_Final.zip** y abre **ProyectoEspacial.exe** con la carpeta **Recursos** a su lado. El paquete incluye el PDB de esa compilación. Se necesita Windows x64, un controlador OpenGL 3.3 y un dispositivo de audio. El código de trabajo y la solución completa están en `main`.
 
 Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrollo para el escritorio con C++, MSVC v143 y Windows SDK. Seleccionar **Release | x64** y ProyectoEspacial como proyecto de inicio. Las dependencias están incluidas; no se requieren descargas ni DLL adicionales de terceros. La compilación copia Recursos a `bin/x64/Release`.
 
@@ -17,7 +17,7 @@ Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrol
 | Planetas | WASD movimiento; Shift correr; mouse cámara; F1 exploración; F3 vista existente |
 | Planeta 1 | X abordar/descender; R reiniciar carrera; C recuperar con penalización; E hangar; P reflector; I reflector Covenant; F energía corporal |
 | Interacciones de P1 | Pulsa una vez G: Grunt 1; K: Grunt 2; H: Hunter. Cada uno camina hacia adelante, gira, vuelve por la misma ruta y queda en su base dentro de un ciclo de 14 s; requiere estar a menos de 18 unidades. Grunt 3 permanece quieto. B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar |
-| Planeta 2 | F energía corporal; P foco de plaza; I spotlight Orokin; F3 plaza; F4 Warframe; NPC, Railjack y Aphelion tienen ciclos propios |
+| Planeta 2 | F energía corporal, P foco de plaza, I foco Orokin, U habilita o deshabilita los cuatro reflectores nocturnos del Railjack, F3 plaza, F4 Warframe |
 | Espacio, F3 pilotaje | W/S acelerar/frenar; A/D girar; mouse orientación; Q/Z subir/bajar; Shift boost; C recuperar; V alterna exterior/cabina; Enter portal cercano |
 | Observación espacial | F4 órbita; F5 estación; F6 asteroides; F3 volver a pilotaje; U/I focos independientes |
 
@@ -28,6 +28,7 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 - `ProyectoEspacial.exe --pruebas --evidencias carpeta`: regresión de las tres regiones y capturas reales.
 - `--pruebas --sin-capturas`: misma regresión sin guardar imágenes (las comprobaciones de píxeles siguen ejecutándose).
 - `--pruebas-integrales --evidencias carpeta`: comprobaciones específicas, incluido Railjack en reposo/vuelo con luz fija, continuidad del cielo y mezcla PCM de audio.
+- `--pruebas-planeta2 --evidencias carpeta`: patrullas, caminos, apoyo de edificios, torre, Aphelion y reflectores del puerto con capturas de día y noche.
 - `--medir-integral`: medición de fotogramas con simulación, HUD y audio en las tres regiones.
 - `--medir-espacio`: medición de dibujo en tres vistas fijas, comparable al bloque anterior.
 
@@ -42,3 +43,5 @@ Release x64 pasa `--pruebas` y `--pruebas-integrales` con `CIERRE CORRECTO`. G/K
 miniaudio 0.11.23 se compila una sola vez desde `src/Audio/Audio.cpp`; no queda un motor waveOut propio. Las pistas musicales entregadas son CC0, sus originales y atribuciones se conservan en `Recursos/Audio/Originales` y `Recursos/Audio/Musica_licencias.md`; no incorporamos música comercial de Halo ni Titanfall. Para regenerar las conversiones y ambientes, ejecutar `Herramientas/convertir_musica.py` y `Herramientas/generar_audio_integral.py`. Python y NumPy sólo son necesarios para esa regeneración, no para jugar.
 
 Las posiciones, cámaras y relojes se conservan durante la sesión; no se guardan al cerrar. El inventario, las pruebas y los límites de verificación de este cierre están en `Revision_Cierre`.
+
+En Planeta 2 los caminos conectan la plaza de Qwark, Kerwan, la torre Orokin, el corral y el puerto Railjack. Cuatro muñecos recorren el perímetro en sentido horario. Las balizas y los reflectores del puerto siguen el ciclo de 120 segundos. La procedencia de los modelos añadidos está en `Recursos/Modelos/P2_Kerwan/Procedencia.md`.

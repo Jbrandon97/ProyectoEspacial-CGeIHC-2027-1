@@ -12,7 +12,7 @@ uniform vec3 recorte;
 uniform vec3 humo;
 uniform vec3 focoPos,focoDir,focoDatos;
 struct Focal { vec3 pos,dir,color,atenuacion,cono; };
-uniform Focal focales[6];
+uniform Focal focales[7];
 uniform int cantidadFocales;
 uniform vec3 volumen;
 out vec4 colorFinal;

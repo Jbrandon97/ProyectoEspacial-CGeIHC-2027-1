@@ -242,3 +242,6 @@ void Renderizador::locomocionBlarg(float fase) { shader_.vector("locomocionClank
 void Renderizador::guardiaWarframe(float apertura) {
     shader_.vector("locomocionClank", {apertura,3,0});
 }
+void Renderizador::brazosMuneco(float oscilacion, bool vertical) {
+    shader_.vector("locomocionClank", {oscilacion, 4.f, vertical ? 1.f : 0.f});
+}

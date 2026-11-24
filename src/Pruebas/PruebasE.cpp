@@ -436,6 +436,7 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
         exigir(p.ratchet().obstaculo(centro), "Edificio sin colision");
     auto dia = p.ambiente();
     exigir(dia.iluminacion.noche < .01f, "Planeta2 no inicia de dia");
+    exigir(!dia.iluminacion.focales.back().encendida, "Reflector Aphelion activo de dia");
     p.actualizar(70);
     auto noche = p.ambiente();
     exigir(noche.iluminacion.noche > .95f, "Luces P2 no siguen ciclo nocturno");
@@ -461,7 +462,8 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     std::cout << "PRUEBA_FRAMEBUFFER_P2 " << w << "x" << h << "\n";
     ContextoEscena c{renderizador_, recursos_};
     auto foto = [&](std::string nombre, glm::vec3 ojo, glm::vec3 objetivo,
-                    const Ambiente *ajuste = nullptr, bool leerPixeles = false) {
+                    const Ambiente *ajuste = nullptr, bool leerPixeles = false,
+                    int soloMuneco = -1, float tiempoBrazos = 0.f) {
         ojo = mundo_.aGlobal(Region::Planeta2, ojo);
         objetivo = mundo_.aGlobal(Region::Planeta2, objetivo);
         auto vp = glm::perspective(glm::radians(58.f), float(w) / h, .1f, 1200.f) *
@@ -474,7 +476,12 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
             if (l.encendida)
                 l.posicion = mundo_.aGlobal(Region::Planeta2, l.posicion);
         renderizador_.iniciar(w, h, vp, amb, ojo);
-        p.dibujar(c, mundo_.transformacion(Region::Planeta2));
+        const auto &m = mundo_.transformacion(Region::Planeta2);
+        if (soloMuneco < 0)
+            p.dibujar(c, m);
+        else
+            p.ratchet().dibujarMuneco(renderizador_,glm::translate(m,{18,0,0}),soloMuneco,
+                                      p.ratchet().distanciaPatrulla(),tiempoBrazos);
         renderizador_.capturar(dir / (nombre + ".ppm"), w, h);
         std::vector<unsigned char> pixeles;
         if (leerPixeles) {
@@ -521,39 +528,59 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     const auto &sector = p.ratchet();
     const glm::vec3 origen(18,0,0);
     auto plano = [](glm::vec3 q) { return glm::vec2(q.x,q.z); };
-    const double longitud = sector.longitudPatrulla(), cuarto = longitud / 4;
+    Planeta2 ciclo;
+    int muestrasDia = 0, muestrasNoche = 0;
+    constexpr int muestrasCiclo = 1200;
+    for (int k = 0; k < muestrasCiclo; ++k) {
+        const auto luz = ciclo.ambiente().iluminacion;
+        if (luz.sol.y > 0)
+            ++muestrasDia;
+        else
+            ++muestrasNoche;
+        if (luz.noche > .97f)
+            exigir(luz.focales.back().encendida, "Aphelion apagada en plena noche");
+        if (luz.noche < .01f)
+            exigir(!luz.focales.back().encendida, "Aphelion encendida en pleno dia");
+        ciclo.actualizar(Planeta2::DuracionCiclo/muestrasCiclo);
+    }
+    exigir(std::abs(ciclo.reloj()-24.f)<.01f && std::abs(muestrasDia-420)<=1 &&
+           std::abs(muestrasNoche-780)<=1, "El ciclo P2 no mantiene la noche mas larga");
+    std::cout << "P2_CICLO_OK dia_s=42 noche_s=78 muestras=" << muestrasCiclo << '\n';
+
+    constexpr int actores = SectorRatchet::CantidadMunecos;
+    const double longitud = sector.longitudPatrulla(), separacion = longitud / actores;
     constexpr int muestras = 960;
     constexpr float velocidad = 7.5f;
     float minPaso = 10, maxPaso = 0;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < actores; ++i) {
         const auto inicio = sector.posicionMuneco(i,0);
-        const int signoX[] = {-1,1,1,-1}, signoZ[] = {-1,-1,1,1};
-        exigir((inicio.x+18)*signoX[i] > 115 && inicio.z*signoZ[i] > 115,
-               "Esquina inicial de muneco incorrecta");
+        exigir(glm::length(inicio-sector.posicionMuneco(0,i*separacion))<.001f,
+               "Error en el desfase de salida de los munecos");
         for (int k = 0; k < muestras; ++k) {
             const double s = longitud*k/muestras;
             const auto q = sector.posicionMuneco(i,s);
             const auto siguiente = sector.posicionMuneco(i,s+longitud/muestras);
             const auto paso = plano(siguiente-q);
-            const auto frente = sector.frenteMuneco(s+cuarto*i);
+            const auto frente = sector.frenteMuneco(s,i);
             exigir(!sector.obstaculo(q,false) && std::abs(q.y-p.altura(q.x+18,q.z)-.092f)<.002f,
                    "Muneco fuera del transito o separado del piso");
             exigir(glm::dot(glm::normalize(paso),plano(frente)) > .99f,
                    "Orientacion lateral en circuito de munecos");
-            exigir(glm::length(plano(q-sector.posicionMuneco((i+1)%4,s))) > 165.f,
+            exigir(glm::length(plano(q-sector.posicionMuneco((i+1)%actores,s))) > 110.f,
                    "Munecos se alcanzan en el perimetro");
             minPaso = std::min(minPaso, glm::length(paso));
             maxPaso = std::max(maxPaso, glm::length(paso));
         }
         exigir(glm::length(sector.posicionMuneco(i,longitud)-inicio)<.001f,
-               "La patrulla no cierra en su esquina");
+               "La patrulla no cierra en su punto de salida");
     }
     exigir(maxPaso-minPaso < .008f, "Velocidad irregular o salto en esquina");
     const double previo = sector.distanciaPatrulla();
     p.actualizar(2.f);
     exigir(std::abs(std::fmod(previo+velocidad*2,longitud)-sector.distanciaPatrulla())<.001,
            "Distancia de patrulla no responde al deltaTime");
-    std::cout << "P2_MUNECOS_OK cuatro actores, 3840 muestras, longitud=" << longitud
+    std::cout << "P2_MUNECOS_OK actores=" << actores << " muestras=" << actores*muestras
+              << " separacion=" << separacion << " longitud=" << longitud
               << " minPaso=" << minPaso << " maxPaso=" << maxPaso
               << " periodo_s=" << longitud/velocidad << '\n';
 
@@ -582,6 +609,18 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     recorrer({42,49},{77,59},true);
     recorrer({98,95},{98,122},true);
     recorrer({-40,28},{-66,45},false);
+    AlturasTerreno terrenoReal(recursos_ / "Modelos/Alturas_201x201.f32");
+    float relieve = 0.f;
+    for (auto z : {93.f,99.f}) {
+        recorrer({-49,z},{-35,z},false);
+        recorrer({-35,z},{-49,z},true);
+        for (int i = 0; i <= 140; ++i) {
+            float x = -49.f + i*.1f;
+            relieve = std::max(relieve,p.altura(x,z) - .60f*terrenoReal.altura(x/.60f,z/.60f));
+        }
+    }
+    exigir(relieve > .16f && relieve < .19f,"Banqueta sin perfil bajo de apoyo");
+    std::cout << "P2_BANQUETAS_OK cuatro cruces en ambos sentidos, relieve=" << relieve << '\n';
     int contactosTorre = 0;
     const auto torre = sector.centroTorre()+origen;
     for (glm::vec2 d : {glm::vec2(1,0),{-1,0},{0,1},{0,-1}}) {
@@ -621,8 +660,25 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     const auto plaza = p.centroPlaza();
     foto("P2_Plaza_Dia", plaza + glm::vec3(11,8,25), plaza + glm::vec3(0,4,0));
     foto("P2_Corral", {-52,20,77}, {-66,3,51});
+    foto("P2_Banquetas",{-35,6,103},{-42,2,85});
     foto("P2_Perimetro_A",{9,306,96},{0,0,0});
     const double d = sector.distanciaPatrulla();
+    for (int tipo = 0; tipo < 2; ++tipo) {
+        const auto q = sector.posicionMuneco(tipo,d)+origen;
+        const auto frente = sector.frenteMuneco(d,tipo);
+        const glm::vec3 lateral(frente.z,0,-frente.x);
+        const auto ojo = q+frente*6.f+lateral*4.f+glm::vec3(0,3.1f,0);
+        const auto centro = q+glm::vec3(0,2.55f,0);
+        const auto nombre = "P2_Brazos_"+std::to_string(tipo);
+        auto a = foto(nombre+"_A",ojo,centro,nullptr,true,tipo,.4f);
+        auto b = foto(nombre+"_B",ojo,centro,nullptr,true,tipo,1.2f);
+        size_t cambio = 0;
+        for (size_t i = 0; i < a.size(); ++i)
+            cambio += std::abs(int(a[i])-int(b[i])) > 8;
+        exigir(cambio > 1800,"No se distingue el movimiento de brazos");
+        std::cout << "P2_BRAZOS_OK " << (tipo ? "vertical" : "adelante_atras")
+                  << " canales_distintos=" << cambio << '\n';
+    }
     for (int k = 0; k < 2; ++k) {
         if (k)
             p.actualizar(2.4f);
@@ -661,7 +717,8 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     puerto.luzAcople = true;
     p.controlar(puerto);
     focos = p.ambiente().iluminacion.focales;
-    exigir(std::none_of(focos.begin()+2,focos.end(),[](auto f){return f.encendida;}),
+    exigir(std::none_of(focos.begin()+2,focos.begin()+6,[](auto f){return f.encendida;})
+           && focos.back().encendida,
            "U no apaga cuatro reflectores en Planeta2");
     const auto apagado = foto("P2_Railjack_Haces_OFF",observador,objetivo,nullptr,true);
     const auto ilumina = foto("P2_Railjack_Solo_Luz",observador,objetivo,&lucesMantener,true);
@@ -672,7 +729,38 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     exigir(canales > 400, "Los reflectores no iluminan materiales al retirar los haces");
     p.controlar(puerto);
     foto("P2_Plaza_Noche",plaza+glm::vec3(11,8,25),plaza+glm::vec3(0,4,0));
-    foto("P2_Torre_Noche",torre+glm::vec3(20,11,27),torre+glm::vec3(0,5,0));
+    auto ambienteTorre = p.ambiente();
+    exigir(!ambienteTorre.iluminacion.focales[1].encendida &&
+           !ambienteTorre.iluminacion.puntuales[13].encendida,"Orokin conserva luz propia apagado");
+    const auto ojoTorre = torre+glm::vec3(20,11,27), objetivoTorre = torre+glm::vec3(0,5,0);
+    auto torreOff = foto("P2_Torre_Noche_OFF",ojoTorre,objetivoTorre,nullptr,true);
+    OrdenActividad oro;
+    oro.luzServicio = true;
+    p.controlar(oro);
+    auto torreOn = foto("P2_Torre_Noche_ON",ojoTorre,objetivoTorre,nullptr,true);
+    p.controlar(oro);
+    auto torreOtraVezOff = foto("P2_Torre_Noche_OFF",ojoTorre,objetivoTorre,nullptr,true);
+    size_t cambioTorre = 0;
+    for (size_t i = 0; i < torreOff.size(); ++i)
+        cambioTorre += torreOn[i] > torreOff[i] + 4;
+    exigir(cambioTorre > 1800 && torreOff == torreOtraVezOff,"Orokin no vuelve a su luz ambiente");
+    std::cout << "P2_OROKIN_OK apagado reproducible; canales iluminados=" << cambioTorre << '\n';
+
+    const auto naveVuelo = sector.aphelionPosicion()+origen;
+    const auto focoVuelo = p.ambiente().iluminacion.focales.back();
+    exigir(focoVuelo.encendida && focoVuelo.direccion.y<-.99f &&
+           glm::length(focoVuelo.posicion-naveVuelo)<1.3f,"Luz nocturna desligada de Aphelion");
+    auto sinFoco = p.ambiente();
+    sinFoco.iluminacion.focales.back().encendida = false;
+    const glm::vec3 sueloVuelo(naveVuelo.x,p.altura(naveVuelo.x,naveVuelo.z),naveVuelo.z);
+    const auto ojoVuelo = sueloVuelo+glm::vec3(26,14,27), vistaVuelo = (sueloVuelo+naveVuelo)*.5f;
+    auto vueloOff = foto("P2_Aphelion_Sin_Luz_Real",ojoVuelo,vistaVuelo,&sinFoco,true);
+    auto vueloOn = foto("P2_Aphelion_Reflector",ojoVuelo,vistaVuelo,nullptr,true);
+    size_t cambioVuelo = 0;
+    for (size_t i = 0; i < vueloOn.size(); ++i)
+        cambioVuelo += vueloOn[i] > vueloOff[i] + 4;
+    exigir(cambioVuelo > 1000,"El reflector de Aphelion no ilumina el suelo");
+    std::cout << "P2_APHELION_FOCO_OK superficie iluminada; canales=" << cambioVuelo << '\n';
     GLint limiteUniformes = 0;
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,&limiteUniformes);
     std::cout << "P2_RAILJACK_FOCOS_OK cuatro conos y control U; canales iluminados=" << canales

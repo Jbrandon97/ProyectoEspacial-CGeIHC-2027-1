@@ -18,6 +18,11 @@ constexpr glm::vec2 CentroPatrulla{-18.f, 0.f};
 constexpr float RadioPatrulla = 122.f, Esquina = 8.f, VelocidadPatrulla = 7.5f;
 constexpr double CuartoPatrulla = 2 * (RadioPatrulla - Esquina) + Pi * Esquina / 2;
 constexpr float RadioPuerto = 23.f;
+constexpr int MuestrasPavimento = 171;
+constexpr float PasoPavimento = 1.8f;
+constexpr glm::vec2 InicioPavimento{-171.f, -153.f};
+constexpr float PieBanqueta = -.58f, InicioBanqueta = .10f, FinBanqueta = .75f,
+                PieExterior = 1.48f, AlturaBanqueta = .18f;
 struct Edificio {
     int tipo;
     glm::vec2 posicion;
@@ -171,6 +176,19 @@ float bordePavimento(glm::vec2 p) {
         d = std::min(d, distanciaSegmento(p, c.a, c.b) - c.medio);
     return d;
 }
+float perfilBanqueta(float distancia) {
+    const float subir = (distancia-PieBanqueta)/(InicioBanqueta-PieBanqueta);
+    const float bajar = (PieExterior-distancia)/(PieExterior-FinBanqueta);
+    return AlturaBanqueta * glm::clamp(std::min(subir,bajar),0.f,1.f);
+}
+Renderizador::Volumen volumenHaz(const glm::mat4 &m, const LuzFocal &l, float alcance, float opacidad) {
+    const auto y = l.direccion;
+    const auto x = glm::normalize(glm::cross(y, glm::vec3(0,0,1)));
+    const auto z = glm::cross(x,y);
+    glm::mat4 base(glm::vec4(x*alcance,0),glm::vec4(y*alcance,0),
+                   glm::vec4(z*alcance,0),glm::vec4(l.posicion,1));
+    return {m*base,l.color,opacidad};
+}
 void cilindro(std::vector<Vertice> &v, glm::vec3 p, float radio, float alto, glm::vec3 color,
               int lados) {
     for (int i = 0; i < lados; ++i) {
@@ -283,12 +301,28 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     propulsor_ = std::make_unique<Malla>(luz);
 }
 
-float SectorRatchet::superficie(float x, float z) const {
+float SectorRatchet::sueloConPuerto(float x, float z) const {
     if (!suelo_)
         return 0.f;
     const float suelo = suelo_(x, z);
     const float r = glm::length(glm::vec2(x, z) - PatioRailjack);
     return glm::mix(pisoPuerto_, suelo, glm::smoothstep(12.f, RadioPuerto - 1.f, r));
+}
+
+float SectorRatchet::superficie(float x, float z) const {
+    const float suelo = sueloConPuerto(x,z);
+    const auto celda = (glm::vec2(x,z)-InicioPavimento)/PasoPavimento;
+    if (distanciasPavimento_.empty() || celda.x < 0 || celda.y < 0 ||
+        celda.x >= MuestrasPavimento-1 || celda.y >= MuestrasPavimento-1)
+        return suelo;
+    const int i = int(celda.x), j = int(celda.y), k = i*MuestrasPavimento+j;
+    const float tx = celda.x-i, tz = celda.y-j;
+    const auto &d = distanciasPavimento_;
+    // La banqueta y el avatar consultan la misma diagonal de la malla.
+    const float distancia = tx >= tz
+        ? (1-tx)*d[k] + (tx-tz)*d[k+MuestrasPavimento] + tz*d[k+MuestrasPavimento+1]
+        : (1-tz)*d[k] + (tz-tx)*d[k+1] + tx*d[k+MuestrasPavimento+1];
+    return suelo + perfilBanqueta(distancia);
 }
 
 glm::vec3 SectorRatchet::centroPlaza() const {
@@ -347,28 +381,39 @@ glm::mat4 SectorRatchet::matrizEstatua() const {
 
 void SectorRatchet::construirUrbanismo() {
     struct Punto { glm::vec3 p; float borde; };
-    constexpr int N = 171;
-    constexpr float paso = 1.8f;
+    constexpr int N = MuestrasPavimento;
     std::vector<Punto> grilla(N*N);
+    distanciasPavimento_.resize(N*N);
     for (int i = 0; i < N; ++i)
         for (int j = 0; j < N; ++j) {
-            float x = -171.f + i * paso, z = -153.f + j * paso;
-            grilla[i*N+j] = {{x, superficie(x, z) + .085f, z}, bordePavimento({x, z})};
+            const auto p = InicioPavimento + PasoPavimento*glm::vec2(i,j);
+            const float d = bordePavimento(p);
+            grilla[i*N+j] = {{p.x, sueloConPuerto(p.x,p.y) + .085f, p.y}, d};
+            distanciasPavimento_[i*N+j] = d;
         }
     std::vector<Vertice> piso, construcciones;
-    auto recortar = [&](const std::array<Punto, 3> &t) {
-        std::array<glm::vec3, 4> recorte;
+    using Poligono = std::array<Punto, 6>;
+    const auto cortar = [](const Poligono &entrada, size_t n, float borde, bool mayor,
+                           Poligono &salida) {
         size_t cantidad = 0;
-        for (size_t i = 0; i < t.size(); ++i) {
-            const auto &a = t[i], &b = t[(i+1) % t.size()];
-            if (a.borde <= 0)
-                recorte[cantidad++] = a.p;
-            if ((a.borde <= 0) != (b.borde <= 0))
-                recorte[cantidad++] = glm::mix(a.p, b.p, a.borde / (a.borde - b.borde));
+        for (size_t i = 0; i < n; ++i) {
+            const auto &a = entrada[i], &b = entrada[(i+1)%n];
+            const bool dentroA = mayor ? a.borde >= borde : a.borde <= borde;
+            const bool dentroB = mayor ? b.borde >= borde : b.borde <= borde;
+            if (dentroA)
+                salida[cantidad++] = a;
+            if (dentroA != dentroB && a.borde != borde && b.borde != borde)
+                salida[cantidad++] = {glm::mix(a.p,b.p,(borde-a.borde)/(b.borde-a.borde)),borde};
         }
+        return cantidad;
+    };
+    auto emitir = [&](const Poligono &recorte, size_t cantidad, bool banqueta) {
         if (cantidad < 3)
             return;
-        const auto p = recorte[0];
+        std::array<glm::vec3,6> puntos;
+        for (size_t i = 0; i < cantidad; ++i)
+            puntos[i] = recorte[i].p + glm::vec3(0,perfilBanqueta(recorte[i].borde),0);
+        const auto p = puntos[0];
         const glm::vec2 xz(p.x, p.z);
         glm::vec3 color(.31f, .36f, .41f);
         if (glm::length(xz - Plaza) < 17.7f)
@@ -376,20 +421,42 @@ void SectorRatchet::construirUrbanismo() {
         if (glm::length(xz - PatioRailjack) < 22.7f)
             color = {.27f, .33f, .38f};
         const int losa = int(std::floor((p.x + 200.f) / 3.6f)) + int(std::floor((p.z + 180.f) / 3.6f));
+        if (banqueta)
+            color = {.59f,.55f,.47f};
         color *= losa % 2 ? 1.f : .93f;
         for (size_t i = 2; i < cantidad; ++i) {
-            auto n = glm::cross(recorte[i-1]-p,recorte[i]-p);
+            auto n = glm::cross(puntos[i-1]-p,puntos[i]-p);
             if (glm::length(n) < .00001f)
                 continue;
             n = glm::normalize(n);
-            for (auto v : {p,recorte[i-1],recorte[i]}) {
+            for (auto v : {p,puntos[i-1],puntos[i]}) {
                 const auto q = glm::vec2(v.x,v.z);
-                const float borde = glm::smoothstep(-1.4f,-.08f,bordePavimento(q));
                 const float radio = glm::length(q - PatioRailjack);
-                const float pintura = (radio>10.4f && radio<12.2f) ? .45f : 0.f;
-                const auto tono = glm::mix(color, glm::vec3(.64f,.54f,.34f), std::max(borde*.73f,pintura));
+                const float pintura = (!banqueta && radio>10.4f && radio<12.2f) ? .45f : 0.f;
+                const auto tono = glm::mix(color, glm::vec3(.64f,.54f,.34f), pintura);
                 piso.push_back({v,n,tono});
             }
+        }
+    };
+    auto recortar = [&](const Poligono &t) {
+        const float minimo = std::min({t[0].borde,t[1].borde,t[2].borde});
+        const float maximo = std::max({t[0].borde,t[1].borde,t[2].borde});
+        if (minimo > PieExterior)
+            return;
+        if (maximo <= PieBanqueta) {
+            emitir(t,3,false);
+            return;
+        }
+        Poligono intermedio, tramo;
+        const auto dentro = cortar(t,3,PieBanqueta,false,tramo);
+        emitir(tramo,dentro,false);
+        const float bordes[] = {PieBanqueta,InicioBanqueta,FinBanqueta,PieExterior};
+        for (size_t i = 0; i < 3; ++i) {
+            if (maximo <= bordes[i] || minimo >= bordes[i+1])
+                continue;
+            const auto cantidad = cortar(t,3,bordes[i],true,intermedio);
+            const auto n = cortar(intermedio,cantidad,bordes[i+1],false,tramo);
+            emitir(tramo,n,true);
         }
     };
     for (int i = 0; i + 1 < N; ++i)
@@ -509,12 +576,24 @@ void SectorRatchet::actualizar(float dt) {
 }
 double SectorRatchet::longitudPatrulla() const { return 4 * CuartoPatrulla; }
 glm::vec3 SectorRatchet::posicionMuneco(int i, double distancia) const {
-    const auto q = esquinaPatrulla(distancia + i * CuartoPatrulla);
+    const auto q = esquinaPatrulla(distancia + i * longitudPatrulla()/CantidadMunecos);
     return {q.x, superficie(q.x, q.y) + .092f, q.y};
 }
-glm::vec3 SectorRatchet::frenteMuneco(double distancia) const {
+glm::vec3 SectorRatchet::frenteMuneco(double distancia, int i) const {
+    distancia += i * longitudPatrulla()/CantidadMunecos;
     const auto d = glm::normalize(esquinaPatrulla(distancia+.20) - esquinaPatrulla(distancia-.20));
     return {d.x, 0, d.y};
+}
+void SectorRatchet::dibujarMuneco(Renderizador &r, const glm::mat4 &m, int i, double distancia,
+                                  float tiempoBrazos) const {
+    const auto p = posicionMuneco(i,distancia);
+    const auto d = frenteMuneco(distancia,i);
+    const float giro = std::atan2(d.x,d.z);
+    const auto base = glm::rotate(glm::translate(m,p),giro,{0,1,0});
+    const auto tipo = i % 2;
+    r.brazosMuneco(std::sin(tiempoBrazos*(2*Pi/1.6f)+i*.85f), tipo == 1);
+    munecos_[tipo]->dibujar(r,base);
+    r.locomocionRobot(0,false);
 }
 glm::vec3 SectorRatchet::aphelionPosicion() const {
     return ruta(tiempo_);
@@ -547,6 +626,23 @@ std::array<LuzFocal, 4> SectorRatchet::reflectoresRailjack(float fuerza) const {
         f.encendida = fuerza > .001f;
     }
     return focos;
+}
+LuzFocal SectorRatchet::reflectorAphelion(float noche) const {
+    LuzFocal f;
+    const float fuerza = suave(.25f,.96f,noche);
+    if (fuerza <= .001f)
+        return f;
+    const float fase = tiempo_*(2*Pi/12.f);
+    f.posicion = aphelionPosicion() - glm::vec3(0,1.15f,0);
+    f.direccion = glm::normalize(glm::vec3(.07f*std::cos(fase),-1,.07f*std::sin(fase)));
+    f.color = glm::mix(glm::vec3(.76f,.88f,1.f),glm::vec3(1.f,.95f,.84f),.5f+.5f*std::sin(fase));
+    f.atenuacion = {1.f,.012f,.0036f};
+    const float altura = f.posicion.y-superficie(f.posicion.x,f.posicion.z);
+    f.intensidad = .92f*fuerza*(1.f+.012f*altura+.0036f*altura*altura);
+    f.interno = 7.5f;
+    f.externo = 13.5f;
+    f.encendida = true;
+    return f;
 }
 
 void SectorRatchet::dibujarPavimento(Renderizador &r, const glm::mat4 &m, float noche) const {
@@ -623,16 +719,13 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m, float noche,
                 r.dibujar(*humo_, colocar(m, q, .18f + .16f * float(i)));
             }
     }
-    std::array<Renderizador::Volumen, 16> vapor;
+    std::array<Renderizador::Volumen, 4*CantidadMunecos> vapor;
     size_t cantidadVapor = 0;
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < CantidadMunecos; ++i) {
         const auto p = posicionMuneco(i, distanciaPatrulla_);
         if (!r.visible(glm::vec3(m * glm::vec4(p + glm::vec3(0,3,0),1)), 10.f))
             continue;
-        const auto d = frenteMuneco(distanciaPatrulla_ + i * CuartoPatrulla);
-        const float giro = std::atan2(d.x, d.z);
-        auto base = glm::rotate(glm::translate(m, p), giro, {0,1,0});
-        munecos_[i%2]->dibujar(r, base, 0);
+        dibujarMuneco(r,m,i,distanciaPatrulla_,tiempo_);
         for (int j = 0; j < 4; ++j) {
             float edad = std::fmod(tiempo_+j*.25f+i*.14f, 1.f);
             auto q = posicionMuneco(i, distanciaPatrulla_ - VelocidadPatrulla*edad);
@@ -643,21 +736,25 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m, float noche,
         }
     }
     r.volumenes(*humo_, vapor.data(), cantidadVapor, false);
+    std::array<Renderizador::Volumen, 5> haces;
+    size_t cantidadHaces = 0;
     if (reflectoresActivos && noche > .001f) {
-        std::array<Renderizador::Volumen, 4> haces;
-        const auto luces = reflectoresRailjack(noche);
-        for (size_t i = 0; i < haces.size(); ++i) {
-            const auto &l = luces[i];
-            const auto y = l.direccion;
-            const auto x = glm::normalize(glm::cross(y, glm::vec3(0,0,1)));
-            const auto z = glm::cross(x,y);
+        for (const auto &l : reflectoresRailjack(noche)) {
             const float alcance = glm::length(railjackPosicion() - l.posicion) + 7.f;
-            glm::mat4 base(glm::vec4(x*alcance,0),glm::vec4(y*alcance,0),
-                           glm::vec4(z*alcance,0),glm::vec4(l.posicion,1));
-            haces[i] = {m*base,l.color,.25f*noche};
+            haces[cantidadHaces++] = volumenHaz(m,l,alcance,.25f*noche);
         }
-        r.volumenes(*haz_, haces.data(), haces.size(), true);
     }
+    const auto focoVuelo = reflectorAphelion(noche);
+    if (focoVuelo.encendida) {
+        const auto p = focoVuelo.posicion;
+        float alcance = (p.y-superficie(p.x,p.z))/-focoVuelo.direccion.y;
+        const auto q = p + focoVuelo.direccion*alcance;
+        alcance = (p.y-superficie(q.x,q.z))/-focoVuelo.direccion.y;
+        auto centro = glm::vec3(m*glm::vec4(p+focoVuelo.direccion*(alcance*.5f),1));
+        if (alcance > 0.f && r.visible(centro,alcance*.60f))
+            haces[cantidadHaces++] = volumenHaz(m,focoVuelo,alcance,.21f*suave(.25f,.96f,noche));
+    }
+    r.volumenes(*haz_,haces.data(),cantidadHaces,true);
 }
 void SectorRatchet::liberar() noexcept {
     edificio1_.reset();
@@ -680,6 +777,7 @@ void SectorRatchet::liberar() noexcept {
     haz_.reset();
     huellaTorre_.clear();
     arboles_.clear();
+    distanciasPavimento_.clear();
     partesRailjack_.clear();
     humo_.reset();
     propulsor_.reset();

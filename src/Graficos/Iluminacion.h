@@ -13,7 +13,7 @@ struct LuzFocal {
     bool encendida = false;
 };
 struct Iluminacion {
-    std::array<LuzFocal, 6> focales{};
+    std::array<LuzFocal, 7> focales{};
     bool activa = false;
     glm::vec3 sol{0, 1, 0}, colorSol{1};
     float fuerzaSol = 1, ambiente = .2f, noche = 0;

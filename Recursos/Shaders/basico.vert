@@ -10,7 +10,21 @@ out vec3 normalMundo,material,posMundo;
 out vec2 coordenada;
 void main(){
  vec3 local=posicion,n=normal;
- if(locomocionClank.y>2.5){
+ if(locomocionClank.y>3.5){
+  bool vertical=locomocionClank.z>.5;
+  float lado=sign(posicion.x);
+  float peso=vertical
+    ? smoothstep(.67,1.36,abs(posicion.x))*smoothstep(1.83,2.02,posicion.y)*(1-smoothstep(2.49,2.68,posicion.y))
+    : smoothstep(.90,1.60,abs(posicion.x))*smoothstep(2.50,2.65,posicion.y)*(1-smoothstep(3.10,3.25,posicion.y));
+  vec3 pivote=vertical?vec3(lado*.71,2.24,-.02):vec3(lado*.88,2.87,-.12);
+  float a=lado*(-.19 + (vertical?.48*locomocionClank.x:0.0));
+  mat3 elevacion=mat3(cos(a),sin(a),0,-sin(a),cos(a),0,0,0,1);
+  float b=vertical?0.0:.50*locomocionClank.x;
+  mat3 vaiven=mat3(cos(b),0,-sin(b),0,1,0,sin(b),0,cos(b));
+  mat3 giro=vaiven*elevacion;
+  local=mix(local,pivote+giro*(local-pivote),peso);
+  n=normalize(mix(n,giro*n,peso));
+ }else if(locomocionClank.y>2.5){
   // El Warframe original esta posado en Z y sus armas comparten las coordenadas del cuerpo.
   float lado=sign(posicion.x);
   float peso=smoothstep(10.0,20.0,abs(posicion.x))*(1-smoothstep(-24.0,-19.0,posicion.z));

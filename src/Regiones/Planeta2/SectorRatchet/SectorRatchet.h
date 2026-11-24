@@ -19,6 +19,7 @@ class SectorRatchet {
     std::array<glm::vec3, 4> reflectores_{};
     std::vector<std::array<glm::vec2, 3>> huellaTorre_;
     std::vector<glm::vec3> arboles_;
+    std::vector<float> distanciasPavimento_;
     std::vector<glm::mat4> partesRailjack_;
     std::function<float(float, float)> suelo_;
     std::array<float, 6> apoyos_{}, huecosBase_{};
@@ -30,9 +31,11 @@ class SectorRatchet {
 
     void construirUrbanismo();
     void apoyarTorre();
+    float sueloConPuerto(float x, float z) const;
     glm::mat4 matrizEstatua() const;
 
   public:
+    static constexpr int CantidadMunecos = 6;
     const auto &huecosBase() const {
         return huecosBase_;
     }
@@ -72,8 +75,11 @@ class SectorRatchet {
     glm::vec3 posicionAphelion(float t) const;
     glm::vec3 frenteAphelion(float t) const;
     glm::vec3 posicionMuneco(int i, double distancia) const;
-    glm::vec3 frenteMuneco(double distancia) const;
+    glm::vec3 frenteMuneco(double distancia, int i = 0) const;
+    void dibujarMuneco(Renderizador &, const glm::mat4 &alMundo, int i, double distancia,
+                       float tiempoBrazos) const;
     double longitudPatrulla() const;
     double distanciaPatrulla() const { return distanciaPatrulla_; }
     std::array<LuzFocal, 4> reflectoresRailjack(float intensidad) const;
+    LuzFocal reflectorAphelion(float noche) const;
 };

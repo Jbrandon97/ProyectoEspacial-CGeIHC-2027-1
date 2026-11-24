@@ -44,4 +44,4 @@ miniaudio 0.11.23 se compila una sola vez desde `src/Audio/Audio.cpp`; no queda 
 
 Las posiciones, cámaras y relojes se conservan durante la sesión; no se guardan al cerrar. El inventario, las pruebas y los límites de verificación de este cierre están en `Revision_Cierre`.
 
-En Planeta 2 los caminos conectan la plaza de Qwark, Kerwan, la torre Orokin, el corral y el puerto Railjack. Cuatro muñecos recorren el perímetro en sentido horario. Las balizas y los reflectores del puerto siguen el ciclo de 120 segundos. La procedencia de los modelos añadidos está en `Recursos/Modelos/P2_Kerwan/Procedencia.md`.
+En Planeta 2 los caminos con banquetas transitables conectan la plaza de Qwark, Kerwan, la torre Orokin, el corral y el puerto Railjack. Seis muñecos recorren el perímetro en sentido horario con dos movimientos de brazos. El ciclo de 120 segundos tiene 42 segundos de día y 78 de noche. Las balizas, los reflectores del puerto y el foco de Aphelion acompañan la noche. La procedencia de los modelos añadidos está en `Recursos/Modelos/P2_Kerwan/Procedencia.md`.

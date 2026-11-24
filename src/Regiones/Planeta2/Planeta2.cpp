@@ -43,7 +43,7 @@ void Planeta2::controlar(const OrdenActividad &orden) {
         reflector_ = !reflector_;
 }
 void Planeta2::actualizar(float dt) {
-    tiempo_ = std::fmod(tiempo_ + std::max(0.f, dt), 120.f);
+    tiempo_ = std::fmod(tiempo_ + std::max(0.f, dt), DuracionCiclo);
     warframe_.actualizar(dt);
     ratchet_.actualizar(dt);
 }
@@ -86,8 +86,8 @@ Ambiente Planeta2::ambiente() const noexcept {
     a.cielo = "Planeta2";
     auto &l = a.iluminacion;
     l.activa = true;
-    // Igual que Planeta 1: 80 s de dia y 40 s de noche.
-    float angulo = tiempo_ < 80 ? Pi * (tiempo_ / 80.f) : Pi + Pi * ((tiempo_ - 80.f) / 40.f);
+    const float angulo = tiempo_ < SegundosDia ? Pi * (tiempo_ / SegundosDia)
+        : Pi + Pi * ((tiempo_ - SegundosDia) / (DuracionCiclo - SegundosDia));
     l.sol = glm::normalize(glm::vec3(std::cos(angulo), std::sin(angulo), .21f));
     float dia = glm::smoothstep(-.15f, .2f, l.sol.y);
     l.noche = 1 - dia;
@@ -138,13 +138,13 @@ Ambiente Planeta2::ambiente() const noexcept {
     auto &f2=l.focales[1];f2=f;f2.posicion={104,altura(83,-15)+20,6};
     f2.direccion=glm::normalize(glm::vec3(-21,-15,-21));f2.color={1,.79f,.4f};f2.intensidad=2.5f;
     f2.encendida=reflectorOrokin_;
-    const glm::vec2 puntos[]={{plaza.x-8,plaza.z+9},{plaza.x+8,plaza.z-8},{78,-6}};
-    for (int i = 0; i < 3; ++i) {
+    const glm::vec2 puntos[]={{plaza.x-8,plaza.z+9},{plaza.x+8,plaza.z-8}};
+    for (int i = 0; i < 2; ++i) {
         auto &p = l.puntuales[11+i];
         const auto q = puntos[i];
         p.posicion = {q.x,altura(q.x,q.y)+5.f,q.y};
         p.color = {1,.75f,.45f};
-        p.intensidad = (i == 2 ? 4.f : 2.8f)*l.noche;
+        p.intensidad = 2.8f*l.noche;
         p.encendida = l.noche > .001f;
         p.atenuacion = {1,.045f,.010f};
     }
@@ -153,6 +153,9 @@ Ambiente Planeta2::ambiente() const noexcept {
         l.focales[2+i] = puerto[i];
         l.focales[2+i].posicion += PosSectorRatchet;
     }
+    auto &reflectorAphelion = l.focales.back();
+    reflectorAphelion = ratchet_.reflectorAphelion(l.noche);
+    reflectorAphelion.posicion += PosSectorRatchet;
 
     return a;
 }

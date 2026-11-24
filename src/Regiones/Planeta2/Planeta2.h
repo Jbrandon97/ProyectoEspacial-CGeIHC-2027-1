@@ -18,6 +18,8 @@ class Planeta2 final : public Escenario {
     float alturaTerreno(float x, float z) const noexcept;
 
   public:
+    static constexpr float DuracionCiclo = 120.f;
+    static constexpr float SegundosDia = 42.f;
     const SectorRatchet &ratchet() const {
         return ratchet_;
     }

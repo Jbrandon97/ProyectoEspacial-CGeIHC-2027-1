@@ -52,6 +52,7 @@ class Aplicacion {
     void medirEspacio(const std::filesystem::path &dir);
     void probarEspacio(const std::filesystem::path &dir);
     void probarE(const std::filesystem::path &dir);
+    void probarAudioHangar();
     void probarD(const std::filesystem::path &dir);
     void probarC(const std::filesystem::path &evidencias);
     void probarB2(const std::filesystem::path &evidencias);

@@ -18,7 +18,8 @@ class Planeta1 final : public Escenario {
     SistemasPlaneta1 sistemas_;
     std::unique_ptr<Malla> propulsion_, hojaCompuerta_, marcoCompuerta_;
     ColisionesPlaneta1 colisionCohete_;
-    unsigned eventoPuerta_ = 0;
+    unsigned aperturasPuerta_ = 0;
+    bool puertaSubiendo_ = false;
     ColisionesPlaneta1 colisiones_, colisionPuerta_;
     std::unique_ptr<Malla> rampaPeatonal_;
     float puertaAltura_ = 7, puertaDestino_ = 7;
@@ -68,9 +69,8 @@ class Planeta1 final : public Escenario {
     const SistemasPlaneta1 &sistemas() const {
         return sistemas_;
     }
-    unsigned eventoPuerta() const {
-        return eventoPuerta_;
-    }
+    unsigned aperturasPuerta() const { return aperturasPuerta_; }
+    static glm::vec3 fuenteSonoraHangar() { return {165, 5, -100}; }
     const GestorCarrera &carrera() const {
         return carrera_;
     }

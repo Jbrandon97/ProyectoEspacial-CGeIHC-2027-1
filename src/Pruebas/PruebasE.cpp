@@ -11,6 +11,154 @@
 #include <fstream>
 #include <chrono>
 #include <vector>
+void Aplicacion::probarAudioHangar() {
+    auto exigir = [](bool b, const char *mensaje) {
+        if (!b)
+            throw std::runtime_error(mensaje);
+    };
+    auto &p = static_cast<Planeta1 &>(escenarios_.actual());
+    const glm::vec3 entrada{165, 3, -65}, sensor{165, 3, -77.5f};
+    const auto orden = [&p](glm::vec3 pos, bool tecla) {
+        OrdenActividad o;
+        o.avatar = pos;
+        o.puerta = tecla;
+        p.controlar(o);
+    };
+    const auto inicios = [this] {
+        return audio_.estado(Audio::HangarAhora).inicios + audio_.estado(Audio::HangarHomero).inicios;
+    };
+    const auto voces = [](Audio &a) {
+        return int(a.estado(Audio::HangarAhora).activa) + int(a.estado(Audio::HangarHomero).activa);
+    };
+    const auto cuadro = [&] (float dt) {
+        p.actualizar(dt);
+        actualizarAudio();
+    };
+    avatar_.colocar(entrada, p);
+    const auto n = inicios();
+    exigir(p.elevacionPuerta() == 7, "La prueba de audio necesita el hangar abierto");
+    orden(entrada, true);
+    cuadro(4.f);
+    exigir(p.elevacionPuerta() == 0 && inicios() == n, "El cierre del hangar inicio audio");
+    orden(entrada, true);
+    actualizarAudio();
+    exigir(inicios() == n, "El audio se adelanto al inicio de la apertura");
+    cuadro(1.f / 60);
+    exigir(p.elevacionPuerta() > 0 && inicios() == n + 1 && voces(audio_) == 1,
+           "La apertura no inicio exactamente un sonido");
+    const auto pista = audio_.estado(Audio::HangarAhora).activa ? Audio::HangarAhora : Audio::HangarHomero;
+    avatar_.colocar(p.fuenteSonoraHangar(), p);
+    actualizarAudio();
+    const float dentro = audio_.estado(pista).objetivo;
+    avatar_.colocar({0, 0, 120}, p);
+    actualizarAudio();
+    const float lejos = audio_.estado(pista).objetivo;
+    avatar_.colocar(p.fuenteSonoraHangar(), p);
+    actualizarAudio();
+    exigir(dentro > .8f && lejos < .015f && audio_.estado(pista).objetivo == dentro &&
+               inicios() == n + 1,
+           "El sonido no sigue la distancia al avatar sin reiniciar");
+    cuadro(4.f);
+    orden(entrada, true);
+    cuadro(.20f);
+    exigir(p.elevacionPuerta() < 7 && inicios() == n + 1, "Se reprodujo sonido durante el cierre");
+    orden(sensor, false);
+    cuadro(.20f);
+    exigir(p.elevacionPuerta() == 7 && inicios() == n + 2 && voces(audio_) == 1,
+           "La reapertura del sensor no sustituye una voz por la otra");
+    for (auto region : {Region::Planeta2, Region::Espacio, Region::Planeta1}) {
+        cambiarRegion(region);
+        actualizarAudio();
+        exigir(voces(audio_) == 0 && inicios() == n + 2, "El audio del hangar se reanudo al cambiar de region");
+    }
+    std::cout << "HANGAR_EVENTOS_OK apertura=1 cierre=0 sensor=1 duplicados=0 regiones=3"
+              << " objetivo_dentro=" << dentro << " objetivo_lejos=" << lejos << '\n';
+
+    Audio offline(recursos_, true);
+    unsigned ahora = 0;
+    for (int i = 0; i < 1024; ++i) {
+        ahora += offline.dispararHangar(4) == Audio::HangarAhora;
+        exigir(voces(offline) == 1, "Dos MP3 del hangar se superponen");
+    }
+    exigir(ahora >= 416 && ahora <= 608, "El muestreo no concuerda con la seleccion equiprobable");
+    exigir(offline.estado(Audio::HangarAhora).inicios == ahora &&
+               offline.estado(Audio::HangarHomero).inicios == 1024 - ahora,
+           "El conteo de voces no concuerda con la seleccion");
+    std::cout << "HANGAR_AZAR_OK N=1024 Ahora=" << ahora << " Homero=" << 1024 - ahora << '\n';
+
+    auto rms = [](const std::vector<float> &pcm, size_t offset, size_t cuadros) {
+        double suma = 0;
+        for (size_t i = 2 * offset; i < 2 * (offset + cuadros); ++i)
+            suma += double(pcm.at(i)) * pcm.at(i);
+        return std::sqrt(suma / double(2 * cuadros));
+    };
+    constexpr unsigned Segundo = 44100, Fundido = Segundo / 10;
+    for (auto sonido : {Audio::HangarAhora, Audio::HangarHomero}) {
+        const auto iniciar = [&] {
+            for (int i = 0; i < 64; ++i)
+                if (offline.dispararHangar(4) == sonido)
+                    return;
+            throw std::runtime_error("No se obtuvo la pista solicitada para comparar el PCM");
+        };
+        iniciar();
+        auto referencia = offline.leerPCM(3 * Segundo);
+        iniciar();
+        offline.leerPCM(Segundo);
+        const auto estadoInicial = offline.estado(sonido);
+        offline.actualizarHangar(200);
+        offline.leerPCM(Fundido / 2);
+        const auto intermedio = offline.estado(sonido);
+        exigir(intermedio.ganancia > intermedio.objetivo + .1f &&
+                   intermedio.ganancia < estadoInicial.ganancia - .1f,
+               "La ganancia no baja gradualmente");
+        offline.leerPCM(Fundido / 2);
+        const auto pcmLejos = offline.leerPCM(Segundo - Fundido);
+        offline.actualizarHangar(4);
+        offline.leerPCM(Fundido / 2);
+        const auto intermedioVuelta = offline.estado(sonido);
+        exigir(intermedioVuelta.ganancia > intermedio.objetivo + .1f &&
+                   intermedioVuelta.ganancia < intermedioVuelta.objetivo - .1f,
+               "La ganancia no se recupera gradualmente");
+        offline.leerPCM(Fundido / 2);
+        const auto pcmVuelta = offline.leerPCM(Segundo - Fundido);
+        const auto rmsBaseLejos = rms(referencia, Segundo + Fundido, Segundo - Fundido);
+        const auto rmsBaseVuelta = rms(referencia, 2 * Segundo + Fundido, Segundo - Fundido);
+        const auto rmsLejos = rms(pcmLejos, 0, Segundo - Fundido);
+        const auto rmsVuelta = rms(pcmVuelta, 0, Segundo - Fundido);
+        exigir(rmsBaseLejos > .001 && rmsBaseVuelta > .001 && rmsLejos < .025 * rmsBaseLejos &&
+                   rmsVuelta > .97 * rmsBaseVuelta && rmsVuelta < 1.03 * rmsBaseVuelta,
+               "El PCM no se atenua o no recupera volumen al volver");
+        const auto estadoVuelta = offline.estado(sonido);
+        exigir(estadoVuelta.cursor > estadoInicial.cursor &&
+                   estadoVuelta.inicios == estadoInicial.inicios && voces(offline) == 1,
+               "La atenuacion detuvo, reinicio o superpuso sonidos");
+
+        offline.silenciar();
+        exigir(rms(offline.leerPCM(Fundido), 0, Fundido) < 1e-7, "M no silencia el hangar");
+        offline.silenciar();
+        for (int i = 0; i < 3; ++i)
+            offline.siguienteCanal();
+        offline.volumen(-1.f);
+        exigir(rms(offline.leerPCM(Fundido), 0, Fundido) < 1e-7, "El grupo Efectos no controla el hangar");
+        offline.volumen(.8f);
+        offline.siguienteCanal();
+        exigir(rms(offline.leerPCM(Fundido), 0, Fundido) > .0001, "El volumen normal no se recupera");
+
+        for (int i = 0; i < 50 && voces(offline); ++i)
+            offline.leerPCM(Segundo);
+        offline.actualizarHangar(4);
+        exigir(!voces(offline) && offline.estado(sonido).inicios == estadoInicial.inicios &&
+                   rms(offline.leerPCM(Fundido), 0, Fundido) < 1e-7,
+               "El MP3 se repite al llegar a su final");
+        std::cout << "HANGAR_PCM_OK " << (sonido == Audio::HangarAhora ? "Ahora" : "Homero")
+                  << " base_lejos_rms=" << rmsBaseLejos << " lejos_rms=" << rmsLejos
+                  << " base_vuelta_rms=" << rmsBaseVuelta << " vuelta_rms=" << rmsVuelta
+                  << " ganancia_media_salida=" << intermedio.ganancia
+                  << " ganancia_media_regreso=" << intermedioVuelta.ganancia
+                  << " M=OK efectos=OK fin_sin_bucle=OK\n";
+    }
+}
+
 void Aplicacion::probarE(const std::filesystem::path &dir) {
     auto exigir = [](bool ok, const char *mensaje) {
         if (!ok)
@@ -39,17 +187,10 @@ void Aplicacion::probarE(const std::filesystem::path &dir) {
     float lejos = audio_.estado(Audio::Cohete).objetivo;
     exigir(cerca > .5f && lejos < cerca * .1f, "E sonido no atenua por distancia real");
     exigir(audio_.estado(Audio::Musica).objetivo == musica.objetivo, "E distancia afecta musica");
-    OrdenActividad o;
-    o.avatar = {165, 3, -65};
-    o.puerta = true;
-    auto n = audio_.estado(Audio::Puerta).inicios;
-    p.controlar(o);
-    actualizarAudio();
-    actualizarAudio();
-    exigir(audio_.estado(Audio::Puerta).inicios == n + 1, "E evento hangar duplicado/ausente");
     s.lanzamiento = -1;
     actualizarAudio();
     exigir(audio_.estado(Audio::Cohete).objetivo == 0, "E propulsion suena sin motor");
+    probarAudioHangar();
     std::cout << "E_AUDIO_OK cerca=" << cerca << " lejos=" << lejos
               << " musica independiente; eventos sin duplicar\n";
     // Avatar quieto conserva exactamente la pose; locomocion sigue a 15/30.

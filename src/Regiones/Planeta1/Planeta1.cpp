@@ -13,7 +13,8 @@ void Planeta1::cargar(ContextoEscena &c) {
     carrera_ = GestorCarrera();
     sistemas_ = SistemasPlaneta1();
     sistemas_.configurar(c.recursos / "Configuracion_C.txt");
-    eventoPuerta_ = 0;
+    aperturasPuerta_ = 0;
+    puertaSubiendo_ = false;
     modelos_["Holocron"] = std::make_unique<ModeloGltf>(c.recursos / "Modelos/EspacioBloque1/Holocron.gltf", true);
     std::vector<Vertice> pedestal;
     Geometria::caja(pedestal, {-125,2.7f,-48}, {4,1.4f,4}, {.23f,.18f,.3f});
@@ -124,6 +125,12 @@ void Planeta1::actualizar(float dt) {
         std::abs(visitante_.z + 77.5f) < 3.5f)
         puertaDestino_ = 7;
     float nueva = puertaAltura_ + glm::clamp(puertaDestino_ - puertaAltura_, -2 * dt, 2 * dt);
+    if (dt > 0) {
+        const bool subiendo = nueva > puertaAltura_;
+        if (subiendo && !puertaSubiendo_)
+            ++aperturasPuerta_;
+        puertaSubiendo_ = subiendo;
+    }
     if (nueva != puertaAltura_) {
         puertaAltura_ = nueva;
         actualizarPuerta();
@@ -336,7 +343,6 @@ void Planeta1::controlar(const OrdenActividad &o) {
     if (o.puerta && !carrera_.estado().ocupado &&
         glm::length(glm::vec2(o.avatar.x - 165, o.avatar.z + 70)) < 30) {
         puertaDestino_ = puertaDestino_ > 0 ? 0.0f : 7.0f;
-        ++eventoPuerta_;
     }
     if (!carrera_.ocupado()) {
         bool cercaCovenant=glm::length(glm::vec2(o.avatar.x+125,o.avatar.z+48))<24;

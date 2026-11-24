@@ -8,6 +8,7 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <stdexcept>
 struct Audio::MotorAudio {
     ma_engine engine{};
@@ -17,6 +18,8 @@ struct Audio::MotorAudio {
     std::array<unsigned, Cantidad> inicios{};
     std::array<float, 4> volumenes{.35f, .8f, .65f, .8f};
     std::atomic<unsigned> bloques{0};
+    std::mt19937 azar{std::random_device{}()};
+    Sonido hangar = Cantidad;
     int cargadas = 0, gruposListos = 0, canal = 0;
     bool listo = false, offline = false, silencio = false;
     static int grupo(int i) {
@@ -61,19 +64,20 @@ Audio::Audio(const std::filesystem::path &r, bool offline)
             throw std::runtime_error("miniaudio: grupo no disponible");
         ++m.gruposListos;
     }
-    const char *nombres[] = {"Exploration_Theme",   "Viento_instalaciones",
-                             "Puerta_hangar",      "Propulsion",
-                             "Motor_nave",         "Inicio_carrera",
-                             "Final_carrera",      "Energia_Covenant",
-                             "Airy", "Our_Expanse_Chill",
-                             "Cabina_espacial",    "Instalaciones_Planeta2",
-                             "Motor_trafico",      "Boost"};
+    const char *archivos[] = {"Exploration_Theme.wav", "Viento_instalaciones.wav",
+                              "Hangar_Ahora.mp3", "Propulsion.wav",
+                              "Motor_nave.wav", "Inicio_carrera.wav",
+                              "Final_carrera.wav", "Energia_Covenant.wav",
+                              "Airy.wav", "Our_Expanse_Chill.wav",
+                              "Cabina_espacial.wav", "Instalaciones_Planeta2.wav",
+                              "Motor_trafico.wav", "Boost.wav", "Hangar_Homero.mp3"};
+    static_assert(sizeof archivos / sizeof *archivos == Cantidad);
     for (int i = 0; i < Cantidad; ++i) {
-        auto path = (r / "Audio" / (std::string(nombres[i]) + ".wav")).wstring();
+        auto path = (r / "Audio" / archivos[i]).wstring();
         if (ma_sound_init_from_file_w(&m.engine, path.c_str(), MA_SOUND_FLAG_DECODE,
                                       &m.grupos[MotorAudio::grupo(i)], nullptr,
                                       &m.voces[i]) != MA_SUCCESS)
-            throw std::runtime_error(std::string("miniaudio: WAV no disponible: ") + nombres[i]);
+            throw std::runtime_error(std::string("miniaudio: audio no disponible: ") + archivos[i]);
         ++m.cargadas;
         ma_sound_set_spatialization_enabled(&m.voces[i], MA_FALSE);
         ma_sound_set_volume(&m.voces[i], 1);
@@ -98,6 +102,13 @@ Audio::Audio(const std::filesystem::path &r, bool offline)
 Audio::~Audio() {
     std::cout << "MINIAUDIO_CIERRE bloques=" << motor_->bloques << "\n";
 }
+void Audio::fundirVoz(Sonido s, float v, unsigned ms) {
+    auto &m = *motor_;
+    if (std::abs(m.objetivos[s] - v) > 1e-5f) {
+        ma_sound_set_fade_in_milliseconds(&m.voces[s], -1, v, ms);
+        m.objetivos[s] = v;
+    }
+}
 void Audio::bucle(Sonido s, float v) {
     auto &m = *motor_;
     auto &voz = m.voces[s];
@@ -108,10 +119,7 @@ void Audio::bucle(Sonido s, float v) {
         ma_sound_start(&voz);
         ++m.inicios[s];
     }
-    if (std::abs(m.objetivos[s] - v) > 1e-5f) {
-        ma_sound_set_fade_in_milliseconds(&voz, -1, v, MotorAudio::grupo(s) == 0 ? 1200 : 80);
-        m.objetivos[s] = v;
-    }
+    fundirVoz(s, v, MotorAudio::grupo(s) == 0 ? 1200 : 80);
     if (v == 0 && ma_sound_get_current_fade_volume(&voz) < .0001f)
         ma_sound_stop(&voz);
 }
@@ -126,9 +134,39 @@ void Audio::disparar(Sonido s, float v) {
     ma_sound_start(&voz);
     ++m.inicios[s];
 }
+namespace {
+float volumenHangar(float distancia) {
+    return .85f * Audio::atenuacionDistancia(distancia - 12.f, 22.f);
+}
+}
+Audio::Sonido Audio::dispararHangar(float distancia) {
+    detenerHangar();
+    auto &m = *motor_;
+    m.hangar = std::bernoulli_distribution(.5)(m.azar) ? HangarAhora : HangarHomero;
+    disparar(m.hangar, volumenHangar(distancia));
+    return m.hangar;
+}
+void Audio::actualizarHangar(float distancia) {
+    auto &m = *motor_;
+    if (m.hangar == Cantidad)
+        return;
+    if (ma_sound_at_end(&m.voces[m.hangar]))
+        detenerHangar();
+    else
+        fundirVoz(m.hangar, volumenHangar(distancia), 100);
+}
+void Audio::detenerHangar() {
+    auto &m = *motor_;
+    if (m.hangar != Cantidad) {
+        ma_sound_stop(&m.voces[m.hangar]);
+        m.objetivos[m.hangar] = 0;
+        m.hangar = Cantidad;
+    }
+}
 void Audio::detenerEfectos() {
+    detenerHangar();
     for (int i = 0; i < Cantidad; ++i)
-        if (MotorAudio::grupo(i) == 2)
+        if (i != HangarAhora && i != HangarHomero && MotorAudio::grupo(i) == 2)
             bucle(Sonido(i), 0);
 }
 void Audio::silenciar() {
@@ -154,8 +192,8 @@ std::string Audio::controlVolumen() const {
     return std::string(n[m.canal]) + " " + std::to_string(int(m.volumenes[m.canal] * 100)) +
            (m.silencio ? " / SILENCIO" : "");
 }
-float Audio::atenuacionDistancia(float distancia) {
-    float d = std::max(0.f, distancia) / 45.f;
+float Audio::atenuacionDistancia(float distancia, float alcance) {
+    float d = std::max(0.f, distancia) / alcance;
     return 1 / (1 + d * d);
 }
 Audio::EstadoVoz Audio::estado(Sonido s) {

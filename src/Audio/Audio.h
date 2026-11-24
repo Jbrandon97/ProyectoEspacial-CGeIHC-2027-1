@@ -12,7 +12,7 @@ class Audio {
     enum Sonido {
         Musica,
         Ambiente,
-        Puerta,
+        HangarAhora,
         Cohete,
         Motor,
         Inicio,
@@ -24,6 +24,7 @@ class Audio {
         AmbientePlaneta2,
         Trafico,
         Boost,
+        HangarHomero,
         Cantidad
     };
     struct EstadoVoz {
@@ -35,10 +36,12 @@ class Audio {
     };
     explicit Audio(const std::filesystem::path &, bool sinDispositivo = false);
     ~Audio();
-    static float atenuacionDistancia(float distancia);
+    static float atenuacionDistancia(float distancia, float alcance = 45.f);
     EstadoVoz estado(Sonido);
     void bucle(Sonido, float);
     void disparar(Sonido, float = .6f);
+    Sonido dispararHangar(float distancia);
+    void actualizarHangar(float distancia);
     void detenerEfectos();
     void silenciar();
     void volumen(float incremento);
@@ -50,4 +53,8 @@ class Audio {
     unsigned bloques() const;
     // Sólo el motor sin dispositivo permite extraer PCM para pruebas reproducibles.
     std::vector<float> leerPCM(unsigned cuadros);
+
+  private:
+    void fundirVoz(Sonido, float volumen, unsigned milisegundos);
+    void detenerHangar();
 };

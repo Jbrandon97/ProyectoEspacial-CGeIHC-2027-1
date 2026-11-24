@@ -69,7 +69,8 @@ void Aplicacion::cambiarRegion(Region r) {
         foco_ = false;
         observandoCohete_ = false;
         audio_.detenerEfectos();
-        sonidoPuerta_ = 0;
+        if (r == Region::Planeta1)
+            sonidoPuerta_ = static_cast<const Planeta1 &>(escenarios_.actual()).aperturasPuerta();
         faseSonora_ = -1;
         avatar_.aparecer(escenarios_.actual());
         camaras_.alCambiarRegion(r);
@@ -722,10 +723,12 @@ void Aplicacion::actualizarAudio() {
                  p.carrera().fase() == FaseCarrera::Corriendo
                      ? .2f + .5f * std::min(1.f, std::abs(p.carrera().nave().velocidad()) / 46)
                      : 0);
-    if (p.eventoPuerta() != sonidoPuerta_) {
-        sonidoPuerta_ = p.eventoPuerta();
-        audio_.disparar(Audio::Puerta);
+    const float distanciaHangar = glm::distance(avatar_.posicion(), p.fuenteSonoraHangar());
+    if (p.aperturasPuerta() != sonidoPuerta_) {
+        sonidoPuerta_ = p.aperturasPuerta();
+        audio_.dispararHangar(distanciaHangar);
     }
+    audio_.actualizarHangar(distanciaHangar);
     int fase = int(p.carrera().fase());
     if (fase != faseSonora_) {
         if (p.carrera().fase() == FaseCarrera::Corriendo)

@@ -18,6 +18,9 @@ constexpr glm::vec2 CentroPatrulla{-18.f, 0.f};
 constexpr float RadioPatrulla = 122.f, Esquina = 8.f, VelocidadPatrulla = 7.5f;
 constexpr double CuartoPatrulla = 2 * (RadioPatrulla - Esquina) + Pi * Esquina / 2;
 constexpr float RadioPuerto = 23.f;
+constexpr float RadioNPC[] = {.73f, .87f, .94f};
+constexpr float RadioMuneco[] = {1.28f, 1.15f};
+constexpr float RadioNinja = 2.5f, VelocidadAngularNinja = .13f;
 constexpr int MuestrasPavimento = 171;
 constexpr float PasoPavimento = 1.8f;
 constexpr glm::vec2 InicioPavimento{-171.f, -153.f};
@@ -292,13 +295,14 @@ void SectorRatchet::cargar(ContextoEscena &c) {
     apoyarTorre();
     construirUrbanismo();
     for (auto p : Arboles)
-        if (bordePavimento(p) > 3.f && !obstaculo({p.x, 0, p.y}, false))
+        if (bordePavimento(p) > 3.f && !obstaculo({p.x, 0, p.y}))
             arboles_.push_back({p.x, alturaSuelo(p.x, p.y), p.y});
     std::vector<Vertice> nube, luz;
     Geometria::elipsoide(nube, {0, 0, 0}, {1, .65f, 1}, {.74f, .78f, .84f}, 8, 4);
     Geometria::elipsoide(luz, {0, 0, 0}, {1, 1, 1}, {1, 1, 1}, 8, 5);
     humo_ = std::make_unique<Malla>(nube);
     propulsor_ = std::make_unique<Malla>(luz);
+    actualizarContactos(true);
 }
 
 float SectorRatchet::sueloConPuerto(float x, float z) const {
@@ -568,6 +572,7 @@ void SectorRatchet::actualizar(float dt) {
     tiempo_ = std::fmod(tiempo_ + std::max(0.f, dt), 9360.f);
     distanciaPatrulla_ = std::fmod(distanciaPatrulla_ + double(std::max(0.f, dt)) * VelocidadPatrulla,
                                  longitudPatrulla());
+    actualizarContactos();
     const float a = aperturaRailjack(tiempo_);
     for (size_t i = 2; i <= 18 && i < partesRailjack_.size(); ++i) {
         const float signo = i % 2 ? -1.f : 1.f;
@@ -575,8 +580,11 @@ void SectorRatchet::actualizar(float dt) {
     }
 }
 double SectorRatchet::longitudPatrulla() const { return 4 * CuartoPatrulla; }
+glm::vec2 SectorRatchet::rutaMuneco(int i, double distancia) const {
+    return esquinaPatrulla(distancia + i * longitudPatrulla()/CantidadMunecos);
+}
 glm::vec3 SectorRatchet::posicionMuneco(int i, double distancia) const {
-    const auto q = esquinaPatrulla(distancia + i * longitudPatrulla()/CantidadMunecos);
+    const auto q = rutaMuneco(i, distancia);
     return {q.x, superficie(q.x, q.y) + .092f, q.y};
 }
 glm::vec3 SectorRatchet::frenteMuneco(double distancia, int i) const {
@@ -684,12 +692,13 @@ void SectorRatchet::dibujar(ContextoEscena &c, const glm::mat4 &m, float noche,
     }
 
     const ModeloGltf *npc[] = {clank_.get(), blarg_.get(), warframe_.get()};
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < CantidadNPC; ++i)
         if (npc[i]) {
             r.locomocionRobot(tiempo_ * 3.5f, i == 0);
             if(i==1) r.locomocionBlarg(tiempo_*3.2f);
             if (i == 2)
-                r.guardiaWarframe(.5f - .5f*std::cos(tiempo_ * (2 * Pi / 4.f)));
+                r.guardiaWarframe(.5f - .5f * std::cos(tiempo_ * RitmoNinja * (2 * Pi / 4.f)),
+                                  fasePasoNinja(tiempo_));
             npc[i]->dibujar(r, m * matrizNPC(i, tiempo_));
         }
     r.locomocionRobot(0, false);
@@ -782,13 +791,18 @@ void SectorRatchet::liberar() noexcept {
     humo_.reset();
     propulsor_.reset();
 }
-bool SectorRatchet::obstaculo(glm::vec3 p, bool personajes) const {
-    if (personajes)
-        for (int i = 0; i < 3; ++i) {
-            auto q = posicionNPC(i, tiempo_);
-            if (glm::length(glm::vec2(p.x - q.x, p.z - q.z)) < (i == 0 ? 3.2f : 2.8f))
-                return true;
-        }
+void SectorRatchet::actualizarContactos(bool inicial) {
+    for (int i = 0; i < CantidadNPC + CantidadMunecos; ++i) {
+        const bool npc = i < CantidadNPC;
+        const int muneco = i - CantidadNPC;
+        const auto centro = npc ? rutaNPC(i, tiempo_) : rutaMuneco(muneco, distanciaPatrulla_);
+        auto &c = contactos_[i];
+        c = {centro, inicial ? glm::vec2(0) : centro - c.centro,
+             npc ? RadioNPC[i] : RadioMuneco[muneco % 2]};
+    }
+}
+
+bool SectorRatchet::obstaculo(glm::vec3 p) const {
     for (const auto &e : Edificios) {
         const auto q = glm::abs(rotarXZ(glm::vec2(p.x,p.z) - e.posicion, -e.giro));
         if (q.x < e.medio.x * EscalaEdificios + .72f && q.y < e.medio.y * EscalaEdificios + .72f)
@@ -818,21 +832,30 @@ bool SectorRatchet::obstaculo(glm::vec3 p, bool personajes) const {
     return false;
 }
 
-glm::vec3 SectorRatchet::posicionNPC(int i, float t) const {
+float SectorRatchet::fasePasoNinja(float tiempo) {
+    constexpr float LongitudCicloPaso = .68f;
+    return std::fmod(tiempo * (RadioNinja * VelocidadAngularNinja * RitmoNinja / LongitudCicloPaso),
+                     1.f);
+}
+
+glm::vec2 SectorRatchet::rutaNPC(int i, float t) const {
     const glm::vec2 centros[] = {Plaza, {Corral.x-1.f, Corral.y}, {Corral.x+19.f, Corral.y+12.f}};
-    const glm::vec2 radios[] = {{13, 13}, {10, 3}, {2.5f, 2.5f}};
-    const float velocidad[] = {.17f, .15f, .13f};
+    const glm::vec2 radios[] = {{13, 13}, {10, 3}, {RadioNinja, RadioNinja}};
+    const float velocidad[] = {.17f, .15f, VelocidadAngularNinja * RitmoNinja};
     float a = t * velocidad[i] + i * 1.7f;
-    if(i==1) a-=.75f*std::sin(a);
-    glm::vec3 p(centros[i].x + radios[i].x * std::sin(a), 0,
-                centros[i].y + radios[i].y * std::cos(a));
-    p.y = superficie(p.x, p.z);
-    return p;
+    if (i == 1)
+        a -= .75f * std::sin(a);
+    return centros[i] + radios[i] * glm::vec2(std::sin(a), std::cos(a));
+}
+
+glm::vec3 SectorRatchet::posicionNPC(int i, float t) const {
+    const auto q = rutaNPC(i, t);
+    return {q.x, superficie(q.x, q.y), q.y};
 }
 glm::mat4 SectorRatchet::matrizNPC(int i, float t) const {
     auto p = posicionNPC(i, t);
-    auto d = posicionNPC(i, t + .02f) - posicionNPC(i, t - .02f);
-    float angulo = std::atan2(d.x, d.z) - (i == 1 ? Pi / 2 : 0);
+    auto d = rutaNPC(i, t + .02f) - rutaNPC(i, t - .02f);
+    float angulo = std::atan2(d.x, d.y) - (i == 1 ? Pi / 2 : 0);
     const float escala[] = {.27f, .48f, 4.f};
     const float apoyo = i == 2 ? -.04f - warframe_->minimoY()*escala[i] : .025f;
     auto m = glm::translate(glm::mat4(1), p + glm::vec3(0, apoyo, 0));

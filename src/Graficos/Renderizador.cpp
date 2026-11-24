@@ -268,8 +268,8 @@ void Renderizador::locomocionRobot(float fase, bool activa) {
     shader_.vector("locomocionClank", {fase, activa ? 1.f : 0.f, 0});
 }
 void Renderizador::locomocionBlarg(float fase) { shader_.vector("locomocionClank",{fase,2,0}); }
-void Renderizador::guardiaWarframe(float apertura) {
-    shader_.vector("locomocionClank", {apertura,3,0});
+void Renderizador::guardiaWarframe(float apertura, float fasePaso) {
+    shader_.vector("locomocionClank", {apertura, 3, fasePaso});
 }
 void Renderizador::brazosMuneco(float oscilacion, bool vertical) {
     shader_.vector("locomocionClank", {oscilacion, 4.f, vertical ? 1.f : 0.f});

@@ -562,7 +562,7 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
             const auto siguiente = sector.posicionMuneco(i,s+longitud/muestras);
             const auto paso = plano(siguiente-q);
             const auto frente = sector.frenteMuneco(s,i);
-            exigir(!sector.obstaculo(q,false) && std::abs(q.y-p.altura(q.x+18,q.z)-.092f)<.002f,
+            exigir(!sector.obstaculo(q) && std::abs(q.y-p.altura(q.x+18,q.z)-.092f)<.002f,
                    "Muneco fuera del transito o separado del piso");
             exigir(glm::dot(glm::normalize(paso),plano(frente)) > .99f,
                    "Orientacion lateral en circuito de munecos");
@@ -597,7 +597,7 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
                   << " detenido=" << avatar.posicion().x << ',' << avatar.posicion().z << '\n';
         exigir(false,"Ruta peatonal bloqueada");
     };
-    exigir(!sector.obstaculo(p.aparicion()-origen,false), "Aparicion P2 bloqueada");
+    exigir(!sector.obstaculo(p.aparicion()-origen), "Aparicion P2 bloqueada");
     recorrer({-42,115},{-42,75},false);
     recorrer({-42,75},{-24,33},true);
     recorrer({-24,33},{-60,5},false);
@@ -765,8 +765,254 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,&limiteUniformes);
     std::cout << "P2_RAILJACK_FOCOS_OK cuatro conos y control U; canales iluminados=" << canales
               << " limite_uniformes=" << limiteUniformes << '\n';
+    probarContactosPlaneta2(dir, w, h);
     probarGalaxia(dir);
     cambiarRegion(Region::Planeta1);
+}
+
+void Aplicacion::probarContactosPlaneta2(const std::filesystem::path &dir, int w, int h) {
+    auto exigir = [](bool valor, const char *mensaje) {
+        if (!valor)
+            throw std::runtime_error(mensaje);
+    };
+    auto &p = static_cast<Planeta2 &>(escenarios_.actual());
+    const auto &sector = p.ratchet();
+    const auto previo = avatar_.guardar();
+    const auto reloj = p.reloj();
+    const glm::vec3 origen(18, 0, 0);
+    constexpr float tau = 6.283185307f, paso = 1.f / 60;
+    const auto plano = [](glm::vec3 v) { return glm::vec2(v.x, v.z); };
+    const auto vector = [](glm::vec2 v) { return glm::vec3(v.x, 0, v.y); };
+    const auto libre = [&](glm::vec3 q) {
+        return std::abs(q.x) <= 171.f && std::abs(q.z) <= 151.f && !sector.obstaculo(q - origen);
+    };
+    const auto suelo = [&](glm::vec3 q) { return p.altura(q.x, q.z) + 1.f; };
+    const auto cambiarHora = [&](float t) {
+        p.actualizar(std::fmod(t - p.reloj() + Planeta2::DuracionCiclo, Planeta2::DuracionCiclo));
+    };
+    const auto foto = [&](const std::string &nombre, glm::vec3 ojo, glm::vec3 objetivo,
+                          int luzAvatar = 0, bool leer = false) {
+        auto amb = p.ambiente();
+        auto &energia = amb.iluminacion.puntuales[8];
+        if (luzAvatar != 0) {
+            energia.encendida = true;
+            energia.posicion = avatar_.posicion() + glm::vec3(0, 1.1f, 0);
+            energia.color = {.12f, .65f, 1.f};
+            energia.intensidad = .75f;
+            energia.atenuacion = {1, .09f, .025f};
+            if (luzAvatar == 2)
+                Planeta2::ajustarLuzEngineer(energia);
+        }
+        constexpr auto r = Region::Planeta2;
+        for (auto &l : amb.iluminacion.puntuales)
+            if (l.encendida)
+                l.posicion = mundo_.aGlobal(r, l.posicion);
+        for (auto &l : amb.iluminacion.focales)
+            if (l.encendida)
+                l.posicion = mundo_.aGlobal(r, l.posicion);
+        const auto ojoGlobal = mundo_.aGlobal(r, ojo);
+        const auto vista = glm::lookAt(ojoGlobal, mundo_.aGlobal(r, objetivo), {0, 1, 0});
+        const auto vp = glm::perspective(glm::radians(53.f), float(w) / h, .15f, 900.f) * vista;
+        renderizador_.iniciar(w, h, vp, amb, ojoGlobal);
+        ContextoEscena c{renderizador_, recursos_};
+        p.dibujar(c, mundo_.transformacion(r));
+        avatar_.dibujar(c, mundo_.transformacion(r), energia.encendida);
+        renderizador_.capturar(dir / (nombre + ".ppm"), w, h);
+        std::vector<unsigned char> pixeles;
+        if (leer) {
+            pixeles.resize(size_t(w) * h * 4);
+            glReadBuffer(GL_BACK);
+            glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixeles.data());
+        }
+        Renderizador::comprobarErrores();
+        ventana_.presentar();
+        return pixeles;
+    };
+
+    cambiarHora(24.f);
+    const char *nombres[] = {"Clank", "Blarg", "Warframe"};
+    for (int i = 0; i < SectorRatchet::CantidadNPC; ++i) {
+        const auto colision = sector.contactos()[i];
+        const auto q = sector.posicionNPC(i, sector.reloj()) + origen;
+        const float radio = colision.radio + Planeta2::RadioAvatar;
+        glm::vec2 dirLibre(0);
+        for (int k = 0; k < 16; ++k) {
+            const float a = k * tau / 16;
+            const glm::vec2 d(std::cos(a), std::sin(a)), lat(-d.y, d.x);
+            if (libre(q + vector(d * (radio + .8f))) &&
+                libre(q + vector(d * .75f * radio + lat * .25f)) &&
+                libre(q + vector(d * (.75f * radio + .6f)))) {
+                dirLibre = d;
+                break;
+            }
+        }
+        exigir(glm::length(dirLibre) > .99f, "No hay espacio de prueba junto al NPC");
+        const auto distancia = [&]() { return glm::length(plano(avatar_.posicion() - q)); };
+        avatar_.colocar(q + vector(dirLibre * (radio + .65f)), p);
+        for (int k = 0; k < 10; ++k)
+            avatar_.mover(-dirLibre, paso, p);
+        exigir(distancia() >= radio - .001f && distancia() <= radio + .26f,
+               "El avatar se detiene lejos del cuerpo o atraviesa un NPC");
+
+        avatar_.colocar(q + vector(dirLibre * radio * .75f), p);
+        const auto contacto = avatar_.posicion();
+        const auto ojo = q + vector(dirLibre * 5.f + glm::vec2(-dirLibre.y, dirLibre.x) * 6.f)
+                         + glm::vec3(0, 3.8f, 0);
+        foto(std::string("Contacto_") + nombres[i], ojo, q + glm::vec3(0, 1.7f, 0));
+        avatar_.mover(-dirLibre, paso, p);
+        exigir(glm::length(plano(avatar_.posicion() - contacto)) < .003f,
+               "Se permitio profundizar la penetracion de un NPC");
+        avatar_.mover({-dirLibre.y, dirLibre.x}, paso, p);
+        const float lateral = glm::length(plano(avatar_.posicion() - contacto));
+        exigir(lateral > .19f, "El avatar no puede deslizarse sobre el costado del NPC");
+        const float penetrado = distancia();
+        for (int k = 0; k < 12; ++k)
+            avatar_.mover(dirLibre, paso, p);
+        exigir(distancia() > radio + .8f && libre(avatar_.posicion()),
+               "El avatar no se puede retirar de un NPC");
+        foto(std::string("Salida_") + nombres[i], ojo, q + vector(dirLibre) + glm::vec3(0, 1.7f, 0));
+        std::cout << "P2_CONTACTO_OK " << nombres[i] << " radio_cuerpo=" << colision.radio
+                  << " salida_lateral=" << lateral << " retroceso=" << distancia() - penetrado << '\n';
+    }
+
+    float velocidadMin = 1e9f, velocidadMax = 0;
+    for (int k = 0; k < 1200; ++k) {
+        const float t = k * .1f;
+        auto q = sector.posicionNPC(2, t);
+        const float velocidad = glm::length(plano(sector.posicionNPC(2, t + .1f) - q)) * 10.f;
+        velocidadMin = std::min(velocidadMin, velocidad);
+        velocidadMax = std::max(velocidadMax, velocidad);
+        const float radio = sector.contactos()[2].radio;
+        for (int j = 0; j < 8; ++j) {
+            const float a = j * tau / 8;
+            exigir(!sector.obstaculo(q + vector(radio * glm::vec2(std::cos(a), std::sin(a)))),
+                   "El cuerpo del ninja pisa una estructura");
+        }
+    }
+    exigir(velocidadMin > .484f && velocidadMax < .491f, "El ninja no patrulla un 50 % mas rapido");
+    const auto pasoNinja = SectorRatchet::fasePasoNinja(1.f);
+    exigir(std::abs(pasoNinja * .68f - .4875f) < .0001f, "La zancada del ninja no sigue su avance");
+    avatar_.colocar(p.aparicion(), p);
+    const auto ninja = sector.posicionNPC(2, sector.reloj()) + origen;
+    const auto ojoNinja = ninja + glm::vec3(-4.6f, 2.3f, 5.5f);
+    foto("Ninja_Paso_A", ojoNinja, ninja + glm::vec3(0, 1.4f, 0));
+    p.actualizar(.7f);
+    foto("Ninja_Paso_B", ojoNinja, ninja + glm::vec3(0, 1.4f, 0));
+    std::cout << "P2_NINJA_OK antes=0.325 ahora_min=" << velocidadMin << " ahora_max=" << velocidadMax
+              << " ciclo_paso_u=.68 pruebas_huella=9600\n";
+
+    const auto vallaFase = std::fmod(sector.reloj() * .195f + 3.4f, tau);
+    p.actualizar(std::fmod(4.71238898f - vallaFase + tau, tau) / .195f);
+    avatar_.colocar({-52.40f, 0, 66.f}, p);
+    const auto juntoValla = avatar_.posicion();
+    exigir(libre(juntoValla) && sector.obstaculo(juntoValla - origen - glm::vec3(.2f, 0, 0)),
+           "La posicion de la prueba no esta junto a la valla");
+    foto("Contacto_Valla_A", juntoValla + glm::vec3(4.6f, 5.5f, -8),
+         juntoValla + glm::vec3(0, 1.3f, 0));
+    for (int k = 0; k < 72; ++k) {
+        avanzarEscena(paso);
+        exigir(libre(avatar_.posicion()), "Un empuje hizo atravesar la valla");
+    }
+    const auto corrimientoValla = glm::length(plano(avatar_.posicion() - juntoValla));
+    exigir(corrimientoValla > .45f, "El contacto con la valla dejo inmovil al avatar");
+    foto("Contacto_Valla_B", juntoValla + glm::vec3(4.6f, 5.5f, -8),
+         juntoValla + glm::vec3(0, 1.3f, 0));
+
+    for (const auto centro : sector.centrosEdificios()) {
+        const auto q = centro + origen;
+        const glm::vec3 d(0, 0, 1);
+        avatar_.colocar(q + d * 12.f, p);
+        for (int k = 0; k < 60; ++k) {
+            avatar_.mover(-plano(d), paso, p);
+            exigir(!sector.obstaculo(avatar_.posicion() - origen),
+                   "El avatar atraviesa un edificio");
+        }
+        const float frenteEdificio = avatar_.posicion().z - q.z;
+        exigir(frenteEdificio > 0 && frenteEdificio < 11.f,
+               "No se reprodujo el contacto con la fachada");
+        avatar_.mover(plano(d), paso, p);
+        exigir(avatar_.posicion().z - q.z > frenteEdificio + .2f,
+               "El avatar no se retira de la fachada");
+    }
+    std::cout << "P2_ESTRUCTURAS_OK edificios=6 valla_escape_u=" << corrimientoValla << '\n';
+
+    const double longitud = sector.longitudPatrulla();
+    const auto empujar = [&](int i, int fps, bool captura) {
+        const double objetivo = longitud * ((i % 4) * .25 + .125) - longitud * i / 6;
+        const double distancia = std::fmod(objetivo - sector.distanciaPatrulla() + 2 * longitud, longitud);
+        double espera = distancia / 7.5;
+        if (captura) {
+            for (int vuelta = 0; vuelta < 16; ++vuelta) {
+                const auto hora = std::fmod(p.reloj() + espera, Planeta2::DuracionCiclo);
+                if (hora > 12.f && hora < 34.f)
+                    break;
+                espera += longitud / 7.5;
+            }
+        }
+        p.actualizar(float(espera));
+        const auto actor = sector.contactos()[SectorRatchet::CantidadNPC + i];
+        const auto frente = sector.frenteMuneco(sector.distanciaPatrulla(), i);
+        const auto normal = plano(frente);
+        const auto q = sector.posicionMuneco(i, sector.distanciaPatrulla()) + origen;
+        avatar_.colocar(q + frente * (actor.radio + Planeta2::RadioAvatar + .45f), p);
+        const auto inicial = avatar_.posicion();
+        const glm::vec3 ojo = q + glm::vec3(7.f * frente.z, 5.8f, -7.f * frente.x) + frente * 2.f;
+        const auto mira = q + frente * 2.5f + glm::vec3(0, 1.9f, 0);
+        if (captura)
+            foto("Muneco_Empuje_A", ojo, mira);
+        const float dt = 1.f / fps;
+        for (int k = 0; k < fps; ++k) {
+            const auto previoPaso = avatar_.posicion();
+            avanzarEscena(dt);
+            const auto pos = avatar_.posicion();
+            exigir(libre(pos) && std::abs(pos.y - suelo(pos)) < .002f &&
+                       glm::length(plano(pos - previoPaso)) <= 10.f * dt + .001f,
+                   "Empuje brusco, elevacion o penetracion de estructura");
+            if (captura && k == fps / 2)
+                foto("Muneco_Empuje_B", ojo, mira);
+        }
+        const auto final = avatar_.posicion();
+        const float avance = glm::dot(plano(final - inicial), normal);
+        exigir(avance > 6.6f && avance < 7.55f, "El muneco no desplaza al avatar en su direccion");
+        const auto lateral = glm::vec2(-normal.y, normal.x);
+        for (int k = 0; k < fps / 3; ++k) {
+            avatar_.mover(lateral, dt, p);
+            avanzarEscena(dt);
+        }
+        exigir(glm::dot(plano(avatar_.posicion() - final), lateral) > 3.f,
+               "Se perdio el control lateral durante el empuje del muneco");
+        return avance;
+    };
+    for (int i = 0; i < SectorRatchet::CantidadMunecos; ++i) {
+        const auto avance = empujar(i, 60, i == 0);
+        std::cout << "P2_MUNECO_CONTACTO_OK indice=" << i << " avance_1s=" << avance << '\n';
+    }
+    const float a30 = empujar(0, 30, false), a60 = empujar(0, 60, false), a120 = empujar(0, 120, false);
+    exigir(std::max({a30, a60, a120}) - std::min({a30, a60, a120}) < .12f,
+           "El empuje cambia con la frecuencia de cuadros");
+    std::cout << "P2_EMPUJE_DT_OK 30=" << a30 << " 60=" << a60 << " 120=" << a120 << '\n';
+
+    cambiarHora(90.f);
+    exigir(p.ambiente().iluminacion.noche > .98f, "La luz del avatar se debe probar de noche");
+    avatar_.colocar({-42, 0, 97}, p);
+    const auto q = avatar_.posicion(), ojo = q + glm::vec3(5.4f, 6.3f, 10.5f);
+    const auto objetivo = q + glm::vec3(0, -.1f, -3.5f);
+    const auto apagada = foto("Engineer_Luz_Apagada", ojo, objetivo, 0, true);
+    const auto vieja = foto("Engineer_Luz_Anterior", ojo, objetivo, 1, true);
+    const auto nueva = foto("Engineer_Luz_Actual", ojo, objetivo, 2, true);
+    size_t afectadosAntes = 0, afectadosAhora = 0, blancos = 0;
+    for (size_t i = 0; i < apagada.size(); i += 4) {
+        afectadosAntes += vieja[i + 2] > apagada[i + 2] + 12;
+        afectadosAhora += nueva[i + 2] > apagada[i + 2] + 12;
+        blancos += nueva[i] >= 250 && nueva[i + 1] >= 250 && nueva[i + 2] >= 250 &&
+                   !(apagada[i] >= 250 && apagada[i + 1] >= 250 && apagada[i + 2] >= 250);
+    }
+    exigir(afectadosAhora > afectadosAntes * 2 && blancos < 200,
+           "La luz del Engineer no gana alcance o satura superficies");
+    std::cout << "P2_LUZ_BODY_OK pixeles_anteriores=" << afectadosAntes
+              << " pixeles_actuales=" << afectadosAhora << " blancos_nuevos=" << blancos << '\n';
+    avatar_.restaurar(previo);
+    cambiarHora(reloj);
 }
 
 void Aplicacion::probarGalaxia(const std::filesystem::path &dir) {
@@ -1193,7 +1439,7 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
         for (int i = 0; i < 3; ++i) {
             float t = k * .1f;
             auto q = p.ratchet().posicionNPC(i, t);
-            exigir(!p.ratchet().obstaculo(q, false), "NPC atraviesa edificio/valla");
+            exigir(!p.ratchet().obstaculo(q), "NPC atraviesa edificio/valla");
             exigir(std::abs(q.y - p.altura(q.x + 18, q.z)) < .001f, "NPC desligado del suelo");
             for (int j = 0; j < i; ++j) {
                 auto r = p.ratchet().posicionNPC(j, t);
@@ -1398,7 +1644,7 @@ void Aplicacion::medirIntegral() {
         for (int i = 0; i < 150; ++i) {
             auto inicio = std::chrono::steady_clock::now();
             ventana_.eventos();
-            escenarios_.actual().actualizar(1.f / 60);
+            avanzarEscena(1.f / 60);
             deltaCuadro_ = 1.f / 60;
             dibujar();
             glFinish();

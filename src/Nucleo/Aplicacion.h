@@ -45,6 +45,7 @@ class Aplicacion {
     void probarFinalPlaneta1(const std::filesystem::path &dir);
     void probarIntegral(const std::filesystem::path &dir);
     void probarGalaxia(const std::filesystem::path &dir);
+    void probarContactosPlaneta2(const std::filesystem::path &dir, int ancho, int alto);
     void probarPlaneta2(const std::filesystem::path &dir);
     void probarEspacioMejora(const std::filesystem::path &dir);
     void medirIntegral();
@@ -55,6 +56,7 @@ class Aplicacion {
     void probarC(const std::filesystem::path &evidencias);
     void probarB2(const std::filesystem::path &evidencias);
     void probarCarrera(const std::filesystem::path &evidencias);
+    void avanzarEscena(float dt);
     void actualizarCamara(float dt);
     void dibujar(const std::filesystem::path &captura = {});
     int ciclo(bool pruebas, const std::filesystem::path &evidencias, Region inicial);

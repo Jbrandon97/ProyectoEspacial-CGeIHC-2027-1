@@ -33,6 +33,11 @@ void main(){
   vec3 pivote=vec3(lado*10.5,1,-43);
   local=mix(local,pivote+giro*(local-pivote),peso);
   n=normalize(mix(n,giro*n,peso));
+  float fase=fract(locomocionClank.z+(lado<0.0?.5:0.0));
+  float pierna=smoothstep(-34.0,-13.0,posicion.z)*smoothstep(.8,4.0,abs(posicion.x));
+  float paso=fase<.5?mix(-1.0,1.0,smoothstep(0.0,.5,fase)):3.0-4.0*fase;
+  local.y+=4.25*paso*pierna;
+  if(fase<.5) local.z-=3.5*sin(fase*6.2831853)*pierna;
  }else if(locomocionClank.y>1.5){
   float lado=sign(posicion.z);
   if(posicion.y<4.2){

@@ -21,6 +21,7 @@ class Planeta2 final : public Escenario {
 
   public:
     static constexpr float DuracionCiclo = 120.f;
+    static constexpr float RadioAvatar = .68f;
     static constexpr float SegundosDia = 42.f;
     const SectorRatchet &ratchet() const {
         return ratchet_;
@@ -47,6 +48,8 @@ class Planeta2 final : public Escenario {
     }
     float altura(float x, float z) const noexcept override;
     glm::vec3 ajustarMovimiento(glm::vec3 anterior, glm::vec3 propuesta) const override;
+    glm::vec3 separarAvatar(glm::vec3 posicion, float dt) const;
+    static void ajustarLuzEngineer(LuzPuntual &luz);
     Ambiente ambiente() const noexcept override;
     EstadoActividad actividad() const override;
 };

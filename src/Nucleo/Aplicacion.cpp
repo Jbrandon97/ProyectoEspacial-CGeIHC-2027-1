@@ -239,6 +239,18 @@ void Aplicacion::procesarEntradas(float dt) {
                       entradas_.mantenida(GLFW_KEY_LEFT_SHIFT) ||
                           entradas_.mantenida(GLFW_KEY_RIGHT_SHIFT));
 }
+void Aplicacion::avanzarEscena(float dt) {
+    auto &escena = escenarios_.actual();
+    escena.actualizar(dt);
+    if (escena.id() == Region::Planeta2 && !enPanorama()) {
+        auto &planeta = static_cast<Planeta2 &>(escena);
+        const auto anterior = avatar_.posicion();
+        const auto corregida = planeta.separarAvatar(anterior, dt);
+        if (anterior != corregida)
+            avatar_.colocar(corregida, planeta);
+    }
+}
+
 void Aplicacion::actualizarCamara(float dt) {
     auto &e = escenarios_.actual();
     auto r = e.id();
@@ -304,8 +316,10 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
                         camaras_.modo() == ModoCamara::Exploracion;
     energia.posicion = mundo_.aGlobal(r, avatar_.posicion() + glm::vec3(0, 1.1f, 0));
     energia.color = {.12f, .65f, 1.f};
-    energia.intensidad = r == Region::Planeta2 ? .75f : 1.65f;
+    energia.intensidad = 1.65f;
     energia.atenuacion = {1, .09f, .025f};
+    if (r == Region::Planeta2)
+        Planeta2::ajustarLuzEngineer(energia);
     renderizador_.iniciar(a, b, vp, ambiente, vista.ojo());
     ContextoEscena c{renderizador_, recursos_};
     e.dibujar(c, mundo_.transformacion(r));
@@ -406,7 +420,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
         antes = ahora;
         deltaCuadro_ = dt;
         procesarEntradas(dt);
-        escenarios_.actual().actualizar(dt);
+        avanzarEscena(dt);
         dibujar();
     }
     return 0;

@@ -40,7 +40,7 @@ class Renderizador {
     }
     void material(float rugosidad, float metal = 0);
     void locomocionBlarg(float fase);
-    void guardiaWarframe(float apertura);
+    void guardiaWarframe(float apertura, float fasePaso);
     void brazosMuneco(float oscilacion, bool vertical);
     void locomocionRobot(float fase, bool activa);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);

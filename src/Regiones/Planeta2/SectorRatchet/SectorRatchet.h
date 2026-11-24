@@ -8,6 +8,15 @@
 
 // Objetos de ambos sectores en las coordenadas locales del croquis integrado.
 class SectorRatchet {
+  public:
+    static constexpr int CantidadNPC = 3, CantidadMunecos = 6;
+    static constexpr float RitmoNinja = 1.5f;
+    struct Contacto {
+        glm::vec2 centro{}, avance{};
+        float radio = 0;
+    };
+
+  private:
     std::unique_ptr<ModeloGltf> edificio1_, edificio2_, edificio3_;
     std::unique_ptr<ModeloGltf> railjack_, orokintower_, warframe_, aphelion_;
     std::unique_ptr<ModeloGltf> clank_, blarg_;
@@ -25,17 +34,21 @@ class SectorRatchet {
     std::array<float, 6> apoyos_{}, huecosBase_{};
     std::array<glm::vec2, 6> contactoBase_{};
     std::array<glm::vec3, 6> lucesEdificios_{}, centrosEdificios_{};
-    glm::vec3 avatarLocal_{500, 0, 500};
+    std::array<Contacto, CantidadNPC + CantidadMunecos> contactos_{};
     float tiempo_ = 0, apoyoTorre_ = 0, apoyoRailjack_ = 0, pisoPuerto_ = 0;
     double distanciaPatrulla_ = 0;
 
     void construirUrbanismo();
+    void actualizarContactos(bool inicial = false);
+    glm::vec2 rutaNPC(int i, float t) const;
+    glm::vec2 rutaMuneco(int i, double distancia) const;
     void apoyarTorre();
     float sueloConPuerto(float x, float z) const;
     glm::mat4 matrizEstatua() const;
 
   public:
-    static constexpr int CantidadMunecos = 6;
+    const auto &contactos() const { return contactos_; }
+    static float fasePasoNinja(float tiempo);
     const auto &huecosBase() const {
         return huecosBase_;
     }
@@ -53,14 +66,11 @@ class SectorRatchet {
     }
     void cargar(ContextoEscena &servicios);
     void actualizar(float deltaTime);
-    void registrarAvatar(glm::vec3 p) {
-        avatarLocal_ = p;
-    }
     void dibujar(ContextoEscena &servicios, const glm::mat4 &sectorAlMundo, float noche,
                  bool reflectoresActivos) const;
     void dibujarPavimento(Renderizador &, const glm::mat4 &sectorAlMundo, float noche) const;
     void liberar() noexcept;
-    bool obstaculo(glm::vec3 posLocal, bool personajes = true) const;
+    bool obstaculo(glm::vec3 posLocal) const;
     glm::vec3 posicionNPC(int i, float t) const;
     glm::mat4 matrizNPC(int i, float t) const;
     float reloj() const {

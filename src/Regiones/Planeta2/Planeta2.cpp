@@ -12,6 +12,21 @@ constexpr float LimiteZ = 151.f;
 constexpr float PendienteMax = 1.2f;
 const glm::vec3 PosSectorWarframe{-18, 0, 0};
 const glm::vec3 PosSectorRatchet{18, 0, 0};
+
+glm::vec2 plano(glm::vec3 p) { return {p.x, p.z}; }
+
+bool bloquea(const SectorRatchet::Contacto &c, glm::vec2 anterior, glm::vec2 avance) {
+    const auto desde = anterior - c.centro;
+    const float radio = c.radio + Planeta2::RadioAvatar;
+    const float radio2 = radio * radio;
+    const float inicio2 = glm::dot(desde, desde);
+    if (inicio2 < radio2)
+        return glm::dot(desde, avance) < -1e-6f;
+    const float longitud2 = glm::dot(avance, avance);
+    const float t = glm::clamp(-glm::dot(desde, avance) / longitud2, 0.f, 1.f);
+    const auto cerca = desde + t * avance;
+    return glm::dot(cerca, cerca) + 1e-5f < radio2;
+}
 } // namespace
 
 void Planeta2::cargar(ContextoEscena &c) {
@@ -35,8 +50,6 @@ glm::vec3 Planeta2::centroPlaza() const {
     return ratchet_.centroPlaza() + PosSectorRatchet;
 }
 void Planeta2::controlar(const OrdenActividad &orden) {
-    // Reaccion de NPC solo cerca del corral, sin interferir con controles de P1.
-    ratchet_.registrarAvatar(orden.avatar - PosSectorRatchet);
     if(orden.luzServicio) reflectorOrokin_=!reflectorOrokin_;
     if (orden.luzAcople)
         reflectoresRailjack_ = !reflectoresRailjack_;
@@ -69,21 +82,83 @@ void Planeta2::liberar() noexcept {
 glm::vec3 Planeta2::ajustarMovimiento(glm::vec3 anterior, glm::vec3 p) const {
     p.x = glm::clamp(p.x, -LimiteX, LimiteX);
     p.z = glm::clamp(p.z, -LimiteZ, LimiteZ);
-    auto empinado = [this](glm::vec3 a, glm::vec3 b) {
-        float d = glm::length(glm::vec2(b.x - a.x, b.z - a.z));
-        return d > 1e-4f && (altura(b.x, b.z) - altura(a.x, a.z)) / d > PendienteMax;
-    };
-    auto choca = [&](glm::vec3 q) {
-        return ratchet_.obstaculo(q - PosSectorRatchet) || empinado(anterior, q);
-    };
-    if (!choca(p))
+    const auto avance = plano(p - anterior);
+    const float distancia = glm::length(avance);
+    if (distancia < 1e-5f)
         return p;
-    glm::vec3 soloX{p.x, p.y, anterior.z}, soloZ{anterior.x, p.y, p.z};
-    if (!choca(soloX))
-        return soloX;
-    if (!choca(soloZ))
-        return soloZ;
+
+    const int pasos = std::max(1, int(std::ceil(distancia / .35f)));
+    const auto delta = glm::vec3(avance.x, 0, avance.y) / float(pasos);
+    auto permitido = [&](glm::vec3 q) {
+        const auto movimiento = plano(q - anterior);
+        const float d2 = glm::dot(movimiento, movimiento);
+        if (d2 < 1e-10f || ratchet_.obstaculo(q - PosSectorRatchet) ||
+            altura(q.x, q.z) - altura(anterior.x, anterior.z) > PendienteMax * std::sqrt(d2))
+            return false;
+        const auto desde = plano(anterior - PosSectorRatchet);
+        for (const auto &c : ratchet_.contactos())
+            if (bloquea(c, desde, movimiento))
+                return false;
+        return true;
+    };
+    // Se intenta la diagonal y luego el deslizamiento por un eje.
+    for (int i = 0; i < pasos; ++i) {
+        const auto q = anterior + delta;
+        const glm::vec3 x{q.x, q.y, anterior.z}, z{anterior.x, q.y, q.z};
+        if (permitido(q))
+            anterior = q;
+        else if (permitido(x))
+            anterior = x;
+        else if (permitido(z))
+            anterior = z;
+        else
+            break;
+    }
+    anterior.y = p.y;
     return anterior;
+}
+
+glm::vec3 Planeta2::separarAvatar(glm::vec3 posicion, float dt) const {
+    if (dt <= 0)
+        return posicion;
+    const auto desde = plano(posicion - PosSectorRatchet);
+    const auto &contactos = ratchet_.contactos();
+    for (size_t i = 0; i < contactos.size(); ++i) {
+        const auto &c = contactos[i];
+        const auto diferencia = desde - c.centro;
+        const float radio = c.radio + RadioAvatar;
+        const float distancia2 = glm::dot(diferencia, diferencia);
+        if (distancia2 >= radio * radio)
+            continue;
+        const float distancia = std::sqrt(distancia2);
+        const auto normal = distancia > .001f ? diferencia / distancia
+            : (glm::dot(c.avance, c.avance) > 1e-6f ? glm::normalize(c.avance) : glm::vec2(1, 0));
+        const float penetracion = radio - distancia;
+        const float avanceActor = std::max(0.f, glm::dot(c.avance, normal));
+        const float limite = i < SectorRatchet::CantidadNPC ? 5.f : 10.f;
+        const float alcance = std::min({penetracion, limite * dt,
+                                        avanceActor + penetracion * (1.f - std::exp(-12.f * dt))});
+        auto intentar = [&](glm::vec2 direccion) {
+            return ajustarMovimiento(posicion, posicion + alcance * glm::vec3(direccion.x, 0, direccion.y));
+        };
+        const auto directa = intentar(normal);
+        if (glm::length(plano(directa - posicion)) >= .75f * alcance)
+            return directa;
+        const glm::vec2 tangente{-normal.y, normal.x};
+        const auto izquierda = intentar(tangente), derecha = intentar(-tangente);
+        const float a = glm::length(plano(izquierda - posicion));
+        const float b = glm::length(plano(derecha - posicion));
+        if (std::max(a, b) > glm::length(plano(directa - posicion)))
+            return a >= b ? izquierda : derecha;
+        if (directa != posicion)
+            return directa;
+    }
+    return posicion;
+}
+
+void Planeta2::ajustarLuzEngineer(LuzPuntual &luz) {
+    luz.intensidad = 1.8f;
+    luz.atenuacion = {1, .047f, .010f};
 }
 Ambiente Planeta2::ambiente() const noexcept {
     Ambiente a{{.13f, .18f, .28f}, {.55f, .63f, .82f}};

@@ -11,7 +11,7 @@ bool GestorCamaras::compatible(ModoCamara m, Region r) {
     case ModoCamara::Viaje:
         return true;
     case ModoCamara::Observacion:
-        return r == Region::Espacio;
+        return r == Region::Espacio || r == Region::Planeta2;
     }
     return false;
 }

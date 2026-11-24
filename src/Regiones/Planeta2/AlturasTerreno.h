@@ -31,6 +31,9 @@ public:
         int ii = std::min(200,i+1), jj = std::min(200,j+1);
         float tx = gx-i, tz = gz-j;
         auto h = [&](int a, int b) {return alturas_[a*N+b];};
-        return (1-tx)*((1-tz)*h(i,j)+tz*h(i,jj)) + tx*((1-tz)*h(ii,j)+tz*h(ii,jj));
+        // Terreno2.gltf divide cada celda por la diagonal (i,j)-(i+1,j+1).
+        if (tx >= tz)
+            return (1 - tx) * h(i, j) + (tx - tz) * h(ii, j) + tz * h(ii, jj);
+        return (1 - tz) * h(i, j) + (tz - tx) * h(i, jj) + tx * h(ii, jj);
     }
 };

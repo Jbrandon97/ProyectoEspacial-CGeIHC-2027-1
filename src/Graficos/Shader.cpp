@@ -60,13 +60,19 @@ Shader::~Shader() {
 void Shader::usar() const {
     glUseProgram(programa_);
 }
+GLint Shader::uniforme(const char *nombre) const {
+    auto [entrada, nuevo] = uniformes_.try_emplace(nombre, -1);
+    if (nuevo)
+        entrada->second = glGetUniformLocation(programa_, nombre);
+    return entrada->second;
+}
 void Shader::matriz(const char *n, const glm::mat4 &v) const {
-    glUniformMatrix4fv(glGetUniformLocation(programa_, n), 1, GL_FALSE, glm::value_ptr(v));
+    glUniformMatrix4fv(uniforme(n), 1, GL_FALSE, glm::value_ptr(v));
 }
 void Shader::vector(const char *n, const glm::vec3 &v) const {
-    glUniform3fv(glGetUniformLocation(programa_, n), 1, glm::value_ptr(v));
+    glUniform3fv(uniforme(n), 1, glm::value_ptr(v));
 }
 
 void Shader::entero(const char *n, int v) const {
-    glUniform1i(glGetUniformLocation(programa_, n), v);
+    glUniform1i(uniforme(n), v);
 }

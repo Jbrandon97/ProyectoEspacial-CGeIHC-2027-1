@@ -20,6 +20,11 @@ class Renderizador {
     glm::mat4 vp_{1};
 
   public:
+    struct Volumen {
+        glm::mat4 modelo;
+        glm::vec3 color;
+        float opacidad;
+    };
     explicit Renderizador(const std::filesystem::path &recursos);
     void iniciar(int ancho, int alto, const glm::mat4 &vistaProyeccion, Ambiente ambiente,
                  glm::vec3 ojo = glm::vec3(0));
@@ -35,12 +40,14 @@ class Renderizador {
     }
     void material(float rugosidad, float metal = 0);
     void locomocionBlarg(float fase);
+    void guardiaWarframe(float apertura);
     void locomocionRobot(float fase, bool activa);
     void dibujar(const Objeto &objeto, const glm::mat4 &alMundo);
     void dibujar(const Malla &malla, const glm::mat4 &modelo, glm::vec3 tinte = glm::vec3(1));
     void texturada(const Malla &, const glm::mat4 &, GLuint textura, glm::vec3 color,
                    glm::vec3 emision = glm::vec3(0), float rugosidad = .85f, float metal = 0,
                    GLuint emisionTextura = 0);
+    void volumenes(const Malla &, const Volumen *, size_t cantidad, bool aditivo);
     bool visible(glm::vec3 centro, float radio) const;
     void interfaz(const Malla &malla, int ancho, int alto);
     void capturar(const std::filesystem::path &archivo, int ancho, int alto) const;

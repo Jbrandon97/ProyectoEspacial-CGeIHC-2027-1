@@ -20,14 +20,25 @@ void Planeta2::cargar(ContextoEscena &c) {
     alturas_ = std::make_unique<AlturasTerreno>(c.recursos / "Modelos/Alturas_201x201.f32");
     warframe_.cargar(c);
     ratchet_.usarSuelo([this](float x, float z) {
-        return altura(x + PosSectorRatchet.x, z + PosSectorRatchet.z);
+        return alturaTerreno(x + PosSectorRatchet.x, z + PosSectorRatchet.z);
     });
     ratchet_.cargar(c);
+}
+float Planeta2::alturaTerreno(float x, float z) const noexcept {
+    return alturas_ ? EscalaTerreno * alturas_->altura(x/EscalaTerreno,z/EscalaTerreno) : 0.f;
+}
+float Planeta2::altura(float x, float z) const noexcept {
+    return alturas_ ? ratchet_.superficie(x - PosSectorRatchet.x, z - PosSectorRatchet.z) : 0.f;
+}
+glm::vec3 Planeta2::centroPlaza() const {
+    return ratchet_.centroPlaza() + PosSectorRatchet;
 }
 void Planeta2::controlar(const OrdenActividad &orden) {
     // Reaccion de NPC solo cerca del corral, sin interferir con controles de P1.
     ratchet_.registrarAvatar(orden.avatar - PosSectorRatchet);
     if(orden.luzServicio) reflectorOrokin_=!reflectorOrokin_;
+    if (orden.luzAcople)
+        reflectoresRailjack_ = !reflectoresRailjack_;
     if (orden.reflector)
         reflector_ = !reflector_;
 }
@@ -37,10 +48,13 @@ void Planeta2::actualizar(float dt) {
     ratchet_.actualizar(dt);
 }
 void Planeta2::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
+    const auto sector = glm::translate(m,PosSectorRatchet);
+    const auto noche = ambiente().iluminacion.noche;
+    ratchet_.dibujarPavimento(c.renderizador,sector,noche);
     if (terreno_)
         terreno_->dibujar(c.renderizador, glm::scale(m, glm::vec3(EscalaTerreno)));
     warframe_.dibujar(c, glm::translate(m, PosSectorWarframe));
-    ratchet_.dibujar(c, glm::translate(m, PosSectorRatchet));
+    ratchet_.dibujar(c, sector, noche, reflectoresRailjack_);
 }
 void Planeta2::liberar() noexcept {
     warframe_.liberar();
@@ -99,7 +113,7 @@ Ambiente Planeta2::ambiente() const noexcept {
     aphelion.encendida = true;
     // El indice 8 es EXCLUSIVO para la luz del Engineer (Aplicacion.cpp).
     auto &corral = l.puntuales[9];
-    corral.posicion = {-42, altura(-42, 20) + 6.f, 20};
+    corral.posicion = {-69, altura(-69, 55) + 6.f, 55};
     corral.color = {.60f, .39f, 1.f};
     corral.intensidad = 3.2f * l.noche;
     corral.atenuacion = {1, .07f, .018f};
@@ -112,10 +126,11 @@ Ambiente Planeta2::ambiente() const noexcept {
     railjack.encendida = true;
 
     auto &f = l.focales[0];
-    f.posicion = {-32, altura(-42, 20) + 14, 30};
-    f.direccion = glm::normalize(glm::vec3(-10, -12, -10));
-    f.color = {.45f, .74f, 1};
-    f.intensidad = 1.35f;
+    const auto plaza = centroPlaza();
+    f.posicion = plaza + glm::vec3(9,12,11);
+    f.direccion = glm::normalize(glm::vec3(-9,-8,-11));
+    f.color = {1.f,.85f,.62f};
+    f.intensidad = 2.2f;
     f.interno = 22;
     f.externo = 38;
     f.atenuacion = {1, .035f, .003f};
@@ -123,9 +138,21 @@ Ambiente Planeta2::ambiente() const noexcept {
     auto &f2=l.focales[1];f2=f;f2.posicion={104,altura(83,-15)+20,6};
     f2.direccion=glm::normalize(glm::vec3(-21,-15,-21));f2.color={1,.79f,.4f};f2.intensidad=2.5f;
     f2.encendida=reflectorOrokin_;
-    const glm::vec2 puntos[]={{-42,90},{-15,20},{38,20},{83,38}};
-    for(int i=0;i<4;++i){auto &p=l.puntuales[11+i];auto q=puntos[i];p.posicion={q.x,altura(q.x,q.y)+4.5f,q.y};
-        p.color={1,.73f,.35f};p.intensidad=2.5f*l.noche;p.encendida=l.noche>.001f;p.atenuacion={1,.06f,.018f};}
+    const glm::vec2 puntos[]={{plaza.x-8,plaza.z+9},{plaza.x+8,plaza.z-8},{78,-6}};
+    for (int i = 0; i < 3; ++i) {
+        auto &p = l.puntuales[11+i];
+        const auto q = puntos[i];
+        p.posicion = {q.x,altura(q.x,q.y)+5.f,q.y};
+        p.color = {1,.75f,.45f};
+        p.intensidad = (i == 2 ? 4.f : 2.8f)*l.noche;
+        p.encendida = l.noche > .001f;
+        p.atenuacion = {1,.045f,.010f};
+    }
+    const auto puerto = ratchet_.reflectoresRailjack(reflectoresRailjack_ ? l.noche : 0.f);
+    for (size_t i = 0; i < puerto.size(); ++i) {
+        l.focales[2+i] = puerto[i];
+        l.focales[2+i].posicion += PosSectorRatchet;
+    }
 
     return a;
 }
@@ -133,6 +160,6 @@ EstadoActividad Planeta2::actividad() const {
     EstadoActividad e;
     e.mensajes = {"PLANETA 2",
                   "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
-                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN"};
+                  "F ENERGIA / P PLAZA / I OROKIN / U RAILJACK DE NOCHE"};
     return e;
 }

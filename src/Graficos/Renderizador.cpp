@@ -84,9 +84,11 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
         shader_.vector((nombre + ".atenuacion").c_str(), p.atenuacion);
     }
     shader_.entero("cantidadPuntuales", cantidad);
-    for (int i = 0; i < 2; ++i) {
-        const auto &f = l.focales[i];
-        auto n = "focales[" + std::to_string(i) + "]";
+    cantidad = 0;
+    for (const auto &f : l.focales) {
+        if (!f.encendida || f.intensidad <= 0)
+            continue;
+        auto n = "focales[" + std::to_string(cantidad++) + "]";
         shader_.vector((n + ".pos").c_str(), f.posicion);
         shader_.vector((n + ".dir").c_str(), f.direccion);
         shader_.vector((n + ".color").c_str(), f.color * (f.encendida ? f.intensidad : 0));
@@ -94,6 +96,8 @@ void Renderizador::iniciar(int a, int b, const glm::mat4 &vp, Ambiente ambiente,
         shader_.vector((n + ".cono").c_str(),
                        {std::cos(glm::radians(f.interno)), std::cos(glm::radians(f.externo)), 0});
     }
+    shader_.entero("cantidadFocales", cantidad);
+    shader_.vector("volumen", {0,0,0});
     shader_.entero("usaEmision", 0);
     recortarDebajo(-100000.f);
     shader_.vector("focoPos", l.focoPos);
@@ -180,6 +184,40 @@ void Renderizador::texturada(const Malla &m, const glm::mat4 &modelo, GLuint tex
     material(.85f);
 }
 
+void Renderizador::volumenes(const Malla &m, const Volumen *instancias, size_t cantidad,
+                             bool aditivo) {
+    if (cantidad == 0)
+        return;
+    GLboolean escribeProfundidad;
+    GLint origenRgb, destinoRgb, origenAlpha, destinoAlpha, ecuacionRgb, ecuacionAlpha;
+    const auto mezcla = glIsEnabled(GL_BLEND), descarte = glIsEnabled(GL_CULL_FACE);
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &escribeProfundidad);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &origenRgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &destinoRgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &origenAlpha);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &destinoAlpha);
+    glGetIntegerv(GL_BLEND_EQUATION_RGB, &ecuacionRgb);
+    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &ecuacionAlpha);
+    glEnable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    glBlendEquation(GL_FUNC_ADD);
+    glBlendFunc(GL_SRC_ALPHA, aditivo ? GL_ONE : GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    for (size_t i = 0; i < cantidad; ++i) {
+        const auto &v = instancias[i];
+        shader_.vector("volumen", {aditivo ? 2.f : 1.f, v.opacidad, 0.f});
+        dibujar(m, v.modelo, v.color);
+    }
+    shader_.vector("volumen", {0,0,0});
+    glDepthMask(escribeProfundidad);
+    glBlendFuncSeparate(origenRgb, destinoRgb, origenAlpha, destinoAlpha);
+    glBlendEquationSeparate(ecuacionRgb, ecuacionAlpha);
+    if (!mezcla)
+        glDisable(GL_BLEND);
+    if (descarte)
+        glEnable(GL_CULL_FACE);
+}
+
 bool Renderizador::visible(glm::vec3 c, float radio) const {
     auto t = glm::transpose(vp_);
     for (int i = 0; i < 3; ++i)
@@ -201,3 +239,6 @@ void Renderizador::locomocionRobot(float fase, bool activa) {
     shader_.vector("locomocionClank", {fase, activa ? 1.f : 0.f, 0});
 }
 void Renderizador::locomocionBlarg(float fase) { shader_.vector("locomocionClank",{fase,2,0}); }
+void Renderizador::guardiaWarframe(float apertura) {
+    shader_.vector("locomocionClank", {apertura,3,0});
+}

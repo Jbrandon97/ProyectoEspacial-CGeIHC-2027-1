@@ -84,7 +84,7 @@ void verificarContratos(ContextoEscena &c) {
     std::cout << "MOVIMIENTO_OK caminar15 correr30 diagonal normalizada\n";
     GestorCamaras cam;
     const bool esperados[3][4] = {
-        {true, true, true, false}, {true, false, true, false}, {false, false, true, true}};
+        {true, true, true, false}, {true, false, true, true}, {false, false, true, true}};
     for (int r = 0; r < 3; ++r) {
         cam.alCambiarRegion(Region(r));
         for (int m = 0; m < 4; ++m) {

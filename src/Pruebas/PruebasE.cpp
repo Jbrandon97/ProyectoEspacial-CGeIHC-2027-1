@@ -460,19 +460,32 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     exigir(w > 0 && h > 0, "Framebuffer sin dimensiones al capturar Planeta 2");
     std::cout << "PRUEBA_FRAMEBUFFER_P2 " << w << "x" << h << "\n";
     ContextoEscena c{renderizador_, recursos_};
-    auto foto = [&](std::string nombre, glm::vec3 ojo, glm::vec3 objetivo) {
+    auto foto = [&](std::string nombre, glm::vec3 ojo, glm::vec3 objetivo,
+                    const Ambiente *ajuste = nullptr, bool leerPixeles = false) {
         ojo = mundo_.aGlobal(Region::Planeta2, ojo);
         objetivo = mundo_.aGlobal(Region::Planeta2, objetivo);
         auto vp = glm::perspective(glm::radians(58.f), float(w) / h, .1f, 1200.f) *
                   glm::lookAt(ojo, objetivo, {0, 1, 0});
-        auto amb = p.ambiente();
+        auto amb = ajuste ? *ajuste : p.ambiente();
         for (auto &l : amb.iluminacion.puntuales)
+            if (l.encendida)
+                l.posicion = mundo_.aGlobal(Region::Planeta2, l.posicion);
+        for (auto &l : amb.iluminacion.focales)
             if (l.encendida)
                 l.posicion = mundo_.aGlobal(Region::Planeta2, l.posicion);
         renderizador_.iniciar(w, h, vp, amb, ojo);
         p.dibujar(c, mundo_.transformacion(Region::Planeta2));
         renderizador_.capturar(dir / (nombre + ".ppm"), w, h);
+        std::vector<unsigned char> pixeles;
+        if (leerPixeles) {
+            pixeles.resize(size_t(w)*h*4);
+            glReadBuffer(GL_BACK);
+            glReadPixels(0,0,w,h,GL_RGBA,GL_UNSIGNED_BYTE,pixeles.data());
+        }
         Renderizador::comprobarErrores();
+        ventana_.presentar();
+        ventana_.eventos();
+        return pixeles;
     };
     foto("P2_Noche", {125, 62, 155}, {15, 12, 0});
     p.actualizar(50);
@@ -485,17 +498,17 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
         std::cout << "P2_BASE_CONTACTO " << i << " hundimiento_min=" << hundimiento.x
                   << " max=" << hundimiento.y << "\n";
     }
-    int i = 0;
+    int indiceBase = 0;
     for (auto centro : p.ratchet().centrosEdificios()) {
         centro += glm::vec3(18, 0, 0);
-        foto("P2_Base_Dia_" + std::to_string(i++), centro + glm::vec3(14, 7, 17),
+        foto("P2_Base_Dia_" + std::to_string(indiceBase++), centro + glm::vec3(14, 7, 17),
              centro + glm::vec3(0, 4, 0));
     }
     p.actualizar(70);
-    i = 0;
+    indiceBase = 0;
     for (auto centro : p.ratchet().centrosEdificios()) {
         centro += glm::vec3(18, 0, 0);
-        foto("P2_Base_Noche_" + std::to_string(i++), centro + glm::vec3(14, 7, 17),
+        foto("P2_Base_Noche_" + std::to_string(indiceBase++), centro + glm::vec3(14, 7, 17),
              centro + glm::vec3(0, 4, 0));
     }
     auto reloj = p.reloj();
@@ -504,6 +517,166 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     exigir(p.reloj() == reloj, "Reloj P2 reiniciado");
     std::cout << "PLANETA2_OK seis apoyos geometricos sin hueco, colisiones, seis luces de "
                  "fachada, ciclo120s y persistencia\n";
+
+    const auto &sector = p.ratchet();
+    const glm::vec3 origen(18,0,0);
+    auto plano = [](glm::vec3 q) { return glm::vec2(q.x,q.z); };
+    const double longitud = sector.longitudPatrulla(), cuarto = longitud / 4;
+    constexpr int muestras = 960;
+    constexpr float velocidad = 7.5f;
+    float minPaso = 10, maxPaso = 0;
+    for (int i = 0; i < 4; ++i) {
+        const auto inicio = sector.posicionMuneco(i,0);
+        const int signoX[] = {-1,1,1,-1}, signoZ[] = {-1,-1,1,1};
+        exigir((inicio.x+18)*signoX[i] > 115 && inicio.z*signoZ[i] > 115,
+               "Esquina inicial de muneco incorrecta");
+        for (int k = 0; k < muestras; ++k) {
+            const double s = longitud*k/muestras;
+            const auto q = sector.posicionMuneco(i,s);
+            const auto siguiente = sector.posicionMuneco(i,s+longitud/muestras);
+            const auto paso = plano(siguiente-q);
+            const auto frente = sector.frenteMuneco(s+cuarto*i);
+            exigir(!sector.obstaculo(q,false) && std::abs(q.y-p.altura(q.x+18,q.z)-.092f)<.002f,
+                   "Muneco fuera del transito o separado del piso");
+            exigir(glm::dot(glm::normalize(paso),plano(frente)) > .99f,
+                   "Orientacion lateral en circuito de munecos");
+            exigir(glm::length(plano(q-sector.posicionMuneco((i+1)%4,s))) > 165.f,
+                   "Munecos se alcanzan en el perimetro");
+            minPaso = std::min(minPaso, glm::length(paso));
+            maxPaso = std::max(maxPaso, glm::length(paso));
+        }
+        exigir(glm::length(sector.posicionMuneco(i,longitud)-inicio)<.001f,
+               "La patrulla no cierra en su esquina");
+    }
+    exigir(maxPaso-minPaso < .008f, "Velocidad irregular o salto en esquina");
+    const double previo = sector.distanciaPatrulla();
+    p.actualizar(2.f);
+    exigir(std::abs(std::fmod(previo+velocidad*2,longitud)-sector.distanciaPatrulla())<.001,
+           "Distancia de patrulla no responde al deltaTime");
+    std::cout << "P2_MUNECOS_OK cuatro actores, 3840 muestras, longitud=" << longitud
+              << " minPaso=" << minPaso << " maxPaso=" << maxPaso
+              << " periodo_s=" << longitud/velocidad << '\n';
+
+    auto recorrer = [&](glm::vec2 inicio, glm::vec2 destino, bool correr) {
+        Avatar avatar;
+        avatar.colocar({inicio.x,0,inicio.y},p);
+        for (int i = 0; i < 800; ++i) {
+            const glm::vec2 d = destino - plano(avatar.posicion());
+            if (glm::length(d)<.65f)
+                return;
+            avatar.mover(glm::normalize(d),1.f/60,p,correr);
+        }
+        std::cout << "P2_RUTA_BLOQUEADA destino=" << destino.x << ',' << destino.y
+                  << " detenido=" << avatar.posicion().x << ',' << avatar.posicion().z << '\n';
+        exigir(false,"Ruta peatonal bloqueada");
+    };
+    exigir(!sector.obstaculo(p.aparicion()-origen,false), "Aparicion P2 bloqueada");
+    recorrer({-42,115},{-42,75},false);
+    recorrer({-42,75},{-24,33},true);
+    recorrer({-24,33},{-60,5},false);
+    recorrer({-60,5},{-77,-4},true);
+    recorrer({-24,33},{-12,29},true);
+    recorrer({-12,29},{26,15},false);
+    recorrer({26,15},{70,-5},true);
+    recorrer({26,15},{42,49},false);
+    recorrer({42,49},{77,59},true);
+    recorrer({98,95},{98,122},true);
+    recorrer({-40,28},{-66,45},false);
+    int contactosTorre = 0;
+    const auto torre = sector.centroTorre()+origen;
+    for (glm::vec2 d : {glm::vec2(1,0),{-1,0},{0,1},{0,-1}}) {
+        auto q = plano(torre) + d*16.f;
+        Avatar avatar;
+        avatar.colocar({q.x,0,q.y},p);
+        for (int i = 0; i < 36; ++i)
+            avatar.mover(-d,1.f/60,p,true);
+        if (glm::dot(plano(avatar.posicion()-torre),d)>0)
+            ++contactosTorre;
+    }
+    exigir(contactosTorre >= 3, "Frentes fisicos de torre sin colision");
+    recorrer({68,-32},{68,0},true);
+    recorrer({95,-32},{95,0},true);
+    std::cout << "P2_CAMINOS_OK 11 tramos a pie/corriendo, torre contactos=" << contactosTorre
+              << " dos pasos laterales\n";
+
+    float margenAphelion = 1e9f;
+    for (int i = 0; i < 780; ++i) {
+        const float t = i*.1f;
+        const auto q = sector.posicionAphelion(t);
+        auto desplazamiento = sector.posicionAphelion(t+.03f)-sector.posicionAphelion(t+77.97f);
+        exigir(glm::dot(glm::normalize(desplazamiento),sector.frenteAphelion(t))>.99f,
+               "Aphelion no apunta por su eje delantero");
+        for (auto d : {glm::vec2(0),glm::vec2(8,0),{-8,0},{0,8},{0,-8}})
+            margenAphelion = std::min(margenAphelion,q.y-8.f-p.altura(q.x+18+d.x,q.z+d.y));
+        for (auto b : sector.centrosEdificios())
+            exigir(glm::length(plano(q-b))>20.f || q.y-b.y>51.f,
+                   "Aphelion puede tocar un edificio");
+        exigir(glm::length(plano(q-sector.centroTorre()))>17.f || q.y-sector.centroTorre().y>25.f,
+               "Aphelion puede tocar Orokin");
+    }
+    exigir(margenAphelion>8.f, "Aphelion demasiado cerca del suelo");
+    std::cout << "P2_APHELION_OK 780 muestras; margen suelo=" << margenAphelion << '\n';
+
+    p.actualizar(std::fmod(24.f-p.reloj()+120.f,120.f));
+    const auto plaza = p.centroPlaza();
+    foto("P2_Plaza_Dia", plaza + glm::vec3(11,8,25), plaza + glm::vec3(0,4,0));
+    foto("P2_Corral", {-52,20,77}, {-66,3,51});
+    foto("P2_Perimetro_A",{9,306,96},{0,0,0});
+    const double d = sector.distanciaPatrulla();
+    for (int k = 0; k < 2; ++k) {
+        if (k)
+            p.actualizar(2.4f);
+        const auto q = sector.posicionMuneco(0,sector.distanciaPatrulla())+origen;
+        const auto frente = sector.frenteMuneco(sector.distanciaPatrulla());
+        foto("P2_Muneco_Ratchet_" + std::to_string(k),
+             q+7.f*frente+glm::vec3(6.f*frente.z,3.3f,-6.f*frente.x),q+glm::vec3(0,2.6f,0));
+    }
+    const auto clank = sector.posicionMuneco(1,d+18)+origen;
+    foto("P2_Muneco_Clank",clank+glm::vec3(-7,4,8),clank+glm::vec3(0,2.3f,0));
+    for (int k = 0; k < 4; ++k) {
+        const auto q = sector.posicionNPC(2,sector.reloj())+origen;
+        foto("P2_Articulacion_" + std::to_string(k),q+glm::vec3(-2.2f,2.6f,5.5f),q+glm::vec3(0,1.5f,0));
+        p.actualizar(1.f);
+    }
+    for (int k = 0; k < 2; ++k) {
+        const auto q = sector.aphelionPosicion()+origen;
+        foto("P2_Aphelion_"+std::to_string(k),q+glm::vec3(12,9,18),q);
+        p.actualizar(3.4f);
+    }
+    foto("P2_Perimetro_B",{9,306,96},{0,0,0});
+    p.actualizar(std::fmod(93.f-p.reloj()+120.f,120.f));
+    p.actualizar(std::fmod(13.f-std::fmod(sector.reloj(),24.f)+24.f,24.f));
+    auto focos = p.ambiente().iluminacion.focales;
+    for (int i = 2; i < 6; ++i) {
+        const auto objetivo = sector.railjackPosicion()+origen-focos[i].posicion;
+        exigir(focos[i].encendida && focos[i].direccion.y>.4f &&
+               glm::dot(glm::normalize(objetivo),focos[i].direccion)>.97f,
+               "Reflector Railjack sin objetivo durante el ascenso");
+    }
+    const auto q = sector.railjackPosicion()+origen;
+    const glm::vec3 observador(126,14,112), objetivo = q-glm::vec3(0,7,0);
+    foto("P2_Railjack_Haces_ON",observador,objetivo);
+    const auto lucesMantener = p.ambiente();
+    OrdenActividad puerto;
+    puerto.luzAcople = true;
+    p.controlar(puerto);
+    focos = p.ambiente().iluminacion.focales;
+    exigir(std::none_of(focos.begin()+2,focos.end(),[](auto f){return f.encendida;}),
+           "U no apaga cuatro reflectores en Planeta2");
+    const auto apagado = foto("P2_Railjack_Haces_OFF",observador,objetivo,nullptr,true);
+    const auto ilumina = foto("P2_Railjack_Solo_Luz",observador,objetivo,&lucesMantener,true);
+    size_t canales = 0;
+    for (size_t i = 0; i < apagado.size(); ++i)
+        if (ilumina[i] > apagado[i] + 4)
+            ++canales;
+    exigir(canales > 400, "Los reflectores no iluminan materiales al retirar los haces");
+    p.controlar(puerto);
+    foto("P2_Plaza_Noche",plaza+glm::vec3(11,8,25),plaza+glm::vec3(0,4,0));
+    foto("P2_Torre_Noche",torre+glm::vec3(20,11,27),torre+glm::vec3(0,5,0));
+    GLint limiteUniformes = 0;
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,&limiteUniformes);
+    std::cout << "P2_RAILJACK_FOCOS_OK cuatro conos y control U; canales iluminados=" << canales
+              << " limite_uniformes=" << limiteUniformes << '\n';
     cambiarRegion(Region::Planeta1);
 }
 
@@ -993,6 +1166,9 @@ void Aplicacion::probarIntegral(const std::filesystem::path &dir) {
 }
 
 void Aplicacion::medirIntegral() {
+    // El monitor puede cambiar el tamano de la ventana de arranque entre mediciones.
+    glfwSetWindowSize(ventana_.nativa(), 800, 560);
+    ventana_.eventos();
     glfwSwapInterval(0);
     for (auto r : {Region::Planeta1, Region::Planeta2, Region::Espacio}) {
         cambiarRegion(r);
@@ -1015,11 +1191,16 @@ void Aplicacion::medirIntegral() {
             if (i >= 30)
                 muestras.push_back(std::chrono::duration<double, std::milli>(fin - inicio).count());
         }
+        int ancho, alto;
+        ventana_.dimensiones(ancho, alto);
+        if (ancho != 800 || alto != 560)
+            throw std::runtime_error("La medicion integral requiere framebuffer 800x560");
         std::sort(muestras.begin(), muestras.end());
         double suma = 0;
         for (auto t : muestras)
             suma += t;
         std::cout << "MEDICION_INTEGRAL " << escenarios_.actual().nombre()
+                  << " framebuffer=" << ancho << 'x' << alto
                   << " muestras=120 FPS_medio=" << 1000 * muestras.size() / suma
                   << " mediana_ms=" << muestras[60] << " p95_ms=" << muestras[114] << "\n";
     }

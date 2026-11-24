@@ -1,0 +1,10 @@
+--- Ripped by Slipsy! ---
+
+[FILE]_c.png - base colour
+[FILE]_s.png - specular
+[FILE]_l.png - emission factor - emission itself should use base colour!
+[FILE]_n.png - normal map
+
+Blitzer and head were reweighted. everything else is untouched.
+
+--- Thanks to DemonBoy, Juni and the members of Game Fuckery INC for the help! ---

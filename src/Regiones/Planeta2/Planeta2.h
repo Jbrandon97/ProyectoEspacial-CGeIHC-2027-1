@@ -14,12 +14,14 @@ class Planeta2 final : public Escenario {
     std::unique_ptr<ModeloGltf> terreno_;
     std::unique_ptr<AlturasTerreno> alturas_;
     float tiempo_ = 24.0f;
-    bool reflector_ = true, reflectorOrokin_ = false;
+    bool reflector_ = true, reflectorOrokin_ = false, reflectoresRailjack_ = true;
+    float alturaTerreno(float x, float z) const noexcept;
 
   public:
     const SectorRatchet &ratchet() const {
         return ratchet_;
     }
+    glm::vec3 centroPlaza() const;
     float reloj() const {
         return tiempo_;
     }
@@ -37,9 +39,7 @@ class Planeta2 final : public Escenario {
     glm::vec3 aparicion() const noexcept override {
         return {-42, 1, 115};
     }
-    float altura(float x, float z) const noexcept override {
-        return alturas_ ? .60f * alturas_->altura(x / .60f, z / .60f) : 0.0f;
-    }
+    float altura(float x, float z) const noexcept override;
     glm::vec3 ajustarMovimiento(glm::vec3 anterior, glm::vec3 propuesta) const override;
     Ambiente ambiente() const noexcept override;
     EstadoActividad actividad() const override;

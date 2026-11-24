@@ -199,7 +199,8 @@ void Aplicacion::actualizarCamara(float dt) {
     glm::vec3 objetivo = actividad.ocupado ? actividad.objetivo : avatar_.posicion();
     glm::vec3 direccion = actividad.direccion;
     if (camaras_.modo() == ModoCamara::Viaje) {
-        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75) : glm::vec3(-42, 4, 20);
+        objetivo = r == Region::Planeta1 ? glm::vec3(90, 4, -75)
+            : dynamic_cast<Planeta2 &>(e).centroPlaza() + glm::vec3(0,4,0);
         camaras_.encuadrarEvento(mundo_.aGlobal(r, objetivo));
         return;
     }
@@ -265,7 +266,7 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     if (lineas.empty() && r == Region::Planeta2)
         lineas = {"PLANETA 2",
                   "WASD MOVER / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 PLAZA / F4 WARFRAME",
-                  "F ENERGIA CORPORAL / P FOCO PLAZA / I FOCO OROKIN"};
+                  "F ENERGIA / P PLAZA / I OROKIN / U RAILJACK DE NOCHE"};
     if (lineas.empty())
         lineas = {std::string(e.nombre()) + " / " + camaras_.nombre(), "WASD MOVER / 1-3 REGIONES"};
     if (r == Region::Planeta1 && !actividad.ocupado && !observandoCohete_ &&
@@ -275,7 +276,7 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
                 texto = "WASD / SHIFT CORRER / MOUSE CAMARA / F1 EXPLORAR / F3 VISTA / TAB CURSOR";
     if (r == Region::Planeta2 && camaras_.modo() != ModoCamara::Exploracion && lineas.size() > 2) {
         lineas[1] = "F1 EXPLORAR / F3 PLAZA / F4 WARFRAME";
-        lineas[2] = "P FOCO PLAZA / I FOCO OROKIN";
+        lineas[2] = "P PLAZA / I OROKIN / U RAILJACK DE NOCHE";
     }
     if (r == Region::Espacio) {
         bool piloto = camaras_.modo() == ModoCamara::Viaje;
@@ -346,7 +347,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
 int Aplicacion::ejecutar(int argc, char **argv) noexcept {
     try {
         bool pruebas = false, capturas = true, medir = false, pruebasEspacio = false,
-             integral = false, medirTodo = false;
+             pruebasP2 = false, integral = false, medirTodo = false;
         Region inicial = Region::Planeta1;
         std::filesystem::path evidencias = "EvidenciasPrueba";
         for (int i = 1; i < argc; ++i) {
@@ -357,6 +358,8 @@ int Aplicacion::ejecutar(int argc, char **argv) noexcept {
                 integral = true;
             else if (a == "--pruebas-espacio")
                 pruebasEspacio = true;
+            else if (a == "--pruebas-planeta2")
+                pruebasP2 = true;
             else if (a == "--medir-espacio")
                 medir = true;
             else if (a == "--pruebas")
@@ -378,7 +381,7 @@ int Aplicacion::ejecutar(int argc, char **argv) noexcept {
             } else
                 throw std::invalid_argument(
                     "Opciones: --region planeta1|planeta2|espacio "
-                    "--pruebas --pruebas-integrales --pruebas-espacio --medir-espacio "
+                    "--pruebas --pruebas-integrales --pruebas-espacio --pruebas-planeta2 --medir-espacio "
                     "--medir-integral --sin-capturas --evidencias carpeta");
         }
         {
@@ -393,6 +396,8 @@ int Aplicacion::ejecutar(int argc, char **argv) noexcept {
                 app.medirEspacio(evidencias);
             else if (pruebasEspacio)
                 app.probarEspacioMejora(evidencias);
+            else if (pruebasP2)
+                app.probarPlaneta2(evidencias);
             else
                 estado = app.ciclo(pruebas, evidencias, inicial);
             if (estado)

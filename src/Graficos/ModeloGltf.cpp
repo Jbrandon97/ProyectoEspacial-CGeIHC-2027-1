@@ -42,7 +42,7 @@ Textura::Textura(const std::filesystem::path &p) {
 Textura::~Textura() {
     glDeleteTextures(1, &id_);
 }
-ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
+ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada, bool conservarTriangulos) {
     cgltf_options opciones{};
     cgltf_data *raw = nullptr;
     if (cgltf_parse_file(&opciones, p.string().c_str(), &raw) != cgltf_result_success)
@@ -156,6 +156,9 @@ ModeloGltf::ModeloGltf(const std::filesystem::path &p, bool indexada) {
                 for (size_t a = 0; a < count; ++a)
                     indices[a] =
                         unsigned(pr.indices ? cgltf_accessor_read_index(pr.indices, a) : a);
+                if (conservarTriangulos)
+                    for (auto i : indices)
+                        triangulos_.push_back(glm::vec3(parte.local * glm::vec4(v[i].posicion,1)));
                 parte.malla = std::make_unique<Malla>(v, indices);
             } else
                 parte.malla = std::make_unique<Malla>(v);

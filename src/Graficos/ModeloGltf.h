@@ -52,7 +52,8 @@ class ModeloGltf {
     float minimoY() const noexcept {
         return minimoY_;
     }
-    explicit ModeloGltf(const std::filesystem::path &, bool indexada = false);
+    explicit ModeloGltf(const std::filesystem::path &, bool indexada = false,
+                        bool conservarTriangulos = false);
     size_t cantidadNodos() const noexcept {
         return nombresNodos_.size();
     }

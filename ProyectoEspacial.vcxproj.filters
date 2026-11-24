@@ -153,6 +153,9 @@
     <ClCompile Include="src\Regiones\Planeta2\Planeta2.cpp">
       <Filter>src\Regiones\Planeta2</Filter>
     </ClCompile>
+    <ClCompile Include="src\Regiones\Planeta2\GalaxiaPlaneta2.cpp">
+      <Filter>src\Regiones\Planeta2</Filter>
+    </ClCompile>
     <ClCompile Include="src\Regiones\Planeta2\SectorRatchet\SectorRatchet.cpp">
       <Filter>src\Regiones\Planeta2\SectorRatchet</Filter>
     </ClCompile>
@@ -271,6 +274,9 @@
       <Filter>src\Regiones\Planeta1</Filter>
     </ClInclude>
     <ClInclude Include="src\Regiones\Planeta2\Planeta2.h">
+      <Filter>src\Regiones\Planeta2</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Regiones\Planeta2\GalaxiaPlaneta2.h">
       <Filter>src\Regiones\Planeta2</Filter>
     </ClInclude>
     <ClInclude Include="src\Regiones\Planeta2\SectorRatchet\SectorRatchet.h">

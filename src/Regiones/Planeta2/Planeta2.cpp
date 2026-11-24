@@ -23,6 +23,7 @@ void Planeta2::cargar(ContextoEscena &c) {
         return alturaTerreno(x + PosSectorRatchet.x, z + PosSectorRatchet.z);
     });
     ratchet_.cargar(c);
+    galaxia_.cargar(c.recursos);
 }
 float Planeta2::alturaTerreno(float x, float z) const noexcept {
     return alturas_ ? EscalaTerreno * alturas_->altura(x/EscalaTerreno,z/EscalaTerreno) : 0.f;
@@ -46,6 +47,7 @@ void Planeta2::actualizar(float dt) {
     tiempo_ = std::fmod(tiempo_ + std::max(0.f, dt), DuracionCiclo);
     warframe_.actualizar(dt);
     ratchet_.actualizar(dt);
+    galaxia_.actualizar(dt);
 }
 void Planeta2::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
     const auto sector = glm::translate(m,PosSectorRatchet);
@@ -55,8 +57,10 @@ void Planeta2::dibujar(ContextoEscena &c, const glm::mat4 &m) const {
         terreno_->dibujar(c.renderizador, glm::scale(m, glm::vec3(EscalaTerreno)));
     warframe_.dibujar(c, glm::translate(m, PosSectorWarframe));
     ratchet_.dibujar(c, sector, noche, reflectoresRailjack_);
+    galaxia_.dibujar(c.renderizador, m, noche);
 }
 void Planeta2::liberar() noexcept {
+    galaxia_.liberar();
     warframe_.liberar();
     ratchet_.liberar();
     terreno_.reset();

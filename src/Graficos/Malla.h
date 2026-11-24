@@ -21,5 +21,5 @@ class Malla {
     Malla(const Malla &) = delete;
     Malla &operator=(const Malla &) = delete;
     void actualizar(const std::vector<Vertice> &vertices, bool dinamica = false);
-    void dibujar() const;
+    void dibujar(GLenum modo = GL_TRIANGLES) const;
 };

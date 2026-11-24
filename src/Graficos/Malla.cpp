@@ -57,10 +57,10 @@ void Malla::actualizar(const std::vector<Vertice> &v, bool dinamica) {
     glEnableVertexAttribArray(3);
     glBindVertexArray(0);
 }
-void Malla::dibujar() const {
+void Malla::dibujar(GLenum modo) const {
     glBindVertexArray(vao_);
     if (indexada_)
-        glDrawElements(GL_TRIANGLES, cantidad_, GL_UNSIGNED_INT, nullptr);
+        glDrawElements(modo, cantidad_, GL_UNSIGNED_INT, nullptr);
     else
-        glDrawArrays(GL_TRIANGLES, 0, cantidad_);
+        glDrawArrays(modo, 0, cantidad_);
 }

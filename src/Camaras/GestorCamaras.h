@@ -42,6 +42,7 @@ class GestorCamaras {
     void seguir(glm::vec3 objetivo, glm::vec3 direccion, float dt,
                 const std::function<float(float, float)> &altura);
     void seguirEspacio(glm::vec3 nave, glm::vec3 frente, glm::vec3 centro, float dt);
+    void mezclarEncuadre(glm::vec3 ojo, glm::vec3 objetivo, float peso);
     glm::mat4 vista(glm::vec3 objetivoGlobal) const;
     glm::mat4 proyeccion(float aspecto) const;
     ModoCamara modo() const noexcept {

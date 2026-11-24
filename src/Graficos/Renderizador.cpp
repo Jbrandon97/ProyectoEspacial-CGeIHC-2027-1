@@ -184,6 +184,35 @@ void Renderizador::texturada(const Malla &m, const glm::mat4 &modelo, GLuint tex
     material(.85f);
 }
 
+void Renderizador::puntos(const Malla &m, const Shader &programa, const glm::mat4 &modelo,
+                          glm::vec3 efecto) {
+    GLboolean escribeProfundidad;
+    GLint origenRgb, destinoRgb, origenAlpha, destinoAlpha;
+    const auto mezcla = glIsEnabled(GL_BLEND), tamanoPuntos = glIsEnabled(GL_PROGRAM_POINT_SIZE);
+    glGetBooleanv(GL_DEPTH_WRITEMASK, &escribeProfundidad);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &origenRgb);
+    glGetIntegerv(GL_BLEND_DST_RGB, &destinoRgb);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &origenAlpha);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &destinoAlpha);
+    glEnable(GL_BLEND);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
+    glDepthMask(GL_FALSE);
+    programa.usar();
+    programa.matriz("vistaProyeccion", vp_);
+    programa.matriz("modelo", modelo);
+    programa.vector("efecto", efecto);
+    m.dibujar(GL_POINTS);
+    ++dibujos_;
+    shader_.usar();
+    glDepthMask(escribeProfundidad);
+    glBlendFuncSeparate(origenRgb, destinoRgb, origenAlpha, destinoAlpha);
+    if (!tamanoPuntos)
+        glDisable(GL_PROGRAM_POINT_SIZE);
+    if (!mezcla)
+        glDisable(GL_BLEND);
+}
+
 void Renderizador::volumenes(const Malla &m, const Volumen *instancias, size_t cantidad,
                              bool aditivo) {
     if (cantidad == 0)

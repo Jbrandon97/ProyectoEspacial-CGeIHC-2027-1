@@ -17,7 +17,7 @@ Para compilar, abrir **ProyectoEspacial.sln** en Visual Studio 2022 con Desarrol
 | Planetas | WASD movimiento; Shift correr; mouse cámara; F1 exploración; F3 vista existente |
 | Planeta 1 | X abordar/descender; R reiniciar carrera; C recuperar con penalización; E hangar; P reflector; I reflector Covenant; F energía corporal |
 | Interacciones de P1 | Pulsa una vez G: Grunt 1; K: Grunt 2; H: Hunter. Cada uno camina hacia adelante, gira, vuelve por la misma ruta y queda en su base dentro de un ciclo de 14 s; requiere estar a menos de 18 unidades. Grunt 3 permanece quieto. B caminar BT; J saludo BT; L lanzar; T reponer; Y holocrón; O observar/regresar |
-| Planeta 2 | F energía corporal, P foco de plaza, I foco Orokin, U habilita o deshabilita los cuatro reflectores nocturnos del Railjack, F3 plaza, F4 Warframe |
+| Planeta 2 | F energía corporal, P foco de plaza, I foco Orokin, U habilita o deshabilita los cuatro reflectores nocturnos del Railjack, F3 plaza, F4 Warframe, G ×3 activa o cierra el panorama galáctico, F1 vuelve a explorar |
 | Espacio, F3 pilotaje | W/S acelerar/frenar; A/D girar; mouse orientación; Q/Z subir/bajar; Shift boost; C recuperar; V alterna exterior/cabina; Enter portal cercano |
 | Observación espacial | F4 órbita; F5 estación; F6 asteroides; F3 volver a pilotaje; U/I focos independientes |
 
@@ -28,7 +28,7 @@ La primera entrada a Espacio inicia en tercera persona. Al regresar se conserva 
 - `ProyectoEspacial.exe --pruebas --evidencias carpeta`: regresión de las tres regiones y capturas reales.
 - `--pruebas --sin-capturas`: misma regresión sin guardar imágenes (las comprobaciones de píxeles siguen ejecutándose).
 - `--pruebas-integrales --evidencias carpeta`: comprobaciones específicas, incluido Railjack en reposo/vuelo con luz fija, continuidad del cielo y mezcla PCM de audio.
-- `--pruebas-planeta2 --evidencias carpeta`: patrullas, caminos, apoyo de edificios, torre, Aphelion y reflectores del puerto con capturas de día y noche.
+- `--pruebas-planeta2 --evidencias carpeta`: patrullas, caminos, apoyo de edificios, torre, Aphelion y reflectores del puerto con capturas de día y noche. También comprueba la secuencia y el panorama galáctico.
 - `--medir-integral`: medición de fotogramas con simulación, HUD y audio en las tres regiones.
 - `--medir-espacio`: medición de dibujo en tres vistas fijas, comparable al bloque anterior.
 

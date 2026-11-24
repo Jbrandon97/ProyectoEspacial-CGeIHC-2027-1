@@ -34,12 +34,17 @@ class Aplicacion {
     float deltaCuadro_ = 1.0f / 60;
     std::string aviso_;
     explicit Aplicacion(const std::filesystem::path &recursos);
+    ~Aplicacion();
     void cambiarRegion(Region region);
     void solicitarCamara(ModoCamara modo);
     void procesarEntradas(float dt);
+    void registrarEntradaGalaxia(int tecla, int accion, double ahora);
+    bool enPanorama() const;
+    GestorCamaras camaraVisible() const;
     void aplicarOrden(const OrdenActividad &orden);
     void probarFinalPlaneta1(const std::filesystem::path &dir);
     void probarIntegral(const std::filesystem::path &dir);
+    void probarGalaxia(const std::filesystem::path &dir);
     void probarPlaneta2(const std::filesystem::path &dir);
     void probarEspacioMejora(const std::filesystem::path &dir);
     void medirIntegral();

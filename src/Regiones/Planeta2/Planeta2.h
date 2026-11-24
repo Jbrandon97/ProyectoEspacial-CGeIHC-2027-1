@@ -1,5 +1,6 @@
 #pragma once
 #include "AlturasTerreno.h"
+#include "GalaxiaPlaneta2.h"
 #include "Graficos/ModeloGltf.h"
 #include "Mundo/Escenario.h"
 #include "SectorRatchet/SectorRatchet.h"
@@ -11,6 +12,7 @@
 class Planeta2 final : public Escenario {
     SectorWarframe warframe_;
     SectorRatchet ratchet_;
+    GalaxiaPlaneta2 galaxia_;
     std::unique_ptr<ModeloGltf> terreno_;
     std::unique_ptr<AlturasTerreno> alturas_;
     float tiempo_ = 24.0f;
@@ -23,6 +25,8 @@ class Planeta2 final : public Escenario {
     const SectorRatchet &ratchet() const {
         return ratchet_;
     }
+    GalaxiaPlaneta2 &galaxia() { return galaxia_; }
+    const GalaxiaPlaneta2 &galaxia() const { return galaxia_; }
     glm::vec3 centroPlaza() const;
     float reloj() const {
         return tiempo_;

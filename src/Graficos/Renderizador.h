@@ -48,6 +48,7 @@ class Renderizador {
     void texturada(const Malla &, const glm::mat4 &, GLuint textura, glm::vec3 color,
                    glm::vec3 emision = glm::vec3(0), float rugosidad = .85f, float metal = 0,
                    GLuint emisionTextura = 0);
+    void puntos(const Malla &, const Shader &, const glm::mat4 &modelo, glm::vec3 efecto);
     void volumenes(const Malla &, const Volumen *, size_t cantidad, bool aditivo);
     bool visible(glm::vec3 centro, float radio) const;
     void interfaz(const Malla &malla, int ancho, int alto);

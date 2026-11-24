@@ -1,6 +1,7 @@
 #include "Camaras/GestorCamaras.h"
 #include <algorithm>
 #include <cmath>
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 bool GestorCamaras::compatible(ModoCamara m, Region r) {
     switch (m) {
@@ -76,6 +77,21 @@ void GestorCamaras::seguir(glm::vec3 p, glm::vec3 frente, float dt,
         ojo_.y = std::max(ojo_.y, altura(ojo_.x, ojo_.z) + 1.25f);
     preparada_ = true;
 }
+void GestorCamaras::mezclarEncuadre(glm::vec3 ojo, glm::vec3 objetivo, float peso) {
+    const auto actual = frente();
+    const auto destino = glm::normalize(objetivo - ojo);
+    const float azimut = std::atan2(actual.x, actual.z);
+    const float arco = std::remainder(std::atan2(destino.x, destino.z) - azimut, glm::two_pi<float>());
+    const float giro = azimut + peso * arco;
+    const float inclinacion = glm::mix(std::asin(std::clamp(actual.y, -1.f, 1.f)),
+                                      std::asin(std::clamp(destino.y, -1.f, 1.f)), peso);
+    ojo_ = glm::mix(ojo_, ojo, peso);
+    ojo_.y += 84.f * peso * (1.f - peso);
+    objetivo_ = ojo_ + glm::vec3(std::sin(giro) * std::cos(inclinacion), std::sin(inclinacion),
+                                 std::cos(giro) * std::cos(inclinacion));
+    preparada_ = true;
+}
+
 glm::mat4 GestorCamaras::vista(glm::vec3 p) const {
     return preparada_ ? glm::lookAt(ojo_, objetivo_, glm::vec3(0, 1, 0))
                       : glm::lookAt(p + glm::vec3(0, 14, 25), p, glm::vec3(0, 1, 0));

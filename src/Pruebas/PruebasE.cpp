@@ -765,7 +765,134 @@ void Aplicacion::probarPlaneta2(const std::filesystem::path &dir) {
     glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,&limiteUniformes);
     std::cout << "P2_RAILJACK_FOCOS_OK cuatro conos y control U; canales iluminados=" << canales
               << " limite_uniformes=" << limiteUniformes << '\n';
+    probarGalaxia(dir);
     cambiarRegion(Region::Planeta1);
+}
+
+void Aplicacion::probarGalaxia(const std::filesystem::path &dir) {
+    auto exigir = [](bool b, const char *m) {
+        if (!b)
+            throw std::runtime_error(m);
+    };
+    auto &p = static_cast<Planeta2 &>(escenarios_.actual());
+    auto &g = p.galaxia();
+    exigir(g.cantidadPuntos() == 50000, "Cantidad de puntos de la galaxia incorrecta");
+    const auto avatarAntes = avatar_.guardar();
+    const auto camaraAntes = camaras_;
+    const auto relojAntes = p.reloj();
+    solicitarCamara(ModoCamara::Exploracion);
+    avatar_.colocar(p.centroPlaza() + glm::vec3(1, 0, 21), p);
+    camaras_.alCambiarRegion(Region::Planeta2);
+    p.actualizar(std::fmod(90.f - p.reloj() + Planeta2::DuracionCiclo, Planeta2::DuracionCiclo));
+    actualizarCamara(1.f / 60);
+    dibujar(dir / "Galaxia_01_Antes.ppm");
+    const auto ojoInicial = camaraVisible().ojo();
+
+    const auto tecla = [this](double t, int k = GLFW_KEY_G, int a = GLFW_PRESS) {
+        registrarEntradaGalaxia(k, a, t);
+    };
+    const auto triple = [&tecla](double t) {
+        tecla(t);
+        tecla(t + .2);
+        tecla(t + .4);
+    };
+    tecla(1.0);
+    tecla(1.1, GLFW_KEY_G, GLFW_REPEAT);
+    tecla(1.2, GLFW_KEY_G, GLFW_RELEASE);
+    exigir(!enPanorama(), "Una pulsacion o una repeticion activo la galaxia");
+    tecla(1.3);
+    tecla(2.8);
+    tecla(3.0);
+    exigir(!enPanorama(), "Una secuencia vencida activo la galaxia");
+    tecla(3.1, GLFW_KEY_W);
+    tecla(3.2);
+    exigir(!enPanorama(), "Una tecla intermedia no reinicio la secuencia");
+    g.interrumpir();
+    triple(4.0);
+    exigir(g.activa() && g.presencia() == 0 &&
+               glm::distance(ojoInicial, camaraVisible().ojo()) < .001f,
+           "La galaxia o la camara saltan al iniciar");
+
+    auto avanzarGalaxia = [&g, this](int cuadros) {
+        for (int i = 0; i < cuadros; ++i) {
+            g.actualizar(1.f / 60);
+            actualizarCamara(1.f / 60);
+        }
+    };
+    int w, h;
+    ventana_.dimensiones(w, h);
+    const auto r = Region::Planeta2;
+    const auto ojo = mundo_.aGlobal(r, GalaxiaPlaneta2::Ojo);
+    const auto objetivo = mundo_.aGlobal(r, GalaxiaPlaneta2::Encuadre);
+    const auto vp = camaras_.proyeccion(float(w) / h) * glm::lookAt(ojo, objetivo, {0, 1, 0});
+    const auto brillo = [&]() {
+        renderizador_.iniciar(w, h, vp, p.ambiente(), ojo);
+        g.dibujar(renderizador_, mundo_.transformacion(r), 1.f);
+        std::vector<unsigned char> pixeles(size_t(w) * h * 3);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixeles.data());
+        glPixelStorei(GL_PACK_ALIGNMENT, 4);
+        Renderizador::comprobarErrores();
+        unsigned long long suma = 0;
+        for (auto canal : pixeles)
+            suma += canal;
+        return suma;
+    };
+    const auto oscuro = brillo();
+    avanzarGalaxia(45);
+    exigir(g.mezclaCamara() > 0 && g.mezclaCamara() < 1 &&
+               glm::distance(ojoInicial, camaraVisible().ojo()) > 1.f,
+           "La camera no pasa por una pose intermedia");
+    avanzarGalaxia(107);
+    const auto progreso = g.presencia();
+    const auto tenue = brillo();
+    exigir(progreso > 0.f && progreso < 1.f && tenue > oscuro + 400,
+           "La galaxia no aparece gradualmente en GPU");
+    dibujar(dir / "Galaxia_02_Aparicion.ppm");
+    avanzarGalaxia(140);
+    const auto completo = brillo();
+    exigir(g.presencia() == 1.f && g.mezclaCamara() == 1.f &&
+               glm::distance(ojo, camaraVisible().ojo()) < .001f && completo > tenue + 1500,
+           "La vista panoramica o el crecimiento de la galaxia no llegan a su estado final");
+    dibujar(dir / "Galaxia_03_Panorama.ppm");
+
+    triple(10.0);
+    exigir(!g.activa() && g.enCurso() && g.presencia() == 1.f,
+           "La segunda secuencia no inicia la salida gradual");
+    avanzarGalaxia(78);
+    exigir(!enPanorama() && camaras_.modo() == ModoCamara::Exploracion &&
+               glm::distance(ojoInicial, camaraVisible().ojo()) < .002f && brillo() == oscuro,
+           "La galaxia no se oculta o la vista de exploracion no vuelve");
+    dibujar(dir / "Galaxia_04_Regreso.ppm");
+
+    solicitarCamara(ModoCamara::Viaje);
+    triple(12.0);
+    avanzarGalaxia(48);
+    solicitarCamara(ModoCamara::Observacion);
+    avanzarGalaxia(80);
+    exigir(!enPanorama() && camaras_.modo() == ModoCamara::Observacion,
+           "La panoramica interfiere con F3/F4");
+    triple(15.0);
+    avanzarGalaxia(48);
+    solicitarCamara(ModoCamara::Exploracion);
+    avanzarGalaxia(80);
+    exigir(!enPanorama(), "F1 no cierra la panoramica");
+    triple(18.0);
+    avanzarGalaxia(30);
+    for (auto region : {Region::Planeta1, Region::Espacio}) {
+        cambiarRegion(region);
+        triple(20.0);
+        exigir(!enPanorama(), "G activo la galaxia fuera de Planeta 2");
+    }
+    cambiarRegion(r);
+    exigir(!enPanorama() && g.cantidadPuntos() == 50000,
+           "El evento persistio al cambiar de region o se perdio el recurso");
+    avatar_.restaurar(avatarAntes);
+    camaras_ = camaraAntes;
+    p.actualizar(std::fmod(relojAntes - p.reloj() + Planeta2::DuracionCiclo, Planeta2::DuracionCiclo));
+    std::cout << "P2_GALAXIA_OK puntos=" << g.cantidadPuntos() << " brillo_base=" << oscuro
+              << " brillo_aparicion=" << tenue << " brillo_final=" << completo
+              << " secuencia, retorno, F1/F3/F4 y aislamiento regional\n";
 }
 
 // Medicion sincronizada: mismo reloj, resolucion y encuadres antes y despues.

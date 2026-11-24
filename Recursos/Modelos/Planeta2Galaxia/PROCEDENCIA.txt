@@ -1,0 +1,9 @@
+Need some space? — Loïc Norgeot
+Fuente: https://sketchfab.com/3d-models/need-some-space-d6521362b37b48e3a82bce4911409303
+Autor: https://sketchfab.com/norgeotloic
+Licencia declarada en el GLB: Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+
+El GLB adjunto se conserva sin editar. En Planeta 2 la aplicación centra, normaliza,
+orienta y anima sus puntos. La presentación usa un shader propio; conserva el color
+de cada punto del modelo.

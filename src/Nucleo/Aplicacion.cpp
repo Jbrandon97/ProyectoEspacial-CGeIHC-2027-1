@@ -32,12 +32,36 @@ std::filesystem::path recursosJuntoAlEjecutable(const char *argumento) {
 Aplicacion::Aplicacion(const std::filesystem::path &r) : recursos_(r), renderizador_(r), audio_(r) {
     registrarEscenarios(escenarios_);
     cambiarRegion(Region::Planeta1);
+    auto *v = ventana_.nativa();
+    glfwSetWindowUserPointer(v, this);
+    glfwSetKeyCallback(v, [](GLFWwindow *w, int tecla, int, int accion, int) {
+        auto &app = *static_cast<Aplicacion *>(glfwGetWindowUserPointer(w));
+        app.registrarEntradaGalaxia(tecla, accion, glfwGetTime());
+    });
+    glfwSetWindowFocusCallback(v, [](GLFWwindow *w, int foco) {
+        if (!foco) {
+            auto &app = *static_cast<Aplicacion *>(glfwGetWindowUserPointer(w));
+            app.registrarEntradaGalaxia(GLFW_KEY_UNKNOWN, GLFW_PRESS, glfwGetTime());
+        }
+    });
 }
+Aplicacion::~Aplicacion() {
+    glfwSetKeyCallback(ventana_.nativa(), nullptr);
+    glfwSetWindowFocusCallback(ventana_.nativa(), nullptr);
+}
+
 void Aplicacion::cambiarRegion(Region r) {
     ContextoEscena c{renderizador_, recursos_};
     if (regionPreparada_) {
-        if (escenarios_.actual().id() == r)
+        const auto anterior = escenarios_.actual().id();
+        if (anterior == r)
             return;
+        if (anterior == Region::Planeta2) {
+            auto &galaxia = static_cast<Planeta2 &>(escenarios_.actual()).galaxia();
+            if (galaxia.enCurso())
+                camaras_.solicitar(ModoCamara::Exploracion, anterior);
+            galaxia.reiniciar();
+        }
         memoriaRegiones_[escenarios_.actual().id()] = {avatar_.guardar(), camaras_, foco_,
                                                        observandoCohete_};
     }
@@ -75,8 +99,11 @@ void Aplicacion::solicitarCamara(ModoCamara m) {
         aviso_ = "Acercate a la nave y aborda con X";
         return;
     }
-    aviso_ =
-        camaras_.solicitar(m, escenarios_.actual().id()) ? "Modo actualizado" : "Modo incompatible";
+    const auto r = escenarios_.actual().id();
+    const bool cambio = camaras_.solicitar(m, r);
+    if (cambio && r == Region::Planeta2)
+        static_cast<Planeta2 &>(escenarios_.actual()).galaxia().cerrar();
+    aviso_ = cambio ? "Modo actualizado" : "Modo incompatible";
 }
 void Aplicacion::aplicarOrden(const OrdenActividad &orden) {
     auto &e = escenarios_.actual();
@@ -101,6 +128,36 @@ void Aplicacion::aplicarOrden(const OrdenActividad &orden) {
         camaras_.solicitar(ModoCamara::Exploracion, e.id());
     }
 }
+void Aplicacion::registrarEntradaGalaxia(int tecla, int accion, double ahora) {
+    if (!regionPreparada_ || accion != GLFW_PRESS)
+        return;
+    auto &e = escenarios_.actual();
+    if (e.id() != Region::Planeta2)
+        return;
+    auto &galaxia = static_cast<Planeta2 &>(e).galaxia();
+    if (tecla != GLFW_KEY_G)
+        galaxia.interrumpir();
+    else if (galaxia.pulsarG(ahora) && !galaxia.activa())
+        camaras_.solicitar(ModoCamara::Exploracion, e.id());
+}
+
+bool Aplicacion::enPanorama() const {
+    const auto &e = escenarios_.actual();
+    return e.id() == Region::Planeta2 && static_cast<const Planeta2 &>(e).galaxia().enCurso();
+}
+
+GestorCamaras Aplicacion::camaraVisible() const {
+    auto vista = camaras_;
+    const auto &e = escenarios_.actual();
+    if (e.id() == Region::Planeta2) {
+        const float mezcla = static_cast<const Planeta2 &>(e).galaxia().mezclaCamara();
+        if (mezcla > 0)
+            vista.mezclarEncuadre(mundo_.aGlobal(e.id(), GalaxiaPlaneta2::Ojo),
+                                  mundo_.aGlobal(e.id(), GalaxiaPlaneta2::Encuadre), mezcla);
+    }
+    return vista;
+}
+
 void Aplicacion::procesarEntradas(float dt) {
     entradas_.actualizar(ventana_.nativa());
     if (entradas_.pulsada(GLFW_KEY_ESCAPE))
@@ -129,9 +186,11 @@ void Aplicacion::procesarEntradas(float dt) {
         escenarios_.actual().id() == Region::Espacio && camaras_.modo() == ModoCamara::Viaje;
     if (pilotando && entradas_.pulsada(GLFW_KEY_V))
         camaras_.alternarCabina();
-    if (!pilotando)
-        camaras_.mirar(entradas_.raton());
-    camaras_.orbitar(entradas_.orbita() * dt);
+    if (!enPanorama()) {
+        if (!pilotando)
+            camaras_.mirar(entradas_.raton());
+        camaras_.orbitar(entradas_.orbita() * dt);
+    }
     OrdenActividad o;
     o.avatar = avatar_.posicion();
     o.acelerador = entradas_.mantenida(GLFW_KEY_W) ? 1.0f : 0.0f;
@@ -174,7 +233,7 @@ void Aplicacion::procesarEntradas(float dt) {
     if (!explorar)
         foco_ = false;
     aplicarOrden(o);
-    if (!observandoCohete_ && !escenarios_.actual().actividad().ocupado &&
+    if (!enPanorama() && !observandoCohete_ && !escenarios_.actual().actividad().ocupado &&
         camaras_.modo() == ModoCamara::Exploracion)
         avatar_.mover(camaras_.movimientoRelativo(entradas_.movimiento()), dt, escenarios_.actual(),
                       entradas_.mantenida(GLFW_KEY_LEFT_SHIFT) ||
@@ -224,7 +283,8 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     auto actividad = e.actividad();
     actualizarCamara(deltaCuadro_);
     actualizarAudio();
-    auto vp = camaras_.proyeccion(float(a) / b) * camaras_.vista(glm::vec3(0));
+    const auto vista = camaraVisible();
+    auto vp = vista.proyeccion(float(a) / b) * vista.vista(glm::vec3(0));
     auto ambiente = e.ambiente();
     auto &il = ambiente.iluminacion;
     // Las regiones trabajan en coordenadas locales; pasar luces a mundo para el shader.
@@ -246,7 +306,7 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
     energia.color = {.12f, .65f, 1.f};
     energia.intensidad = r == Region::Planeta2 ? .75f : 1.65f;
     energia.atenuacion = {1, .09f, .025f};
-    renderizador_.iniciar(a, b, vp, ambiente, camaras_.ojo());
+    renderizador_.iniciar(a, b, vp, ambiente, vista.ojo());
     ContextoEscena c{renderizador_, recursos_};
     e.dibujar(c, mundo_.transformacion(r));
     if (r != Region::Espacio && !actividad.ocupado)
@@ -284,6 +344,12 @@ void Aplicacion::dibujar(const std::filesystem::path &captura) {
             lineas[1] = "OBSERVACION / F3 VOLVER AL PILOTAJE";
         lineas.push_back(piloto ? "V CABINA / F4 ORBITA / F5 ESTACION / F6 ASTEROIDES"
                                 : "F4 ORBITA / F5 ESTACION / F6 ASTEROIDES");
+    }
+    if (r == Region::Planeta2) {
+        if (enPanorama())
+            lineas[1] = "PANORAMA GALACTICO / G X3 O F1 PARA VOLVER";
+        else
+            lineas.push_back("G X3 GALAXIA");
     }
     interfaz_.preparar(lineas, a, b, true);
     renderizador_.interfaz(interfaz_.malla(), a, b);
@@ -327,6 +393,7 @@ int Aplicacion::ciclo(bool pruebas, const std::filesystem::path &evidencias, Reg
         probarEspacioMejora(evidencias);
         probarPlaneta2(evidencias);
         probarIntegral(evidencias);
+        regionPreparada_ = false;
         escenarios_.liberar();
         Renderizador::comprobarErrores();
         return 0;
@@ -596,7 +663,8 @@ void Aplicacion::probarCarrera(const std::filesystem::path &evidencias) {
 
 void Aplicacion::actualizarAudio() {
     auto region = escenarios_.actual().id();
-    audio_.oyente(camaras_.ojo(), camaras_.frente());
+    const auto vista = camaraVisible();
+    audio_.oyente(vista.ojo(), vista.frente());
     bool activo = region == Region::Planeta1;
     bool espacio = escenarios_.actual().id() == Region::Espacio;
     bool planeta2 = escenarios_.actual().id() == Region::Planeta2;
